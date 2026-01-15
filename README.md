@@ -1,156 +1,191 @@
-# NARRA_FORGE 🚀
+# NARRA_FORGE V2 🚀
 
-**Autonomiczny Wieloświatowy System Generowania Narracji Klasy Absolutnej**
+**Autonomiczny Batch Engine do Produkcji Narracji Wydawniczych**
 
-[![Polski](https://img.shields.io/badge/język-Polski-red.svg)](README.md)
-[![English](https://img.shields.io/badge/lang-English-blue.svg)](README_EN.md)
+[![Status](https://img.shields.io/badge/status-foundation-yellow.svg)](README.md)
+[![Version](https://img.shields.io/badge/version-2.0.0--foundation-blue.svg)](README.md)
+[![Python](https://img.shields.io/badge/python-3.11+-green.svg)](README.md)
+[![OpenAI](https://img.shields.io/badge/AI-OpenAI%20Only-orange.svg)](README.md)
 
 ---
 
-## 📖 Czym Jest NARRA_FORGE?
+## ⚡ Czym Jest NARRA_FORGE V2?
 
-**NARRA_FORGE** to nie chatbot. To nie narzędzie kreatywne. To nie pojedynczy model.
+**To NIE jest chatbot. To NIE jest system strumieniowy. To NIE jest narzędzie interaktywne.**
 
-To **SYNTEZA**:
-- 🧠 Zaawansowanych modeli generatywnych (Claude Opus/Sonnet, GPT-4)
-- 💾 Systemów pamięci długoterminowej (strukturalna, semantyczna, ewolucyjna)
-- 🤖 Orkiestracji wieloagentowej (10 wyspecjalizowanych agentów)
-- ✅ Mechanizmów kontroli jakości
-- 📚 Logiki wydawniczej
-- 🌍 Architektury narracyjnej na skalę uniwersów
+**To jest SILNIK PRODUKCYJNY TYPU BATCH.**
+
+### Tryb pracy:
+```
+wejście → pełna analiza → pełna produkcja → wynik końcowy
+```
+
+**Jeden zamknięty cykl. Jeden kompletny rezultat.**
 
 ---
 
 ## 🎯 Co Produkuje?
 
-Narracje **GOTOWE DO SPRZEDAŻY**:
+Narracje **GOTOWE DO PUBLIKACJI**:
 
-- ✍️ **Opowiadania** (do 10,000 słów)
-- 📕 **Nowele** (10,000-40,000 słów)
-- 📗 **Powieści** (40,000-120,000 słów)
-- 📚 **Sagi epickie** (wielotomowe)
-- 🎧 **Audiobooki** (ze znacznikami dla narratora)
+- ✍️ **Opowiadania** (5k-10k słów)
+- 📕 **Nowele** (10k-40k słów)
+- 📗 **Powieści** (40k-120k słów)
+- 📚 **Sagi epickie** (120k+ słów)
 
 **WSZYSTKIE na najwyższym poziomie jakości** - niezależnie od długości!
 
 ---
 
-## ⚡ Szybki Start
+## 🏗️ Status Projektu
 
-### 🖥️ Opcja 1: Web Interface (NAJŁATWIEJSZA!)
+### ✅ FAZA 1: FUNDAMENT (GOTOWE)
+
+Zaimplementowano:
+
+- ✅ Kompletna struktura projektu
+- ✅ Konfiguracja Docker (środowisko testowe)
+- ✅ Klient OpenAI z rate limiting
+- ✅ Router modeli (mini vs gpt-4o)
+- ✅ Potrójny system pamięci (structural, semantic, evolutionary)
+- ✅ Batch Orchestrator (10-etapowy pipeline)
+- ✅ System konfiguracji
+- ✅ Tracking kosztów i tokenów
+
+### ⏳ FAZA 2: AGENCI (NASTĘPNA)
+
+W kolejnej iteracji:
+
+- [ ] Implementacja wszystkich 10 agentów
+- [ ] Pełne prompty w języku polskim
+- [ ] Rzeczywista generacja narracji
+- [ ] Walidacja jakości
+- [ ] Logika retry i error handling
+
+### 📅 FAZA 3: POLISH
+
+- [ ] Prosty UI (CLI/Web)
+- [ ] Kompletne testy
+- [ ] Dokumentacja użytkownika
+- [ ] Optymalizacja wydajności
+
+---
+
+## 🚀 Szybki Start
+
+### 1. Setup
 
 ```bash
-# 1. Skopiuj .env.example do .env i dodaj klucz OpenAI
+# Sklonuj repo
+git clone https://github.com/Marksio90/NARRA_FORGE.git
+cd NARRA_FORGE
+
+# Skopiuj .env
 cp .env.example .env
-# Edytuj .env i dodaj: OPENAI_API_KEY=sk-proj-xxx...
 
-# 2. Uruchom wszystko (API + UI)
-./start_all.sh
-
-# 3. Otwórz w przeglądarce
-#    UI:       http://localhost:8501
-#    API Docs: http://localhost:8000/docs
+# Dodaj klucz OpenAI do .env
+# OPENAI_API_KEY=sk-proj-...
 ```
 
-**Gotowe!** Masz teraz:
-- 🖥️ **Streamlit Dashboard** - intuicyjny interfejs do generacji
-- 🔌 **REST API** - do integracji z własnymi aplikacjami
-- 📡 **WebSocket** - real-time monitoring postępu
-
-📖 **Pełna dokumentacja API/UI**: [API_UI.md](API_UI.md)
-
----
-
-### 🐍 Opcja 2: Python (Programistyczna)
+### 2. Instalacja
 
 ```bash
-# 1. Instalacja
+# Utwórz venv
+python3 -m venv venv
+source venv/bin/activate
+
+# Zainstaluj
 pip install -r requirements.txt
-
-# 2. Klucz API
-export OPENAI_API_KEY="twój-klucz"
-
-# 3. Uruchom przykład
-python przyklad_uzycia_pl.py
+pip install -e .
 ```
 
-### Twoja Pierwsza Narracja w 3 Minuty:
+### 3. Uruchom Przykład
 
-```python
-import asyncio
-from narra_forge.core.config import get_default_config
-from narra_forge.core.orchestrator import NarrativeOrchestrator
-
-async def generuj():
-    config = get_default_config()
-    orchestrator = NarrativeOrchestrator(config)
-
-    zlecenie = """
-    Napisz mroczne opowiadanie fantasy o młodym alchemiku,
-    który odkrywa straszną tajemnicę swojego mistrza.
-
-    Forma: opowiadanie (5000 słów)
-    Ton: mroczny, moralnie złożony
-    """
-
-    wynik = await orchestrator.produce_narrative(zlecenie)
-
-    if wynik["success"]:
-        print(f"✅ Gotowe! Plik: {wynik['output']['text_file']}")
-
-asyncio.run(generuj())
+```bash
+python example_basic.py
 ```
+
+**Uwaga:** To wersja foundation. Agenci są placeholderami. Rzeczywista generacja narracji zostanie dodana w Fazie 2.
 
 ---
 
-## 🏗️ Pipeline Produkcji (10 Etapów)
+## 📊 Pipeline Produkcyjny (10 Etapów)
 
 ```
-1️⃣  Interpretacja Zlecenia      →  Analiza wymagań
-2️⃣  Architektura Świata         →  Kompletny system świata
-3️⃣  Architektura Postaci        →  Postacie jako procesy
-4️⃣  Struktura Narracyjna        →  Dobór struktury
-5️⃣  Planowanie Segmentów        →  Plan rozdziałów/scen
-6️⃣  Generacja Sekwencyjna       →  Pisanie z pamięcią
-7️⃣  Kontrola Koherencji         →  Walidacja spójności
-8️⃣  Stylizacja Językowa         →  Najwyższy poziom PL
-9️⃣  Redakcja Wydawnicza         →  Finalne cięcia
-🔟 Finalne Wyjście             →  Tekst + audiobook + meta
+1️⃣  Interpretacja Zlecenia      →  Analiza wymagań        [gpt-4o-mini]
+2️⃣  Architektura Świata         →  Kompletny system       [gpt-4o-mini]
+3️⃣  Architektura Postaci        →  Postacie jako procesy  [gpt-4o-mini]
+4️⃣  Struktura Narracyjna        →  Dobór struktury        [gpt-4o-mini]
+5️⃣  Planowanie Segmentów        →  Plan rozdziałów        [gpt-4o-mini]
+6️⃣  Generacja Sekwencyjna       →  Pisanie narracji       [gpt-4o] 💰
+7️⃣  Kontrola Koherencji         →  Walidacja spójności    [gpt-4o-mini]
+8️⃣  Stylizacja Językowa         →  Polski na najwyższym   [gpt-4o] 💰
+9️⃣  Redakcja Wydawnicza         →  Finalne cięcia         [gpt-4o-mini]
+🔟 Finalne Wyjście             →  Tekst + metadata       [local]
 ```
+
+**Optymalizacja kosztowa:**
+- 60-70% tokenów używa gpt-4o-mini (tani)
+- 30-40% tokenów używa gpt-4o (drogi, ale konieczny dla jakości)
 
 ---
 
 ## 🧠 Potrójny System Pamięci
 
-### 1. **Pamięć Strukturalna**
-Światy, postacie, reguły, archetypy - SZKIELET uniwersów
+### 1. Pamięć Strukturalna (Structural)
+**SZKIELET uniwersów**
+- Światy (IP-level entities)
+- Postacie (dynamiczne procesy)
+- Reguły, archetypy
 
-### 2. **Pamięć Semantyczna**
-Wydarzenia, motywy, relacje - ŻYWA TREŚĆ historii
+### 2. Pamięć Semantyczna (Semantic)
+**ŻYWA TREŚĆ historii**
+- Wydarzenia
+- Motywy
+- Relacje
+- Konflikty
 
-### 3. **Pamięć Ewolucyjna**
-Jak światy i postacie się ZMIENIAJĄ w czasie
+### 3. Pamięć Ewolucyjna (Evolutionary)
+**WYMIAR CZASU**
+- Jak światy się zmieniają
+- Jak postacie ewoluują
+- Jak relacje się przekształcają
 
 ---
 
-## 🌍 Multi-World / Multi-IP
+## 🐳 Docker-First Approach
 
-System obsługuje **wiele uniwersów równocześnie**:
+**Docker = główne środowisko deweloperskie i testowe**
 
-```python
-# Twórz wiele światów
-fantasy_world = world_manager.create_world("Królestwo Eternal", ...)
-scifi_world = world_manager.create_world("Kolonia Mars-7", ...)
+```bash
+# Build
+docker-compose build
 
-# Linkuj je (opcjonalnie)
-world_manager.link_worlds(fantasy_world.id, scifi_world.id)
+# Uruchom przykład
+docker-compose run --rm narra_forge python example_basic.py
 
-# Generuj w konkretnym świecie
-wynik = await orchestrator.produce_narrative(
-    "Historia w Królestwie Eternal...",
-    world_id=fantasy_world.world_id
-)
+# Testy (gdy zaimplementowane)
+./docker-test.sh
 ```
+
+**Zasada:** Nic nie idzie do produkcji bez pełnego przejścia testów w Docker.
+
+---
+
+## 💰 Przykładowe Koszty
+
+| Typ Produkcji | Słowa | Szacowany Koszt |
+|--------------|-------|----------------|
+| Opowiadanie | 5k-10k | $2-5 |
+| Nowela | 10k-40k | $5-20 |
+| Powieść | 40k-120k | $20-100 |
+| Saga | 120k+ | $100+ |
+
+**Uwaga:** Koszty zależą od:
+- Złożoności zlecenia
+- Wymagań jakościowych
+- Liczby postaci/lokacji
+- Potrzeb retry
 
 ---
 
@@ -164,144 +199,172 @@ wynik = await orchestrator.produce_narrative(
 - Długa forma ≠ rozwlekła forma
 - Każdy tekst = fragment potencjalnego uniwersum
 
-### 👤 Postacie jako Procesy
+### 🤖 OpenAI ONLY
 
-Nie statyczne opisy, ale **dynamiczne procesy psychologiczne**:
-- Wewnętrzne trajektorie
-- Sprzeczności i konflikty
-- Ograniczenia poznawcze
-- Zdolność ewolucji
+**Wyłącznie OpenAI API. Żadnych innych providerów.**
 
-### 🌍 Światy jako Systemy
+- ✅ OpenAI (gpt-4o-mini, gpt-4o)
+- ❌ Anthropic
+- ❌ Claude
+- ❌ Inne
 
-Nie dekoracje, ale **kompletne systemy**:
-- Prawa rzeczywistości (tworzą ograniczenia)
-- Granice przestrzenne/czasowe/wymiarowe
-- Anomalie (celowe wyjątki)
-- Konflikt nadrzędny
-- Temat egzystencjalny
+### 🔄 Batch, Not Streaming
 
----
+**System działa w zamkniętym cyklu.**
 
-## 📊 Metryki Jakości
-
-| Metryka | Min. Próg |
-|---------|-----------|
-| Wynik Koherencji | 0.85/1.0 |
-| Spójność Logiczna | ✅ TAK |
-| Spójność Psychologiczna | ✅ TAK |
-| Spójność Czasowa | ✅ TAK |
+- ❌ Nie streamuje
+- ❌ Nie generuje cząstkowych wyników
+- ❌ Nie konsultuje w trakcie
+- ✅ Jeden pełny cykl produkcyjny
+- ✅ Zwraca wynik po zakończeniu WSZYSTKICH etapów
 
 ---
 
-## 📁 Co Otrzymujesz?
-
-Po produkcji otrzymujesz:
+## 📁 Struktura Projektu
 
 ```
-output/[project_id]/
-├── narracja.txt           # Tekst publikacyjny
-├── narracja_audiobook.txt # Wersja z znacznikami
-├── metadata.json          # Kompletne metadane
-└── ekspansja.json         # Struktura ekspansji
+narra_forge/
+├── core/                    # Rdzeń systemu
+│   ├── config.py           # Konfiguracja
+│   ├── orchestrator.py     # Batch Orchestrator (główny silnik)
+│   └── types.py            # Typy danych
+│
+├── models/                  # Modele AI (OpenAI ONLY)
+│   ├── openai_client.py    # Klient OpenAI
+│   └── model_router.py     # Router mini/gpt-4o
+│
+├── memory/                  # Potrójny system pamięci
+│   ├── structural.py       # Światy, postacie
+│   ├── semantic.py         # Wydarzenia, motywy
+│   ├── evolutionary.py     # Zmiany w czasie
+│   └── storage.py          # SQLite backend
+│
+├── agents/                  # 10 agentów (TODO - Faza 2)
+│   └── [będą dodane w następnej iteracji]
+│
+└── ui/                      # Interfejs (TODO - Faza 3)
+    └── [będzie dodany później]
 ```
 
 ---
 
 ## 📚 Dokumentacja
 
-- 📖 **[DOKUMENTACJA_PL.md](DOKUMENTACJA_PL.md)** - Pełna dokumentacja po polsku
-- 🚀 **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide
-- 🏗️ **[ARCHITECTURE.md](ARCHITECTURE.md)** - Dokumentacja techniczna
-- 💻 **[przyklad_uzycia_pl.py](przyklad_uzycia_pl.py)** - Kompletny przykład
+- 📖 **[QUICKSTART_V2.md](QUICKSTART_V2.md)** - Szybki start i instrukcje
+- 🏗️ **[ARCHITECTURE_V2.md](ARCHITECTURE_V2.md)** - Pełna specyfikacja architektury
+- 💻 **[example_basic.py](example_basic.py)** - Podstawowy przykład użycia
 
 ---
 
 ## 🔬 Technologie
 
 - **Python 3.11+**
-- **Claude Opus 4.5 / Sonnet 4.5** - Główne modele
-- **OpenAI GPT-4** - Alternatywa/fallback
-- **SQLite** - Persistent memory
-- **Architektura model-agnostic** - Gotowa na przyszłość
+- **OpenAI API** (gpt-4o-mini + gpt-4o)
+- **SQLite** (persistent memory)
+- **Docker** (środowisko testowe)
+- **aiosqlite** (async database)
+- **pydantic** (configuration & validation)
+- **tiktoken** (token counting)
 
 ---
 
-## 💎 Charakterystyka
+## 💡 Przykład Użycia
 
-### ✅ Ma:
-- Kompletny pipeline 10-etapowy
-- Wszystkie agenty zaimplementowane
-- Polski system prompt dla każdego agenta
-- Walidacja koherencji
-- Pamięć długoterminowa
-- Multi-world support
-- Format audiobook
-- Metadane i ekspansja
-
-### 🚀 Gotowe:
-- Generowanie opowiadań
-- Generowanie nowel
-- Generowanie powieści
-- Generowanie sag
-- Wieloświatowość
-- Produkcja publikacyjna
-
----
-
-## 🎯 Przykłady Zastosowań
-
-### 📖 Seria w Jednym Świecie
 ```python
-world = world_manager.create_world(...)
-for i in range(10):
-    story = await produce_narrative(f"Historia {i}...", world_id=world.id)
-```
+import asyncio
+from narra_forge import BatchOrchestrator, NarraForgeConfig
+from narra_forge.core import ProductionBrief, ProductionType, Genre
 
-### 📚 Kontynuacja z Postaciami
-```python
-book1 = await produce_narrative("Księga 1...")
-book2 = await produce_narrative(
-    "Księga 2...",
-    world_id=book1.world.id,
-    characters=book1.characters  # TE SAME postacie!
-)
-```
+async def main():
+    # Konfiguracja
+    config = NarraForgeConfig()
 
-### 🌌 Multi-Universe
-```python
-world_a = create_world("Fantasy")
-world_b = create_world("Sci-Fi")
-link_worlds(world_a.id, world_b.id)
+    # Orchestrator
+    orchestrator = BatchOrchestrator(config)
+    await orchestrator._ensure_memory_initialized()
 
-crossover = await produce_narrative(
-    "Podróż między światami...",
-    world_ids=[world_a.id, world_b.id]
-)
+    # Zlecenie produkcji
+    brief = ProductionBrief(
+        production_type=ProductionType.SHORT_STORY,
+        genre=Genre.FANTASY,
+        inspiration="Młody alchemik odkrywa straszną tajemnicę swojego mistrza."
+    )
+
+    # BATCH PRODUCTION (zamknięty cykl)
+    output = await orchestrator.produce_narrative(brief)
+
+    # Wynik
+    print(f"✓ Gotowe! Pliki: {output.output_dir}")
+    print(f"  Koszt: ${output.total_cost_usd:.2f}")
+    print(f"  Słowa: {output.word_count:,}")
+
+asyncio.run(main())
 ```
 
 ---
 
-## 🛠️ Konfiguracja
+## ⚠️ Ważne Informacje
 
-### Wybór Modeli
-```python
-# Szybkie dla analiz
-config.models["haiku"] = ModelConfig(...)
+### To jest wersja FOUNDATION
 
-# Kreatywne dla generacji
-config.models["opus"] = ModelConfig(...)
+1. **Agenci są placeholderami.** Symulują pracę, ale nie generują prawdziwych narracji.
 
-# Użycie
-agent.config["preferred_model"] = "opus"
-```
+2. **Pełna implementacja w Fazie 2.** Następna iteracja doda:
+   - Wszystkie 10 agentów z pełnymi promptami
+   - Rzeczywistą generację narracji (polski język)
+   - Walidację jakości
+   - Error handling
 
-### Jakość
-```python
-config.min_coherence_score = 0.92  # Wyższe standardy
-config.enable_strict_validation = True
-config.max_retries = 5
-```
+3. **Architektura jest kompletna.** Fundament jest solidny i gotowy na agentów.
+
+4. **System kosztów działa.** Tracking tokenów i kosztów jest funkcjonalny, choć obecnie symulowany.
+
+---
+
+## 🗺️ Roadmap Szczegółowy
+
+### ✅ Faza 1: FUNDAMENT (GOTOWE)
+- [x] Struktura projektu
+- [x] Docker setup
+- [x] OpenAI client + rate limiting
+- [x] Model router (mini/gpt-4o)
+- [x] Potrójny system pamięci
+- [x] Batch orchestrator
+- [x] Cost tracking
+- [x] Dokumentacja architektury
+
+### ⏳ Faza 2: AGENCI (NASTĘPNA - 2-3 tygodnie)
+- [ ] Agent 01: Brief Interpreter (analiza zlecenia)
+- [ ] Agent 02: World Architect (budowa świata)
+- [ ] Agent 03: Character Architect (tworzenie postaci)
+- [ ] Agent 04: Structure Designer (struktura narracyjna)
+- [ ] Agent 05: Segment Planner (planowanie segmentów)
+- [ ] Agent 06: Sequential Generator (generacja narracji)
+- [ ] Agent 07: Coherence Validator (walidacja spójności)
+- [ ] Agent 08: Language Stylizer (stylizacja polska)
+- [ ] Agent 09: Editorial Reviewer (redakcja)
+- [ ] Agent 10: Output Processor (finalizacja)
+- [ ] Pełne prompty systemowe w języku polskim
+- [ ] Walidacja jakości (coherence, logic, psychology, time)
+- [ ] Retry logic i error handling
+
+### 📅 Faza 3: POLISH (1-2 tygodnie)
+- [ ] Prosty UI (CLI z rich)
+- [ ] Opcjonalny Web UI (FastAPI + Streamlit)
+- [ ] Kompletne testy jednostkowe
+- [ ] Testy integracyjne
+- [ ] Testy jakości narracyjnej
+- [ ] Testy kosztowe
+- [ ] Dokumentacja użytkownika
+- [ ] Przykłady użycia (opowiadania, nowele, powieści)
+
+### 🚀 Faza 4: PRODUKCJA (ongoing)
+- [ ] Multi-world fully tested
+- [ ] Long-form support (powieści 100k+)
+- [ ] Saga support (multi-volume)
+- [ ] Cost optimization
+- [ ] Performance tuning
+- [ ] Production deployment guides
 
 ---
 
@@ -309,55 +372,28 @@ config.max_retries = 5
 
 ### Brak klucza API
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+cp .env.example .env
+# Edytuj .env i dodaj OPENAI_API_KEY
 ```
 
-### Niska jakość
-```python
-config.default_model = "claude-opus"
-config.min_coherence_score = 0.90
+### Błąd importu
+```bash
+pip install -e .
 ```
 
-### Wolne działanie
-```python
-# Szybkie modele dla analiz
-validator.config["preferred_model"] = "claude-haiku"
-
-# Mocne modele dla generacji
-generator.config["preferred_model"] = "claude-opus"
+### Docker nie działa
+```bash
+docker-compose build --no-cache
+docker-compose logs
 ```
 
 ---
 
-## 🗺️ Roadmap
+## 🤝 Wsparcie
 
-### ✅ Faza 1: Core (GOTOWE)
-- [x] Wszystkie 10 agentów
-- [x] Potrójny system pamięci
-- [x] Multi-world support
-- [x] Kompletny pipeline
-
-### 🔄 Faza 2: Advanced (W Trakcie)
-- [ ] Vector embeddings
-- [ ] Parallel execution
-- [ ] Long context caching
-- [ ] Real-time monitoring
-
-### 📅 Faza 3: UI/API
-- [ ] Web interface
-- [ ] REST API
-- [ ] Batch processing
-- [ ] Integracje wydawnicze
-
----
-
-## 🎭 Filozofia
-
-> _"Nie tworzymy 'tekstu'. Nie tworzymy 'opowiadania'._
->
-> _Tworzymy **ŚWIATY**, **HISTORIE**, **UNIWERSA**, **PRODUKTY WYDAWNICZE**._
->
-> _Działamy jak studio narracyjne, wydawnictwo przyszłości, silnik opowieści ponadczasowych."_
+- **Issues:** [GitHub Issues](https://github.com/Marksio90/NARRA_FORGE/issues)
+- **Pull Requests:** Mile widziane!
+- **Dokumentacja:** Zobacz [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md)
 
 ---
 
@@ -367,28 +403,24 @@ generator.config["preferred_model"] = "claude-opus"
 
 ---
 
-## 🤝 Wsparcie
+## 🎭 Filozofia
 
-- **Issues**: [GitHub Issues](https://github.com/Marksio90/NARRA_FORGE/issues)
-- **Pull Requests**: Mile widziane!
-- **Dokumentacja**: DOKUMENTACJA_PL.md
+> _"Nie tworzymy 'tekstu'. Nie tworzymy 'opowiadania'._
+>
+> _Tworzymy **ŚWIATY**, **HISTORIE**, **UNIWERSA**, **PRODUKTY WYDAWNICZE**._
+>
+> _Działamy jak studio narracyjne, wydawnictwo przyszłości, silnik opowieści."_
 
 ---
 
-## ⭐ Status Projektu
+## ⭐ Status: FOUNDATION COMPLETE
 
-```
-✅ PRODUCTION READY dla:
-   - Opowiadania (short stories)
-   - Nowele (novellas)
-   - Powieści (novels)
-   - Sagi (epics)
-   - Multi-world narratives
-   - Audiobook format
-```
+**Fundament gotowy. Architektura solidna. Gotowy na agentów.**
+
+**Następny krok:** Faza 2 - Implementacja wszystkich 10 agentów z pełnymi promptami.
 
 ---
 
 **Zbudowane z precyzją. Zaprojektowane na wieczność.** 🚀
 
-**NARRA_FORGE** - Synteza sztuki i inżynierii na najwyższym poziomie.
+**NARRA_FORGE V2** - Synteza sztuki i inżynierii.

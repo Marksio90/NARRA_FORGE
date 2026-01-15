@@ -147,6 +147,65 @@ def delete_project(project_id: str) -> bool:
         return False
 
 
+def revise_narrative(
+    project_id: str,
+    from_stage: str,
+    instructions: Optional[str] = None,
+    create_new_version: bool = True
+) -> Optional[Dict]:
+    """Rewizja narracji."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/revise",
+            json={
+                "project_id": project_id,
+                "from_stage": from_stage,
+                "instructions": instructions,
+                "create_new_version": create_new_version
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Błąd rewizji: {e}")
+        return None
+
+
+def get_versions(project_id: str) -> Optional[Dict]:
+    """Pobierz wersje projektu."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/versions/{project_id}",
+            timeout=5
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Błąd pobierania wersji: {e}")
+        return None
+
+
+def compare_versions(
+    project_id: str,
+    version1: int,
+    version2: int,
+    stage: str = "FINAL_OUTPUT"
+) -> Optional[Dict]:
+    """Porównaj wersje projektu."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/compare/{project_id}",
+            params={"version1": version1, "version2": version2, "stage": stage},
+            timeout=5
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Błąd porównania: {e}")
+        return None
+
+
 # ============================================================================
 # UI COMPONENTS
 # ============================================================================
@@ -509,6 +568,166 @@ def page_projects():
                             st.rerun()
 
 
+def page_revise():
+    """Strona rewizji."""
+    st.header("🔄 Rewizja Narracji")
+
+    st.markdown("""
+    **System rewizji** pozwala na poprawianie i regenerację wygenerowanych narracji:
+    - 🔄 Regeneracja od wybranego etapu
+    - 📝 Dodanie instrukcji rewizji
+    - 🆕 Tworzenie nowych wersji lub nadpisywanie
+    - 📊 Porównywanie wersji
+    """)
+
+    st.markdown("---")
+
+    # Wybór projektu
+    st.subheader("1️⃣ Wybierz projekt")
+
+    result = list_projects(status="completed", limit=50)
+    if not result or not result.get("projects"):
+        st.warning("Brak ukończonych projektów do rewizji")
+        return
+
+    projects = result.get("projects", [])
+    project_options = {p['id']: f"{p['id']} (utworzono: {p['created_at']})" for p in projects}
+
+    selected_project_id = st.selectbox(
+        "Projekt do rewizji:",
+        options=list(project_options.keys()),
+        format_func=lambda x: project_options[x]
+    )
+
+    if not selected_project_id:
+        return
+
+    st.markdown("---")
+
+    # Historia wersji
+    st.subheader("2️⃣ Historia wersji")
+
+    versions_data = get_versions(selected_project_id)
+    if versions_data:
+        versions = versions_data.get("versions", [])
+        st.write(f"Znaleziono **{len(versions)}** wersji")
+
+        for version in versions:
+            with st.expander(f"📦 Wersja {version['version']} - {version['created_at']}"):
+                stages = version.get('stages', [])
+                st.write(f"**Etapy:** {len(stages)}/10")
+                for stage in stages:
+                    st.write(f"  • {stage['stage']} - {stage['timestamp']}")
+    else:
+        st.info("Brak historii wersji dla tego projektu")
+
+    st.markdown("---")
+
+    # Formularz rewizji
+    st.subheader("3️⃣ Nowa rewizja")
+
+    with st.form("revision_form"):
+        # Wybór etapu
+        stage_options = [
+            ("SEQUENTIAL_GENERATION", "6. Generacja sekwencyjna"),
+            ("COHERENCE_CONTROL", "7. Kontrola koherencji"),
+            ("LANGUAGE_STYLIZATION", "8. Stylizacja językowa"),
+            ("EDITORIAL_REVIEW", "9. Redakcja wydawnicza"),
+            ("FINAL_OUTPUT", "10. Finalne wyjście")
+        ]
+
+        from_stage = st.selectbox(
+            "Od którego etapu regenerować?",
+            options=[s[0] for s in stage_options],
+            format_func=lambda x: next(s[1] for s in stage_options if s[0] == x)
+        )
+
+        # Instrukcje
+        instructions = st.text_area(
+            "Instrukcje rewizji (opcjonalne)",
+            height=150,
+            placeholder="Np: Zmień ton na bardziej mroczny, dodaj więcej dialogów..."
+        )
+
+        # Wersjonowanie
+        create_new_version = st.checkbox(
+            "Utwórz nową wersję (zachowaj poprzednią)",
+            value=True
+        )
+
+        # Submit
+        submitted = st.form_submit_button("🔄 Rozpocznij rewizję", use_container_width=True)
+
+        if submitted:
+            with st.spinner("Wysyłanie żądania rewizji..."):
+                result = revise_narrative(
+                    project_id=selected_project_id,
+                    from_stage=from_stage,
+                    instructions=instructions if instructions else None,
+                    create_new_version=create_new_version
+                )
+
+                if result:
+                    st.success(f"✅ Rewizja rozpoczęta! Wersja: v{result['version']}")
+                    st.info(f"Status: {result['message']}")
+                    st.session_state.current_project_id = selected_project_id
+                    time.sleep(1)
+                    st.rerun()
+
+    # Porównanie wersji
+    if versions_data and len(versions_data.get("versions", [])) >= 2:
+        st.markdown("---")
+        st.subheader("4️⃣ Porównanie wersji")
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+
+        with col1:
+            version1 = st.number_input(
+                "Wersja 1",
+                min_value=1,
+                max_value=len(versions_data.get("versions", [])),
+                value=1
+            )
+
+        with col2:
+            version2 = st.number_input(
+                "Wersja 2",
+                min_value=1,
+                max_value=len(versions_data.get("versions", [])),
+                value=min(2, len(versions_data.get("versions", [])))
+            )
+
+        with col3:
+            stage_for_compare = st.selectbox(
+                "Etap do porównania",
+                options=[s[0] for s in stage_options],
+                format_func=lambda x: next(s[1] for s in stage_options if s[0] == x),
+                key="compare_stage"
+            )
+
+        if st.button("📊 Porównaj wersje"):
+            with st.spinner("Porównywanie..."):
+                comparison = compare_versions(
+                    selected_project_id,
+                    version1,
+                    version2,
+                    stage_for_compare
+                )
+
+                if comparison:
+                    st.write(f"**Projekt:** {comparison['project_id']}")
+                    st.write(f"**Etap:** {comparison['stage']}")
+
+                    differences = comparison.get("differences", [])
+                    if differences:
+                        st.write(f"**Znaleziono {len(differences)} różnic:**")
+                        for i, diff in enumerate(differences[:20]):  # Max 20
+                            with st.expander(f"Różnica {i+1}: {diff.get('path', 'N/A')}"):
+                                st.json(diff)
+                    else:
+                        st.success("Brak różnic między wersjami!")
+
+
 # ============================================================================
 # MAIN APP
 # ============================================================================
@@ -523,10 +742,11 @@ def main():
 
         page = st.radio(
             "Wybierz stronę:",
-            options=["new", "monitor", "projects"],
+            options=["new", "monitor", "revise", "projects"],
             format_func=lambda x: {
                 "new": "🎬 Nowa Generacja",
                 "monitor": "📊 Monitor",
+                "revise": "🔄 Rewizja",
                 "projects": "📚 Wszystkie Projekty"
             }[x]
         )
@@ -549,6 +769,8 @@ def main():
         page_new_generation()
     elif page == "monitor":
         page_monitor()
+    elif page == "revise":
+        page_revise()
     elif page == "projects":
         page_projects()
 

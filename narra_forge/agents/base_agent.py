@@ -108,11 +108,14 @@ class BaseAgent(ABC):
         if system_prompt is None:
             system_prompt = self.get_system_prompt()
 
+        # Użyj temperature z kwargs jeśli podano, inaczej z konfiguracji
+        if 'temperature' not in kwargs:
+            kwargs['temperature'] = self.get_temperature()
+
         response = await self.model.generate(
             prompt=prompt,
             system_prompt=system_prompt,
             preferred_model=self.get_preferred_model(),
-            temperature=self.get_temperature(),
             **kwargs
         )
 

@@ -24,41 +24,46 @@ class CharacterArchitectAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
-        return """You are a character architect specializing in dynamic, psychologically complex entities.
+        return """Jesteś architektem postaci specjalizującym się w dynamicznych, psychologicznie złożonych bytach.
 
-CRITICAL PRINCIPLES:
+KRYTYCZNE ZASADY:
 
-1. CHARACTERS ARE PROCESSES
-   - Not static descriptions
-   - They have internal trajectories
-   - They evolve through experience
-   - They have cognitive limits
+1. POSTACIE SĄ PROCESAMI
+   - Nie statycznymi opisami
+   - Mają wewnętrzne trajektorie
+   - Ewoluują przez doświadczenie
+   - Mają ograniczenia poznawcze
 
-2. EVERY CHARACTER NEEDS:
-   - INTERNAL TRAJECTORY: Where are they going psychologically?
-   - CONTRADICTIONS: What conflicts exist within them?
-   - COGNITIVE LIMITS: What can't they see/understand?
-   - EVOLUTION CAPACITY: How resistant/open to change?
+2. KAŻDA POSTAĆ POTRZEBUJE:
+   - TRAJEKTORIA WEWNĘTRZNA: Dokąd zmierzają psychologicznie?
+   - SPRZECZNOŚCI: Jakie konflikty istnieją w ich wnętrzu?
+   - OGRANICZENIA POZNAWCZE: Czego nie mogą zobaczyć/zrozumieć?
+   - ZDOLNOŚĆ EWOLUCJI: Jak bardzo są oporni/otwarci na zmianę?
 
-3. DEPTH OVER DESCRIPTION:
-   - Don't describe appearance
-   - Define INTERNAL STRUCTURE
-   - Create PSYCHOLOGICAL ARCHITECTURE
+3. GŁĘBIA ZAMIAST OPISU:
+   - Nie opisuj wyglądu
+   - Definiuj WEWNĘTRZNĄ STRUKTURĘ
+   - Twórz ARCHITEKTURĘ PSYCHOLOGICZNĄ
 
-4. MOTIVATIONS VS FEARS:
-   - What drives them forward?
-   - What holds them back?
-   - How do these forces conflict?
+4. MOTYWACJE VS LĘKI:
+   - Co pcha ich do przodu?
+   - Co ich powstrzymuje?
+   - Jak te siły się ze sobą konfliktują?
 
-5. BLIND SPOTS:
-   - What truths can they not see?
-   - What biases shape their perception?
+5. MARTWE PUNKTY:
+   - Jakich prawd nie mogą dostrzec?
+   - Jakie uprzedzenia kształtują ich percepcję?
 
-6. RELATIONAL:
-   - How do they relate to others?
-   - What patterns repeat?
+6. RELACYJNE:
+   - Jak odnoszą się do innych?
+   - Jakie wzorce się powtarzają?
 
-Design characters that CHANGE, not mannequins."""
+ABSOLUTNIE WYMAGANE:
+   - WSZYSTKIE imiona muszą być PO POLSKU lub brzmiące naturalnie po polsku
+   - Opisy psychologiczne, motywacje, lęki - wszystko po polsku
+   - Żadnych angielskich terminów ani imion
+
+Projektuj postacie które się ZMIENIAJĄ, nie manekiny."""
 
     def validate_input(self, context: Dict[str, Any]) -> bool:
         """Validate inputs."""
@@ -102,40 +107,43 @@ Design characters that CHANGE, not mannequins."""
         self.log(f"Designing {character_count} characters for {world.name}")
 
         # Design characters
-        prompt = f"""Design {character_count} characters for this narrative world:
+        prompt = f"""Zaprojektuj {character_count} postaci dla tego świata narracyjnego:
 
-WORLD: {world.name}
-THEME: {world.existential_theme}
-CONFLICT: {world.core_conflict}
-GENRE: {brief.genre.value}
-FORM: {brief.form.value}
+ŚWIAT: {world.name}
+TEMAT: {world.existential_theme}
+KONFLIKT: {world.core_conflict}
+GATUNEK: {brief.genre.value}
+FORMA: {brief.form.value}
 
-WORLD LAWS:
+PRAWA ŚWIATA:
 {world.laws_of_reality}
 
-ARCHETYPES AVAILABLE:
+DOSTĘPNE ARCHETYPY:
 {world.archetype_system}
 
-For EACH character, provide:
+Dla KAŻDEJ postaci podaj:
 
-1. NAME: Appropriate for world
-2. INTERNAL TRAJECTORY: Where are they going psychologically?
-3. CONTRADICTIONS: What internal conflicts do they have? (list)
-4. COGNITIVE LIMITS: What can't they perceive/understand? (list)
-5. EVOLUTION CAPACITY: 0.0-1.0 (0=rigid, 1=highly adaptive)
-6. MOTIVATIONS: What drives them? (list)
-7. FEARS: What terrifies them? (list)
-8. BLIND SPOTS: What truths can't they see? (list)
-9. CURRENT STATE: Where are they NOW? (object)
-10. ARCHETYPE: Which world archetype do they embody/subvert?
+1. NAME: Imię odpowiednie dla świata (PO POLSKU lub brzmiące naturalnie po polsku!)
+2. INTERNAL TRAJECTORY: Dokąd zmierzają psychologicznie?
+3. CONTRADICTIONS: Jakie mają wewnętrzne konflikty? (lista)
+4. COGNITIVE LIMITS: Czego nie mogą dostrzec/zrozumieć? (lista)
+5. EVOLUTION CAPACITY: 0.0-1.0 (0=sztywni, 1=bardzo adaptatywni)
+6. MOTIVATIONS: Co ich napędza? (lista)
+7. FEARS: Czego się boją? (lista)
+8. BLIND SPOTS: Jakich prawd nie widzą? (lista)
+9. CURRENT STATE: Gdzie są TERAZ? (obiekt)
+10. ARCHETYPE: Który archetypświata ucieleśniają/podważają?
 
-Design characters that are:
-- Psychologically complex
-- Capable of evolution
-- Internally contradictory
-- Appropriate for {brief.form.value}
+Zaprojektuj postacie które są:
+- Psychologicznie złożone
+- Zdolne do ewolucji
+- Wewnętrznie sprzeczne
+- Odpowiednie dla {brief.form.value}
 
-Respond with JSON array of characters."""
+KRYTYCZNIE WAŻNE: Wszystkie imiona, opisy, terminy muszą być PO POLSKU!
+Imiona postaci muszą brzmieć naturalnie po polsku (np. Tomasz, Maria, Krzysztof, Ada, etc.).
+
+Odpowiedz tablicą JSON z postaciami."""
 
         try:
             result = await self.generate_structured(

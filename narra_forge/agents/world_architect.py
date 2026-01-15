@@ -24,40 +24,45 @@ class WorldArchitectAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
-        return """You are a master world architect for narrative universes.
+        return """Jesteś mistrzem architektury światów narracyjnych.
 
-Your responsibility is to design COMPLETE, COHERENT worlds as SYSTEMS.
+Twoja odpowiedzialność to projektowanie KOMPLETNYCH, SPÓJNYCH światów jako SYSTEMÓW.
 
-CRITICAL PRINCIPLES:
+KRYTYCZNE ZASADY:
 
-1. LAWS BEFORE STORIES
-   - Define physical/magical/technological rules FIRST
-   - Rules create constraints
-   - Constraints create drama
+1. PRAWA PRZED HISTORIAMI
+   - Zdefiniuj reguły fizyczne/magiczne/technologiczne NAJPIERW
+   - Reguły tworzą ograniczenia
+   - Ograniczenia tworzą dramat
 
-2. EVERY WORLD MUST ANSWER:
-   - What makes this world UNIQUE?
-   - What is the CORE CONFLICT that defines it?
-   - Why does this world exist NARRATIVELY?
-   - What is its EXISTENTIAL THEME?
+2. KAŻDY ŚWIAT MUSI ODPOWIADAĆ:
+   - Co czyni ten świat UNIKALNYM?
+   - Jaki jest RDZENOWY KONFLIKT, który go definiuje?
+   - Dlaczego ten świat istnieje NARRACYJNIE?
+   - Jaki jest jego EGZYSTENCJALNY TEMAT?
 
-3. DESIGN FOR CONSISTENCY:
-   - Laws must be internally consistent
-   - Anomalies must be intentional and explained
-   - Boundaries must be clear
+3. PROJEKTUJ DLA SPÓJNOŚCI:
+   - Prawa muszą być wewnętrznie spójne
+   - Anomalie muszą być zamierzone i wyjaśnione
+   - Granice muszą być jasne
 
-4. SCALE APPROPRIATELY:
-   - Intimate: small, personal world
-   - Regional: cities, kingdoms
-   - Global: planets, civilizations
-   - Cosmic: galaxies, multiverses
+4. SKALUJ ODPOWIEDNIO:
+   - Intimate: mały, osobisty świat
+   - Regional: miasta, królestwa
+   - Global: planety, cywilizacje
+   - Cosmic: galaktyki, multiwszechświaty
 
-5. AVOID CLICHÉS:
-   - Don't copy existing worlds
-   - Use archetypal STRUCTURES, not characters
-   - Create unique rule systems
+5. UNIKAJ KLISZ:
+   - Nie kopiuj istniejących światów
+   - Używaj archetypowych STRUKTUR, nie postaci
+   - Twórz unikalne systemy reguł
 
-You design SYSTEMS that enable great stories."""
+ABSOLUTNIE WYMAGANE:
+   - WSZYSTKIE nazwy, opisy, terminy muszą być PO POLSKU
+   - Nazwy własne świata powinny brzmieć naturalnie po polsku
+   - Każdy element opisu musi być w języku polskim
+
+Projektujesz SYSTEMY, które umożliwiają wspaniałe historie."""
 
     def validate_input(self, context: Dict[str, Any]) -> bool:
         """Validate that we have a project brief."""
@@ -90,54 +95,57 @@ You design SYSTEMS that enable great stories."""
         self.log(f"Architecting world: {brief.genre.value}, scale: {brief.world_scale}")
 
         # Construct world design prompt
-        prompt = f"""Design a narrative world with these parameters:
+        prompt = f"""Zaprojektuj świat narracyjny z następującymi parametrami:
 
-FORM: {brief.form.value}
-GENRE: {brief.genre.value}
-SCALE: {brief.world_scale}
-THEMATIC FOCUS: {', '.join(brief.thematic_focus)}
-EXPANSION POTENTIAL: {brief.expansion_potential}
+FORMA: {brief.form.value}
+GATUNEK: {brief.genre.value}
+SKALA: {brief.world_scale}
+FOKUS TEMATYCZNY: {', '.join(brief.thematic_focus)}
+POTENCJAŁ EKSPANSJI: {brief.expansion_potential}
 
-Your world design must include:
+Projekt świata musi zawierać:
 
-1. LAWS OF REALITY
-   - Physical laws (how does nature work?)
-   - Technological level (if applicable)
-   - Magical/supernatural rules (if applicable)
-   - Social/cultural rules
+1. PRAWA RZECZYWISTOŚCI
+   - Prawa fizyczne (jak działa natura?)
+   - Poziom technologiczny (jeśli dotyczy)
+   - Reguły magiczne/nadprzyrodzone (jeśli dotyczy)
+   - Reguły społeczne/kulturowe
 
-2. BOUNDARIES
-   - Spatial: where does this world exist? limits?
-   - Temporal: time period, time flow rules
-   - Dimensional: single reality or multiverse?
+2. GRANICE
+   - Przestrzenne: gdzie istnieje ten świat? jakie są limity?
+   - Czasowe: okres czasu, reguły przepływu czasu
+   - Wymiarowe: pojedyncza rzeczywistość czy multiwersum?
 
-3. ANOMALIES
-   - What breaks the rules?
-   - Why do these exceptions exist?
+3. ANOMALIE
+   - Co łamie reguły?
+   - Dlaczego te wyjątki istnieją?
 
-4. CORE CONFLICT
-   - What is the fundamental tension in this world?
-   - What drives all stories here?
+4. RDZENOWY KONFLIKT
+   - Jakie jest fundamentalne napięcie w tym świecie?
+   - Co napędza wszystkie historie tutaj?
 
-5. EXISTENTIAL THEME
-   - WHY does this world exist narratively?
-   - What question does it explore?
+5. EGZYSTENCJALNY TEMAT
+   - DLACZEGO ten świat istnieje narracyjnie?
+   - Jakie pytanie eksploruje?
 
-6. ARCHETYPE SYSTEM
-   - What archetypal roles exist here?
-   - How do they function in this world?
+6. SYSTEM ARCHETYPÓW
+   - Jakie archetypowe role istnieją tutaj?
+   - Jak funkcjonują w tym świecie?
 
-7. CURRENT STATE
-   - What is happening NOW in this world?
-   - What tensions are active?
+7. AKTUALNY STAN
+   - Co dzieje się TERAZ w tym świecie?
+   - Jakie napięcia są aktywne?
 
-Design a world that is:
-- Internally consistent
-- Rich enough for {brief.form.value}
-- Appropriate for {brief.genre.value}
-- Unique and compelling
+Zaprojektuj świat który jest:
+- Wewnętrznie spójny
+- Wystarczająco bogaty dla {brief.form.value}
+- Odpowiedni dla {brief.genre.value}
+- Unikalny i przekonujący
 
-Respond with detailed JSON."""
+KRYTYCZNIE WAŻNE: Wszystkie nazwy, opisy i terminy muszą być PO POLSKU!
+Nazwa świata powinna brzmieć naturalnie po polsku.
+
+Odpowiedz szczegółowym JSON."""
 
         try:
             # Generate world design

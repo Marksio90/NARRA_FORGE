@@ -27,6 +27,7 @@ from narra_forge.agents.output_processor import OutputProcessorAgent
 
 # Import backendów modeli
 from narra_forge.models.backend import ModelOrchestrator
+from narra_forge.models.openai_backend import OpenAIBackend
 from narra_forge.models.anthropic_backend import AnthropicBackend
 
 
@@ -58,10 +59,11 @@ async def main():
     config = get_default_config()
 
     # Sprawdź klucz API
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        print("\n⚠️  UWAGA: Brak ANTHROPIC_API_KEY w zmiennych środowiskowych!")
-        print("   Ustaw klucz komendą: export ANTHROPIC_API_KEY='twój-klucz'")
-        print("   Lub utwórz plik .env z linią: ANTHROPIC_API_KEY=twój-klucz")
+    if not os.getenv("OPENAI_API_KEY"):
+        print("\n⚠️  UWAGA: Brak OPENAI_API_KEY w zmiennych środowiskowych!")
+        print("   Ustaw klucz komendą: export OPENAI_API_KEY='twój-klucz'")
+        print("   Lub utwórz plik .env z linią: OPENAI_API_KEY=twój-klucz")
+        print("\n   Pobierz klucz: https://platform.openai.com/api-keys")
         return
 
     # ========================================================================
@@ -71,11 +73,18 @@ async def main():
 
     backends = {}
 
-    # Zainicjalizuj backendy Anthropic
+    # Zainicjalizuj backendy OpenAI (GŁÓWNE)
     for model_name, model_config in config.models.items():
-        if model_config.provider == "anthropic":
-            backends[model_name] = AnthropicBackend(model_config.__dict__)
+        if model_config.provider == "openai":
+            backends[model_name] = OpenAIBackend(model_config.__dict__)
             print(f"  ✓ {model_name}: {model_config.model_name}")
+
+    # Opcjonalnie: Zainicjalizuj backendy Anthropic (backup)
+    if os.getenv("ANTHROPIC_API_KEY"):
+        for model_name, model_config in config.models.items():
+            if model_config.provider == "anthropic":
+                backends[model_name] = AnthropicBackend(model_config.__dict__)
+                print(f"  ✓ {model_name}: {model_config.model_name} (backup)")
 
     model_orchestrator = ModelOrchestrator(
         backends=backends,
@@ -97,93 +106,93 @@ async def main():
     # ========================================================================
     print("[4/6] Rejestracja agentów pipeline'u...")
 
-    # Etap 1: Interpretacja zlecenia
+    # Etap 1: Interpretacja zlecenia (analiza - tani model)
     brief_agent = BriefInterpreterAgent(
         name="InterpretatorZlecenia",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-sonnet"}
+        config={"preferred_model": "gpt-3.5-turbo"}  # Tani i wystarczający
     )
     orchestrator.register_agent(PipelineStage.BRIEF_INTERPRETATION, brief_agent)
 
-    # Etap 2: Architektura świata
+    # Etap 2: Architektura świata (kreatywność - dobry model)
     world_agent = WorldArchitectAgent(
         name="ArchitektSwiata",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-opus", "temperature": 0.8}
+        config={"preferred_model": "gpt-4-turbo", "temperature": 0.8}  # Kreatywny
     )
     orchestrator.register_agent(PipelineStage.WORLD_ARCHITECTURE, world_agent)
 
-    # Etap 3: Architektura postaci
+    # Etap 3: Architektura postaci (złożoność - najlepszy model)
     character_agent = CharacterArchitectAgent(
         name="ArchitektPostaci",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-opus", "temperature": 0.8}
+        config={"preferred_model": "gpt-4", "temperature": 0.8}  # Najlepsza jakość
     )
     orchestrator.register_agent(PipelineStage.CHARACTER_ARCHITECTURE, character_agent)
 
-    # Etap 4: Projektowanie struktury
+    # Etap 4: Projektowanie struktury (planowanie - średni model)
     structure_agent = StructureDesignerAgent(
         name="ProjektantStruktury",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-sonnet"}
+        config={"preferred_model": "gpt-4-turbo"}  # Dobry balans
     )
     orchestrator.register_agent(PipelineStage.NARRATIVE_STRUCTURE, structure_agent)
 
-    # Etap 5: Planowanie segmentów
+    # Etap 5: Planowanie segmentów (szczegóły - średni model)
     planner_agent = SegmentPlannerAgent(
         name="PlanistaSeg mentow",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-sonnet"}
+        config={"preferred_model": "gpt-4-turbo"}  # Dobry balans
     )
     orchestrator.register_agent(PipelineStage.SEGMENT_PLANNING, planner_agent)
 
-    # Etap 6: Generacja sekwencyjna
+    # Etap 6: Generacja sekwencyjna (pisanie - najlepszy model!)
     generator_agent = SequentialGeneratorAgent(
         name="GeneratorSekwencyjny",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-opus", "temperature": 0.85}
+        config={"preferred_model": "gpt-4", "temperature": 0.85}  # Kreatywność max
     )
     orchestrator.register_agent(PipelineStage.SEQUENTIAL_GENERATION, generator_agent)
 
-    # Etap 7: Walidacja koherencji
+    # Etap 7: Walidacja koherencji (analiza - tani model)
     validator_agent = CoherenceValidatorAgent(
         name="WalidatorKoherencji",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-sonnet", "temperature": 0.3}
+        config={"preferred_model": "gpt-3.5-turbo", "temperature": 0.3}  # Precyzja
     )
     orchestrator.register_agent(PipelineStage.COHERENCE_CONTROL, validator_agent)
 
-    # Etap 8: Stylizacja językowa
+    # Etap 8: Stylizacja językowa (jakość języka - dobry model)
     styler_agent = LanguageStylerAgent(
         name="StylizatorJezyka",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-opus", "temperature": 0.7}
+        config={"preferred_model": "gpt-4-turbo", "temperature": 0.7}  # Dobra jakość
     )
     orchestrator.register_agent(PipelineStage.LANGUAGE_STYLIZATION, styler_agent)
 
-    # Etap 9: Redakcja wydawnicza
+    # Etap 9: Redakcja wydawnicza (finalne poprawki - średni model)
     editor_agent = EditorialReviewerAgent(
         name="RedaktorWydawniczy",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-sonnet", "temperature": 0.6}
+        config={"preferred_model": "gpt-4-turbo", "temperature": 0.6}  # Balans
     )
     orchestrator.register_agent(PipelineStage.EDITORIAL_REVIEW, editor_agent)
 
-    # Etap 10: Przetwarzanie wyjścia
+    # Etap 10: Przetwarzanie wyjścia (formatowanie - tani model)
     output_agent = OutputProcessorAgent(
         name="ProcesorWyjscia",
         model_orchestrator=model_orchestrator,
         memory_system=memory_system,
-        config={"preferred_model": "claude-haiku"}
+        config={"preferred_model": "gpt-3.5-turbo"}  # Proste zadanie
     )
     orchestrator.register_agent(PipelineStage.FINAL_OUTPUT, output_agent)
 

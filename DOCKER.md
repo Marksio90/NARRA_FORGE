@@ -17,8 +17,8 @@
 git clone https://github.com/Marksio90/NARRA_FORGE.git
 cd NARRA_FORGE
 
-# Utwórz plik .env z kluczem API
-echo "ANTHROPIC_API_KEY=twój-klucz-api" > .env
+# Utwórz plik .env z kluczem API OpenAI (główny model)
+echo "OPENAI_API_KEY=twój-klucz-openai" > .env
 ```
 
 ### 2. Build i Test
@@ -64,7 +64,7 @@ NARRA_FORGE - Test Kontenera Docker
   ✓ Min. coherence score: 0.85
 
 [Test 4] Sprawdzanie zmiennych środowiskowych...
-  ✓ ANTHROPIC_API_KEY: sk-ant-...xyz
+  ✓ OPENAI_API_KEY: sk-...xyz (GŁÓWNY - GPT-4 Turbo)
 
 [Test 5] Test systemu pamięci...
   ✓ SQLiteMemorySystem zainicjalizowany
@@ -132,11 +132,11 @@ Pliki utworzone w kontenerze będą dostępne na hoście.
 
 Plik `.env`:
 ```bash
-# Wymagane
-ANTHROPIC_API_KEY=sk-ant-api03-xxx
-
-# Opcjonalne
+# Wymagane (główny model - GPT-4 Turbo, tańszy i skuteczny!)
 OPENAI_API_KEY=sk-xxx
+
+# Opcjonalne (backup - Claude)
+ANTHROPIC_API_KEY=sk-ant-api03-xxx
 ```
 
 ### Customizacja docker-compose.yml
@@ -181,18 +181,20 @@ sudo usermod -aG docker $USER
 # Wyloguj się i zaloguj ponownie
 ```
 
-### Problem: "ANTHROPIC_API_KEY not set"
+### Problem: "OPENAI_API_KEY not set"
 
 ```bash
 # Sprawdź czy plik .env istnieje
 cat .env
 
 # Jeśli nie, utwórz go:
-echo "ANTHROPIC_API_KEY=twój-klucz" > .env
+echo "OPENAI_API_KEY=twój-klucz" > .env
 
 # Lub przekaż bezpośrednio:
-ANTHROPIC_API_KEY=twój-klucz docker-compose run narra-forge
+OPENAI_API_KEY=twój-klucz docker-compose run narra-forge
 ```
+
+**Pobierz klucz:** https://platform.openai.com/api-keys
 
 ### Problem: "Cannot connect to the Docker daemon"
 

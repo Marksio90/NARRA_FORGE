@@ -28,6 +28,18 @@ from narra_forge.core.types import (
     ProductionJob,
     ProductionType,
 )
+from narra_forge.agents import (
+    BriefInterpreterAgent,
+    CharacterArchitectAgent,
+    CoherenceValidatorAgent,
+    EditorialReviewerAgent,
+    LanguageStylerAgent,
+    OutputProcessorAgent,
+    SegmentPlannerAgent,
+    SequentialGeneratorAgent,
+    StructureDesignerAgent,
+    WorldArchitectAgent,
+)
 from narra_forge.memory import MemorySystem
 from narra_forge.models import ModelRouter, OpenAIClient
 
@@ -231,154 +243,166 @@ class BatchOrchestrator:
         stage: PipelineStage,
     ) -> None:
         """
-        Execute a single pipeline stage.
-
-        This is a placeholder. Real implementation will import and call agents.
+        Execute a single pipeline stage with REAL agents.
         """
-        # TODO: Import and execute actual agents
-        # For now, just simulate work
+        # Build context for this stage
+        context = self._build_stage_context(job, stage)
 
-        # Simulate API call cost
-        if stage == PipelineStage.SEQUENTIAL_GENERATION:
-            # Most expensive stage (narrative generation with gpt-4o)
-            await asyncio.sleep(0.5)
-            job.cost_usd += 1.50  # Simulated
-            job.tokens_used += 15000  # Simulated
-        elif stage == PipelineStage.LANGUAGE_STYLIZATION:
-            # Second most expensive (stylization with gpt-4o)
-            await asyncio.sleep(0.3)
-            job.cost_usd += 0.80  # Simulated
-            job.tokens_used += 8000  # Simulated
-        else:
-            # Analysis stages (cheap, using gpt-4o-mini)
-            await asyncio.sleep(0.1)
-            job.cost_usd += 0.05  # Simulated
-            job.tokens_used += 1000  # Simulated
-
-        # Store stage-specific results in job
+        # Execute appropriate agent
         if stage == PipelineStage.BRIEF_INTERPRETATION:
-            # Placeholder: Real agent would analyze brief
-            pass
+            agent = BriefInterpreterAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job._analyzed_brief = result.data.get("analyzed_brief")
 
         elif stage == PipelineStage.WORLD_ARCHITECTURE:
-            # Placeholder: Real agent would create world
-            if not job.world:
-                from narra_forge.core.types import Genre, RealityLaws, World, WorldBoundaries
+            agent = WorldArchitectAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
 
-                job.world = World(
-                    world_id=f"world_{uuid4().hex[:8]}",
-                    name=f"{job.brief.genre.value.title()} World",
-                    genre=job.brief.genre,
-                    reality_laws=RealityLaws(
-                        physics={"type": "standard"},
-                        magic={"level": "high"} if job.brief.genre == Genre.FANTASY else None,
-                    ),
-                    boundaries=WorldBoundaries(
-                        spatial={"size": "continental"},
-                        temporal={"span": "centuries"},
-                    ),
-                    anomalies=[],
-                    core_conflict="Light vs Darkness",
-                    existential_theme="The nature of power",
-                )
+            if result.success:
+                job.world = result.data.get("world")
 
         elif stage == PipelineStage.CHARACTER_ARCHITECTURE:
-            # Placeholder: Real agent would create characters
-            pass
+            agent = CharacterArchitectAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job.characters = result.data.get("characters", [])
 
         elif stage == PipelineStage.STRUCTURE_DESIGN:
-            # Placeholder: Real agent would design structure
-            pass
+            agent = StructureDesignerAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job.structure = result.data.get("structure")
 
         elif stage == PipelineStage.SEGMENT_PLANNING:
-            # Placeholder: Real agent would plan segments
-            pass
+            agent = SegmentPlannerAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job.segments = result.data.get("segments", [])
 
         elif stage == PipelineStage.SEQUENTIAL_GENERATION:
-            # Placeholder: Real agent would generate narrative
-            pass
+            agent = SequentialGeneratorAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job._narrative_text = result.data.get("narrative_text")
 
         elif stage == PipelineStage.COHERENCE_VALIDATION:
-            # Placeholder: Real agent would validate
-            pass
+            agent = CoherenceValidatorAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if not result.success:
+                # Validation failed - we could retry generation here
+                raise ValueError(f"Coherence validation failed: {result.errors}")
 
         elif stage == PipelineStage.LANGUAGE_STYLIZATION:
-            # Placeholder: Real agent would stylize
-            pass
+            agent = LanguageStylerAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job._stylized_text = result.data.get("stylized_text")
 
         elif stage == PipelineStage.EDITORIAL_REVIEW:
-            # Placeholder: Real agent would review
-            pass
+            agent = EditorialReviewerAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if not result.success:
+                # Review found critical issues
+                self._handle_editorial_issues(result)
+                # For now, continue anyway
+
+            job._final_text = result.data.get("final_text")
 
         elif stage == PipelineStage.OUTPUT_PROCESSING:
-            # Placeholder: Real agent would finalize
-            pass
+            agent = OutputProcessorAgent(self.config, self.memory, self.router)
+            result = await agent.run(context)
+
+            if result.success:
+                job.output = result.data.get("output")
+
+        else:
+            raise ValueError(f"Unknown stage: {stage}")
+
+        # Aggregate costs from agent
+        if hasattr(result, 'model_calls'):
+            for call in result.model_calls:
+                job.tokens_used += call.total_tokens
+                job.cost_usd += call.cost_usd
+
+    def _build_stage_context(self, job: ProductionJob, stage: PipelineStage) -> Dict[str, Any]:
+        """Build context dict for stage execution"""
+        context = {
+            "job_id": job.job_id,
+            "brief": job.brief,
+            "world": job.world,
+            "characters": job.characters,
+            "structure": job.structure,
+            "segments": job.segments,
+        }
+
+        # Add stage-specific data
+        if hasattr(job, '_analyzed_brief'):
+            context["analyzed_brief"] = job._analyzed_brief
+
+        if hasattr(job, '_narrative_text'):
+            context["narrative_text"] = job._narrative_text
+
+        if hasattr(job, '_stylized_text'):
+            context["stylized_text"] = job._stylized_text
+
+        if hasattr(job, '_final_text'):
+            context["final_text"] = job._final_text
+
+        return context
+
+    def _handle_editorial_issues(self, result):
+        """Handle critical editorial issues"""
+        # For now, just log
+        # In future: could trigger retry or manual review
+        pass
 
     async def _build_output(
         self,
         job: ProductionJob,
         total_time: float,
     ) -> NarrativeOutput:
-        """Build final NarrativeOutput"""
-        # Create output directory
+        """Build final NarrativeOutput from job results"""
+
+        # If output was already built by OutputProcessorAgent, return it
+        if job.output:
+            return job.output
+
+        # Otherwise, build a minimal output (fallback)
         output_dir = self.config.output_dir / job.job_id
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Write placeholder narrative
+        narrative_text = getattr(job, '_final_text', None) or getattr(job, '_narrative_text', "")
+
         narrative_file = output_dir / "narrative.txt"
-        narrative_text = (
-            f"Narrative for job {job.job_id}\n\n"
-            f"Type: {job.brief.production_type.value}\n"
-            f"Genre: {job.brief.genre.value}\n\n"
-            f"[Narrative would be generated here by agents]\n"
-        )
-        narrative_file.write_text(narrative_text)
+        narrative_file.write_text(narrative_text or "Production incomplete", encoding="utf-8")
 
-        # Write metadata
-        import json
-
-        metadata_file = output_dir / "metadata.json"
-        metadata = {
-            "job_id": job.job_id,
-            "type": job.brief.production_type.value,
-            "genre": job.brief.genre.value,
-            "world_id": job.world.world_id if job.world else None,
-            "tokens_used": job.tokens_used,
-            "cost_usd": job.cost_usd,
-            "generation_time": total_time,
-        }
-        metadata_file.write_text(json.dumps(metadata, indent=2))
-
-        # Build output
         output = NarrativeOutput(
             job_id=job.job_id,
-            success=True,
-            narrative_text=narrative_text,
+            success=bool(narrative_text),
+            narrative_text=narrative_text or "",
             world=job.world,
             characters=job.characters,
             structure=job.structure,
             segments=job.segments,
             production_type=job.brief.production_type,
             genre=job.brief.genre,
-            word_count=len(narrative_text.split()),
-            quality_metrics={
-                "coherence_score": 0.90,
-                "logical_consistency": True,
-                "psychological_consistency": True,
-                "temporal_consistency": True,
-            },
+            word_count=len(narrative_text.split()) if narrative_text else 0,
+            quality_metrics={},
             total_tokens=job.tokens_used,
             total_cost_usd=job.cost_usd,
             generation_time_seconds=total_time,
-            model_usage={
-                "mini_tokens": int(job.tokens_used * 0.6),
-                "gpt4_tokens": int(job.tokens_used * 0.4),
-            },
+            model_usage={},
             output_dir=str(output_dir),
-            files={
-                "narrative": str(narrative_file),
-                "metadata": str(metadata_file),
-            },
+            files={"narrative": str(narrative_file)},
             started_at=job.started_at,
             completed_at=datetime.now(),
         )

@@ -12,7 +12,8 @@ from datetime import datetime
 
 from ..core.orchestrator import NarrativeOrchestrator
 from ..core.config import get_default_config
-from ..core.types import ProductionStage
+from ..core.types import ProductionStage, PipelineStage
+from ..core.revision import RevisionRequest as CoreRevisionRequest
 from ..models.backend import ModelOrchestrator
 from ..models.openai_backend import OpenAIBackend
 from ..models.anthropic_backend import AnthropicBackend
@@ -60,6 +61,31 @@ class ProjectStatus(BaseModel):
     output_files: Optional[Dict[str, str]] = None
     metadata: Dict[str, Any] = {}
     error: Optional[str] = None
+
+
+class RevisionRequest(BaseModel):
+    """Żądanie rewizji narracji."""
+    project_id: str
+    from_stage: str  # Nazwa etapu: "SEQUENTIAL_GENERATION", "COHERENCE_CONTROL", etc.
+    instructions: Optional[str] = None
+    context_modifications: Optional[Dict[str, Any]] = None
+    create_new_version: bool = True
+
+
+class RevisionResponse(BaseModel):
+    """Odpowiedź na żądanie rewizji."""
+    project_id: str
+    version: int
+    status: str
+    message: str
+    status_url: str
+
+
+class VersionInfo(BaseModel):
+    """Informacje o wersji projektu."""
+    version: int
+    stages: List[Dict[str, Any]]
+    created_at: str
 
 
 # ============================================================================
@@ -297,6 +323,155 @@ async def delete_project(project_id: str):
     return {"message": f"Projekt {project_id} usunięty"}
 
 
+@app.post("/api/revise", response_model=RevisionResponse)
+async def revise_narrative(
+    request: RevisionRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Rewizja i regeneracja narracji od wybranego etapu.
+
+    Umożliwia poprawienie wygenerowanej narracji poprzez:
+    - Regenerację od wybranego etapu
+    - Dodanie instrukcji rewizji
+    - Modyfikację kontekstu
+    - Utworzenie nowej wersji lub nadpisanie istniejącej
+    """
+    if orchestrator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="System nie jest gotowy"
+        )
+
+    # Sprawdź czy projekt istnieje
+    if request.project_id not in active_projects:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Projekt {request.project_id} nie istnieje"
+        )
+
+    # Nie można rewizować projektu w trakcie przetwarzania
+    if active_projects[request.project_id]["status"] == "processing":
+        raise HTTPException(
+            status_code=400,
+            detail="Nie można rewizować projektu w trakcie przetwarzania"
+        )
+
+    # Konwertuj nazwę etapu na PipelineStage
+    try:
+        from_stage = PipelineStage[request.from_stage]
+    except KeyError:
+        valid_stages = [stage.name for stage in PipelineStage]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nieprawidłowy etap: {request.from_stage}. Dozwolone: {valid_stages}"
+        )
+
+    # Utwórz core RevisionRequest
+    core_request = CoreRevisionRequest(
+        project_id=request.project_id,
+        from_stage=from_stage,
+        instructions=request.instructions,
+        context_modifications=request.context_modifications,
+        create_new_version=request.create_new_version
+    )
+
+    # Określ numer wersji
+    version = orchestrator.revision_system.get_latest_version(request.project_id)
+    if request.create_new_version:
+        version += 1
+
+    # Zaktualizuj status projektu
+    active_projects[request.project_id]["status"] = "queued"
+    active_projects[request.project_id]["revision_version"] = version
+
+    # Uruchom rewizję w tle
+    background_tasks.add_task(
+        run_revision,
+        core_request=core_request
+    )
+
+    return RevisionResponse(
+        project_id=request.project_id,
+        version=version,
+        status="queued",
+        message=f"Rewizja dodana do kolejki. Regeneracja od etapu {request.from_stage}.",
+        status_url=f"/api/status/{request.project_id}"
+    )
+
+
+@app.get("/api/versions/{project_id}")
+async def list_versions(project_id: str):
+    """
+    Lista wszystkich wersji projektu.
+
+    Pokazuje historię rewizji i wersji projektu.
+    """
+    if orchestrator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="System nie jest gotowy"
+        )
+
+    versions = orchestrator.revision_system.list_versions(project_id)
+
+    if not versions:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Nie znaleziono wersji dla projektu {project_id}"
+        )
+
+    return {
+        "project_id": project_id,
+        "total_versions": len(versions),
+        "versions": versions
+    }
+
+
+@app.get("/api/compare/{project_id}")
+async def compare_versions(
+    project_id: str,
+    version1: int,
+    version2: int,
+    stage: str = "FINAL_OUTPUT"
+):
+    """
+    Porównaj dwie wersje projektu na danym etapie.
+
+    Pokazuje różnice między wersjami.
+    """
+    if orchestrator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="System nie jest gotowy"
+        )
+
+    # Konwertuj nazwę etapu
+    try:
+        pipeline_stage = PipelineStage[stage]
+    except KeyError:
+        valid_stages = [s.name for s in PipelineStage]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nieprawidłowy etap: {stage}. Dozwolone: {valid_stages}"
+        )
+
+    comparison = orchestrator.revision_system.compare_versions(
+        project_id,
+        version1,
+        version2,
+        pipeline_stage
+    )
+
+    if "error" in comparison:
+        raise HTTPException(
+            status_code=404,
+            detail=comparison["error"]
+        )
+
+    return comparison
+
+
 # ============================================================================
 # WEBSOCKET
 # ============================================================================
@@ -380,6 +555,61 @@ POTENCJAŁ EKSPANSJI: {request.expansion_potential}
         active_projects[project_id]["completed_at"] = datetime.now()
         active_projects[project_id]["output_files"] = result.metadata.get("output_files", {})
         active_projects[project_id]["metadata"] = result.metadata
+
+        await broadcast_update(project_id)
+
+    except Exception as e:
+        # Zaktualizuj status - błąd
+        active_projects[project_id]["status"] = "failed"
+        active_projects[project_id]["completed_at"] = datetime.now()
+        active_projects[project_id]["error"] = str(e)
+
+        await broadcast_update(project_id)
+
+
+async def run_revision(core_request: CoreRevisionRequest):
+    """
+    Uruchom rewizję narracji w tle.
+    """
+    project_id = core_request.project_id
+
+    try:
+        # Zaktualizuj status
+        active_projects[project_id]["status"] = "processing"
+        active_projects[project_id]["started_at"] = datetime.now()
+        await broadcast_update(project_id)
+
+        # Callback dla aktualizacji postępu
+        async def progress_callback(stage: str, data: Dict[str, Any]):
+            active_projects[project_id]["current_stage"] = stage
+
+            if data.get("completed"):
+                if stage not in active_projects[project_id]["stages_completed"]:
+                    active_projects[project_id]["stages_completed"].append(stage)
+
+            if data.get("failed"):
+                if stage not in active_projects[project_id]["stages_failed"]:
+                    active_projects[project_id]["stages_failed"].append(stage)
+
+            await broadcast_update(project_id)
+
+        # Uruchom rewizję
+        result = await orchestrator.revise_narrative(
+            revision_request=core_request,
+            progress_callback=progress_callback
+        )
+
+        # Zaktualizuj status
+        if result["success"]:
+            active_projects[project_id]["status"] = "completed"
+            active_projects[project_id]["completed_at"] = datetime.now()
+            active_projects[project_id]["version"] = result["version"]
+            active_projects[project_id]["output_files"] = result.get("output", {})
+            active_projects[project_id]["metadata"] = result.get("metadata", {})
+        else:
+            active_projects[project_id]["status"] = "failed"
+            active_projects[project_id]["completed_at"] = datetime.now()
+            active_projects[project_id]["error"] = result.get("error", "Unknown error")
 
         await broadcast_update(project_id)
 

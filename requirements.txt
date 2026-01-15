@@ -1,0 +1,19 @@
+# NARRA_FORGE Dependencies
+
+# Core AI/ML
+anthropic>=0.40.0
+openai>=1.50.0
+
+# Data handling
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Database
+sqlite3  # Built-in, no install needed
+
+# Async
+asyncio  # Built-in
+aiohttp>=3.9.0
+
+# Utilities
+python-dateutil>=2.8.0

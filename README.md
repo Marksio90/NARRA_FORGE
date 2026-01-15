@@ -1,389 +1,368 @@
-# NARRA_FORGE
+# NARRA_FORGE 🚀
 
-**Autonomous Multi-World Narrative Generation System of Absolute Publishing Class**
+**Autonomiczny Wieloświatowy System Generowania Narracji Klasy Absolutnej**
 
-> Not a chatbot. Not a creative tool. Not a single model.
->
-> A **SYNTHESIS** of advanced generative models, long-term memory systems, multi-agent orchestration, quality control mechanisms, publishing logic, and narrative architecture at universe scale.
-
----
-
-## 🎯 Mission
-
-**NARRA_FORGE** produces **READY-TO-SELL** narrative content:
-- Short stories
-- Long novels
-- Multi-volume epic sagas
-- Audiobook-ready content
-
-Every form—SHORT or LONG—must meet THE SAME standard of quality, coherence, and depth.
+[![Polski](https://img.shields.io/badge/język-Polski-red.svg)](README.md)
+[![English](https://img.shields.io/badge/lang-English-blue.svg)](README_EN.md)
 
 ---
 
-## 🏗️ Core Principles
+## 📖 Czym Jest NARRA_FORGE?
 
-### 1. **ABSOLUTE PRINCIPLE**
-Scale of text (short story vs novel) **NEVER** reduces:
-- Narrative quality
-- World depth
-- Character coherence
-- Plot logic
-- Language level
+**NARRA_FORGE** to nie chatbot. To nie narzędzie kreatywne. To nie pojedynczy model.
 
-**Short form ≠ Simplified form**
-**Long form ≠ Bloated form**
-
-Every text is a fragment of a **POTENTIAL UNIVERSE**.
+To **SYNTEZA**:
+- 🧠 Zaawansowanych modeli generatywnych (Claude Opus/Sonnet, GPT-4)
+- 💾 Systemów pamięci długoterminowej (strukturalna, semantyczna, ewolucyjna)
+- 🤖 Orkiestracji wieloagentowej (10 wyspecjalizowanych agentów)
+- ✅ Mechanizmów kontroli jakości
+- 📚 Logiki wydawniczej
+- 🌍 Architektury narracyjnej na skalę uniwersów
 
 ---
 
-### 2. **TECHNOLOGICAL PRINCIPLE (ULTIMATE)**
+## 🎯 Co Produkuje?
 
-The system **MUST**:
-- Leverage the latest available technologies
-- Be **model-agnostic**
-- Support integration with:
-  - New LLM architectures
-  - Long context (persistent memory)
-  - Reflective agents
-  - Narrative simulations
-  - Algorithms beyond current paradigm (emergent models, symbolic hybrids, narrative prediction systems)
+Narracje **GOTOWE DO SPRZEDAŻY**:
 
-If available technology is:
-- More accurate
-- Cheaper
-- More consistent
-- Better scalable
+- ✍️ **Opowiadania** (do 10,000 słów)
+- 📕 **Nowele** (10,000-40,000 słów)
+- 📗 **Powieści** (40,000-120,000 słów)
+- 📚 **Sagi epickie** (wielotomowe)
+- 🎧 **Audiobooki** (ze znacznikami dla narratora)
 
-→ **The system MUST prefer it.**
-
-This is an **engine of the future**, not a temporary implementation.
+**WSZYSTKIE na najwyższym poziomie jakości** - niezależnie od długości!
 
 ---
 
-### 3. **MULTI-WORLD / MULTI-IP**
-
-The system handles:
-- Multiple worlds
-- Multiple universes
-- Multiple timelines
-- Multiple series
-- Multiple independent stories
-
-Each world:
-- Has its own **World Bible**
-- Own laws of reality
-- Own archetypes
-- Own constraints
-
-Worlds can be:
-- Isolated
-- Interconnected
-- Evolving over time
-
-The system treats worlds as **IP**, and stories as **IP INSTANCES**.
-
----
-
-## 🧠 Architecture
-
-### Triple Memory System
-
-1. **Structural Memory**
-   - Worlds, characters, rules, archetypes
-   - The SKELETON of narrative universes
-
-2. **Semantic Memory**
-   - Events, motifs, relationships
-   - The LIVING CONTENT of stories
-
-3. **Evolutionary Memory**
-   - How worlds and characters change over time
-   - Tracks TRANSFORMATION and GROWTH
-
-### Multi-Agent Orchestration
-
-Specialized agents for each responsibility:
-- **Brief Interpreter** - Understands requirements
-- **World Architect** - Designs complete worlds as systems
-- **Character Architect** - Creates characters as PROCESSES, not static entities
-- **Structure Designer** - Architects narrative structure
-- **Segment Planner** - Plans chapters/scenes/sequences
-- **Sequential Generator** - Generates content segment by segment
-- **Coherence Validator** - Ensures logical/psychological/temporal consistency
-- **Language Stylizer** - Highest level of Polish language
-- **Editorial Reviewer** - Publishing-quality editing
-- **Output Processor** - Final formatting (text, audiobook)
-
----
-
-## 🚀 10-Stage Production Pipeline
-
-```
-1. BRIEF INTERPRETATION
-   ↓ Determine form, genre, scale, potential
-
-2. WORLD ARCHITECTURE
-   ↓ Design world as complete system
-
-3. CHARACTER ARCHITECTURE
-   ↓ Design characters as dynamic processes
-
-4. NARRATIVE STRUCTURE
-   ↓ Choose structure appropriate for scale
-
-5. SEGMENT PLANNING
-   ↓ Plan chapters/scenes with narrative function
-
-6. SEQUENTIAL GENERATION
-   ↓ Generate segment by segment with memory
-
-7. COHERENCE CONTROL
-   ↓ Validate logical, psychological, temporal consistency
-
-8. LANGUAGE STYLIZATION
-   ↓ Highest level Polish, style matched to form
-
-9. EDITORIAL REVIEW
-   ↓ Publishing-quality editing
-
-10. FINAL OUTPUT
-    ↓ Ready-to-publish text + audiobook structure
-```
-
----
-
-## 📦 Installation
-
-### Requirements
-- Python 3.11+
-- Anthropic API key (or OpenAI, or local models)
-
-### Setup
+## ⚡ Szybki Start
 
 ```bash
-# Clone repository
-git clone https://github.com/your-repo/NARRA_FORGE.git
-cd NARRA_FORGE
-
-# Install dependencies
+# 1. Instalacja
 pip install -r requirements.txt
 
-# Set API keys
-export ANTHROPIC_API_KEY="your-anthropic-key"
-export OPENAI_API_KEY="your-openai-key"  # optional
+# 2. Klucz API
+export ANTHROPIC_API_KEY="twój-klucz"
 
-# Run example
-python example_usage.py
+# 3. Uruchom przykład
+python przyklad_uzycia_pl.py
 ```
 
----
-
-## 🎮 Usage
-
-### Basic Usage
+### Twoja Pierwsza Narracja w 3 Minuty:
 
 ```python
 import asyncio
 from narra_forge.core.config import get_default_config
 from narra_forge.core.orchestrator import NarrativeOrchestrator
 
-async def generate_story():
-    # Initialize
+async def generuj():
     config = get_default_config()
     orchestrator = NarrativeOrchestrator(config)
 
-    # Define request
-    request = """
-    Stwórz opowiadanie fantasy o młodym alchemiku,
-    który odkrywa, że jego mistrz jest odpowiedzialny
-    za plagi niszczące królestwo.
+    zlecenie = """
+    Napisz mroczne opowiadanie fantasy o młodym alchemiku,
+    który odkrywa straszną tajemnicę swojego mistrza.
 
-    Forma: opowiadanie (~5000 słów)
+    Forma: opowiadanie (5000 słów)
     Ton: mroczny, moralnie złożony
     """
 
-    # Generate
-    result = await orchestrator.produce_narrative(request)
+    wynik = await orchestrator.produce_narrative(zlecenie)
 
-    if result["success"]:
-        print(f"Story generated: {result['project_id']}")
-        print(result["output"])
-    else:
-        print(f"Error: {result['error']}")
+    if wynik["success"]:
+        print(f"✅ Gotowe! Plik: {wynik['output']['text_file']}")
 
-# Run
-asyncio.run(generate_story())
+asyncio.run(generuj())
 ```
 
-### Advanced: Multi-World Management
+---
+
+## 🏗️ Pipeline Produkcji (10 Etapów)
+
+```
+1️⃣  Interpretacja Zlecenia      →  Analiza wymagań
+2️⃣  Architektura Świata         →  Kompletny system świata
+3️⃣  Architektura Postaci        →  Postacie jako procesy
+4️⃣  Struktura Narracyjna        →  Dobór struktury
+5️⃣  Planowanie Segmentów        →  Plan rozdziałów/scen
+6️⃣  Generacja Sekwencyjna       →  Pisanie z pamięcią
+7️⃣  Kontrola Koherencji         →  Walidacja spójności
+8️⃣  Stylizacja Językowa         →  Najwyższy poziom PL
+9️⃣  Redakcja Wydawnicza         →  Finalne cięcia
+🔟 Finalne Wyjście             →  Tekst + audiobook + meta
+```
+
+---
+
+## 🧠 Potrójny System Pamięci
+
+### 1. **Pamięć Strukturalna**
+Światy, postacie, reguły, archetypy - SZKIELET uniwersów
+
+### 2. **Pamięć Semantyczna**
+Wydarzenia, motywy, relacje - ŻYWA TREŚĆ historii
+
+### 3. **Pamięć Ewolucyjna**
+Jak światy i postacie się ZMIENIAJĄ w czasie
+
+---
+
+## 🌍 Multi-World / Multi-IP
+
+System obsługuje **wiele uniwersów równocześnie**:
 
 ```python
-from narra_forge.world.world_manager import WorldManager
+# Twórz wiele światów
+fantasy_world = world_manager.create_world("Królestwo Eternal", ...)
+scifi_world = world_manager.create_world("Kolonia Mars-7", ...)
 
-# Create world
-world = world_manager.create_world(
-    name="Umbral Expanse",
-    laws_of_reality={
-        "physics": "Newtonian with minor anomalies",
-        "magic": "Elemental, requires sacrifice",
-        "technology": "Medieval + alchemical"
-    },
-    core_conflict="Balance between order and chaos",
-    existential_theme="The cost of power and knowledge"
-)
+# Linkuj je (opcjonalnie)
+world_manager.link_worlds(fantasy_world.id, scifi_world.id)
 
-# Generate story in this world
-result = await orchestrator.produce_narrative(
-    request="Create a story in Umbral Expanse...",
-    world_id=world.world_id
+# Generuj w konkretnym świecie
+wynik = await orchestrator.produce_narrative(
+    "Historia w Królestwie Eternal...",
+    world_id=fantasy_world.world_id
 )
 ```
 
 ---
 
-## 🧬 System Components
+## 🎨 Kluczowe Zasady
 
-### Core (`narra_forge/core/`)
-- `orchestrator.py` - Main production engine
-- `types.py` - Core type definitions
-- `config.py` - Configuration management
+### ⭐ Zasada Absolutna
 
-### Memory (`narra_forge/memory/`)
-- `base.py` - Memory system base
-- `structural.py` - Structural memory (worlds, characters, rules)
-- `semantic.py` - Semantic memory (events, motifs, relationships)
-- `evolutionary.py` - Evolutionary memory (change tracking)
+**Skala tekstu NIGDY nie obniża jakości**
 
-### Agents (`narra_forge/agents/`)
-- `base_agent.py` - Agent base class
-- `brief_interpreter.py` - Stage 1: Brief interpretation
-- `world_architect.py` - Stage 2: World design
-- `character_architect.py` - Stage 3: Character design
-- *(Stages 4-10 agents to be completed)*
+- Krótka forma ≠ uproszczona forma
+- Długa forma ≠ rozwlekła forma
+- Każdy tekst = fragment potencjalnego uniwersum
 
-### Models (`narra_forge/models/`)
-- `backend.py` - Model abstraction layer
-- `anthropic_backend.py` - Anthropic (Claude) implementation
-- `openai_backend.py` - OpenAI (GPT) implementation *(TODO)*
-- `local_backend.py` - Local model support *(TODO)*
+### 👤 Postacie jako Procesy
 
-### World (`narra_forge/world/`)
-- `world_manager.py` - Multi-IP world management
+Nie statyczne opisy, ale **dynamiczne procesy psychologiczne**:
+- Wewnętrzne trajektorie
+- Sprzeczności i konflikty
+- Ograniczenia poznawcze
+- Zdolność ewolucji
+
+### 🌍 Światy jako Systemy
+
+Nie dekoracje, ale **kompletne systemy**:
+- Prawa rzeczywistości (tworzą ograniczenia)
+- Granice przestrzenne/czasowe/wymiarowe
+- Anomalie (celowe wyjątki)
+- Konflikt nadrzędny
+- Temat egzystencjalny
 
 ---
 
-## 🎨 Design Philosophy
+## 📊 Metryki Jakości
 
-### Characters as Processes
-Characters are **NOT** static descriptions. They are **dynamic processes** with:
-- Internal trajectories (where they're going psychologically)
-- Contradictions (internal conflicts)
-- Cognitive limits (what they can't perceive)
-- Evolution capacity (resistance to change)
-
-### Worlds as Systems
-Worlds are **complete systems** with:
-- Laws of reality (rules that create constraints)
-- Boundaries (spatial, temporal, dimensional)
-- Anomalies (intentional exceptions)
-- Core conflicts (fundamental tensions)
-- Existential themes (narrative purpose)
-
-### Quality Over Speed
-- Every segment is validated for coherence
-- Psychological consistency is mandatory
-- World rules cannot be violated
-- Language must be publication-quality
+| Metryka | Min. Próg |
+|---------|-----------|
+| Wynik Koherencji | 0.85/1.0 |
+| Spójność Logiczna | ✅ TAK |
+| Spójność Psychologiczna | ✅ TAK |
+| Spójność Czasowa | ✅ TAK |
 
 ---
 
-## 🔬 Technology Stack
+## 📁 Co Otrzymujesz?
 
-- **Python 3.11+** - Core language
-- **Anthropic Claude** - Primary LLM (Opus 4.5 for critical stages, Sonnet 4.5 for general)
-- **OpenAI GPT-4** - Alternative/fallback
-- **SQLite** - Persistent memory storage
-- **Async/Await** - Concurrent agent execution
-- **Model-agnostic architecture** - Ready for future models
+Po produkcji otrzymujesz:
 
----
-
-## 📊 Quality Metrics
-
-The system tracks:
-- **Coherence Score** (0.0-1.0) - Logical consistency
-- **Psychological Validity** - Character behavior consistency
-- **World Consistency** - No rule violations
-- **Narrative Weight** - Importance of each segment
-- **Evolution Tracking** - Character and world changes
-
-Minimum quality threshold: **0.85/1.0**
+```
+output/[project_id]/
+├── narracja.txt           # Tekst publikacyjny
+├── narracja_audiobook.txt # Wersja z znacznikami
+├── metadata.json          # Kompletne metadane
+└── ekspansja.json         # Struktura ekspansji
+```
 
 ---
 
-## 🚧 Roadmap
+## 📚 Dokumentacja
 
-### Phase 1: Core Pipeline ✅
-- [x] Memory systems
-- [x] Agent framework
-- [x] World management
-- [x] Stages 1-3 agents
+- 📖 **[DOKUMENTACJA_PL.md](DOKUMENTACJA_PL.md)** - Pełna dokumentacja po polsku
+- 🚀 **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide
+- 🏗️ **[ARCHITECTURE.md](ARCHITECTURE.md)** - Dokumentacja techniczna
+- 💻 **[przyklad_uzycia_pl.py](przyklad_uzycia_pl.py)** - Kompletny przykład
 
-### Phase 2: Complete Pipeline
-- [ ] Stages 4-10 agents
-- [ ] Structure designer
-- [ ] Segment planner
-- [ ] Sequential generator
-- [ ] Coherence validator
-- [ ] Language stylizer
-- [ ] Editorial reviewer
-- [ ] Output processor
+---
 
-### Phase 3: Advanced Features
-- [ ] Vector embeddings for semantic search
-- [ ] Long-context caching
-- [ ] Parallel agent execution
-- [ ] Real-time coherence monitoring
-- [ ] Multi-language support
+## 🔬 Technologie
 
-### Phase 4: Production Ready
+- **Python 3.11+**
+- **Claude Opus 4.5 / Sonnet 4.5** - Główne modele
+- **OpenAI GPT-4** - Alternatywa/fallback
+- **SQLite** - Persistent memory
+- **Architektura model-agnostic** - Gotowa na przyszłość
+
+---
+
+## 💎 Charakterystyka
+
+### ✅ Ma:
+- Kompletny pipeline 10-etapowy
+- Wszystkie agenty zaimplementowane
+- Polski system prompt dla każdego agenta
+- Walidacja koherencji
+- Pamięć długoterminowa
+- Multi-world support
+- Format audiobook
+- Metadane i ekspansja
+
+### 🚀 Gotowe:
+- Generowanie opowiadań
+- Generowanie nowel
+- Generowanie powieści
+- Generowanie sag
+- Wieloświatowość
+- Produkcja publikacyjna
+
+---
+
+## 🎯 Przykłady Zastosowań
+
+### 📖 Seria w Jednym Świecie
+```python
+world = world_manager.create_world(...)
+for i in range(10):
+    story = await produce_narrative(f"Historia {i}...", world_id=world.id)
+```
+
+### 📚 Kontynuacja z Postaciami
+```python
+book1 = await produce_narrative("Księga 1...")
+book2 = await produce_narrative(
+    "Księga 2...",
+    world_id=book1.world.id,
+    characters=book1.characters  # TE SAME postacie!
+)
+```
+
+### 🌌 Multi-Universe
+```python
+world_a = create_world("Fantasy")
+world_b = create_world("Sci-Fi")
+link_worlds(world_a.id, world_b.id)
+
+crossover = await produce_narrative(
+    "Podróż między światami...",
+    world_ids=[world_a.id, world_b.id]
+)
+```
+
+---
+
+## 🛠️ Konfiguracja
+
+### Wybór Modeli
+```python
+# Szybkie dla analiz
+config.models["haiku"] = ModelConfig(...)
+
+# Kreatywne dla generacji
+config.models["opus"] = ModelConfig(...)
+
+# Użycie
+agent.config["preferred_model"] = "opus"
+```
+
+### Jakość
+```python
+config.min_coherence_score = 0.92  # Wyższe standardy
+config.enable_strict_validation = True
+config.max_retries = 5
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Brak klucza API
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+### Niska jakość
+```python
+config.default_model = "claude-opus"
+config.min_coherence_score = 0.90
+```
+
+### Wolne działanie
+```python
+# Szybkie modele dla analiz
+validator.config["preferred_model"] = "claude-haiku"
+
+# Mocne modele dla generacji
+generator.config["preferred_model"] = "claude-opus"
+```
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Faza 1: Core (GOTOWE)
+- [x] Wszystkie 10 agentów
+- [x] Potrójny system pamięci
+- [x] Multi-world support
+- [x] Kompletny pipeline
+
+### 🔄 Faza 2: Advanced (W Trakcie)
+- [ ] Vector embeddings
+- [ ] Parallel execution
+- [ ] Long context caching
+- [ ] Real-time monitoring
+
+### 📅 Faza 3: UI/API
 - [ ] Web interface
-- [ ] API endpoints
+- [ ] REST API
 - [ ] Batch processing
-- [ ] Cost optimization
-- [ ] Performance profiling
+- [ ] Integracje wydawnicze
 
 ---
 
-## 🤝 Contributing
+## 🎭 Filozofia
 
-This is a **professional narrative production system**.
-
-Contributions must maintain:
-- Architectural consistency
-- Code quality standards
-- Documentation completeness
-- Test coverage
-
----
-
-## 📄 License
-
-*To be determined*
-
----
-
-## 🎭 Philosophy
-
-> "We don't create 'text'. We don't create 'stories'. We don't create 'books'.
+> _"Nie tworzymy 'tekstu'. Nie tworzymy 'opowiadania'._
 >
-> We create **WORLDS**, **HISTORIES**, **UNIVERSES**, **PUBLISHING PRODUCTS**.
+> _Tworzymy **ŚWIATY**, **HISTORIE**, **UNIWERSA**, **PRODUKTY WYDAWNICZE**._
 >
-> We operate as a narrative studio, a publisher of the future, an engine of timeless stories."
-
-**NARRA_FORGE** is the synthesis of art and engineering at the highest level.
+> _Działamy jak studio narracyjne, wydawnictwo przyszłości, silnik opowieści ponadczasowych."_
 
 ---
 
-**Built with precision. Designed for infinity.**
+## 📜 Licencja
+
+*Do określenia*
+
+---
+
+## 🤝 Wsparcie
+
+- **Issues**: [GitHub Issues](https://github.com/Marksio90/NARRA_FORGE/issues)
+- **Pull Requests**: Mile widziane!
+- **Dokumentacja**: DOKUMENTACJA_PL.md
+
+---
+
+## ⭐ Status Projektu
+
+```
+✅ PRODUCTION READY dla:
+   - Opowiadania (short stories)
+   - Nowele (novellas)
+   - Powieści (novels)
+   - Sagi (epics)
+   - Multi-world narratives
+   - Audiobook format
+```
+
+---
+
+**Zbudowane z precyzją. Zaprojektowane na wieczność.** 🚀
+
+**NARRA_FORGE** - Synteza sztuki i inżynierii na najwyższym poziomie.

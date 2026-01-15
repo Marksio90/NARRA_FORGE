@@ -22,3 +22,8 @@ streamlit>=1.30.0
 # Utilities
 python-dateutil>=2.8.0
 requests>=2.31.0
+
+# Export & Publishing
+ebooklib>=0.18
+reportlab>=4.0.0
+Pillow>=10.0.0

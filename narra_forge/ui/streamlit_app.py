@@ -206,6 +206,52 @@ def compare_versions(
         return None
 
 
+def export_narrative(
+    project_id: str,
+    format: str,
+    version: Optional[int] = None,
+    metadata: Optional[Dict[str, str]] = None,
+    include_toc: bool = False
+) -> Optional[Dict]:
+    """Export narracji do ePub lub PDF."""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/export",
+            json={
+                "project_id": project_id,
+                "format": format,
+                "version": version,
+                "metadata": metadata,
+                "include_toc": include_toc
+            },
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Błąd exportu: {e}")
+        return None
+
+
+def list_exports(project_id: str) -> Optional[Dict]:
+    """Lista exportów projektu."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/exports/{project_id}",
+            timeout=5
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Błąd pobierania exportów: {e}")
+        return None
+
+
+def get_download_url(file_id: str) -> str:
+    """Zwraca URL do pobrania pliku."""
+    return f"{API_BASE_URL}/api/download/{file_id}"
+
+
 # ============================================================================
 # UI COMPONENTS
 # ============================================================================
@@ -560,12 +606,136 @@ def page_projects():
                     st.session_state.current_project_id = project['id']
                     st.rerun()
 
+                # Export dla ukończonych projektów
+                if project["status"] == "completed":
+                    if st.button("📥 Export", key=f"export_{project['id']}"):
+                        st.session_state.export_project_id = project['id']
+                        st.session_state.show_export_dialog = True
+                        st.rerun()
+
                 if project["status"] in ["completed", "failed"]:
                     if st.button("🗑️ Usuń", key=f"delete_{project['id']}"):
                         if delete_project(project['id']):
                             st.success("Projekt usunięty!")
                             time.sleep(1)
                             st.rerun()
+
+    # Dialog exportu
+    if st.session_state.get('show_export_dialog', False):
+        export_project_id = st.session_state.get('export_project_id')
+
+        st.markdown("---")
+        st.subheader("📥 Export narracji")
+
+        with st.form("export_form"):
+            st.write(f"**Projekt:** {export_project_id}")
+
+            # Format
+            format_type = st.radio(
+                "Format pliku:",
+                options=["epub", "pdf"],
+                format_func=lambda x: {
+                    "epub": "📱 ePub (e-reader, Kindle)",
+                    "pdf": "📄 PDF (druk, uniwersalny)"
+                }[x],
+                horizontal=True
+            )
+
+            # Metadane
+            st.write("**Metadane (opcjonalne):**")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                title = st.text_input("Tytuł", placeholder="Tytuł narracji")
+                author = st.text_input("Autor", value="NARRA_FORGE")
+
+            with col2:
+                description = st.text_area(
+                    "Opis",
+                    placeholder="Krótki opis narracji...",
+                    height=100
+                )
+
+            # Opcje dla PDF
+            include_toc = False
+            if format_type == "pdf":
+                include_toc = st.checkbox("Dodaj spis treści")
+
+            # Przyciski
+            col_submit, col_cancel = st.columns([1, 1])
+
+            with col_submit:
+                submitted = st.form_submit_button("📥 Exportuj", use_container_width=True)
+
+            with col_cancel:
+                cancelled = st.form_submit_button("❌ Anuluj", use_container_width=True)
+
+            if submitted:
+                metadata = {}
+                if title:
+                    metadata['title'] = title
+                if author:
+                    metadata['author'] = author
+                if description:
+                    metadata['description'] = description
+
+                with st.spinner(f"Generowanie pliku {format_type.upper()}..."):
+                    result = export_narrative(
+                        project_id=export_project_id,
+                        format=format_type,
+                        metadata=metadata if metadata else None,
+                        include_toc=include_toc
+                    )
+
+                    if result and result.get('success'):
+                        st.success("✅ Export zakończony pomyślnie!")
+
+                        file_id = result.get('file_id')
+                        file_size = result.get('file_size', 0)
+                        download_url = get_download_url(file_id)
+
+                        st.write(f"**Rozmiar pliku:** {file_size / 1024:.1f} KB")
+                        st.markdown(
+                            f"[📥 Pobierz {format_type.upper()}]({download_url})",
+                            unsafe_allow_html=True
+                        )
+
+                        # Clear dialog
+                        st.session_state.show_export_dialog = False
+                        st.session_state.export_project_id = None
+
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error("❌ Błąd podczas exportu")
+
+            if cancelled:
+                st.session_state.show_export_dialog = False
+                st.session_state.export_project_id = None
+                st.rerun()
+
+        # Lista istniejących exportów
+        st.markdown("---")
+        st.subheader("📂 Istniejące exporty")
+
+        exports_data = list_exports(export_project_id)
+        if exports_data and exports_data.get('exports'):
+            exports = exports_data['exports']
+            st.write(f"Znaleziono **{len(exports)}** exportów")
+
+            for exp in exports:
+                with st.expander(f"{exp['format'].upper()} - {exp['created_at']}"):
+                    st.write(f"**Wersja:** {exp['version']}")
+                    st.write(f"**Rozmiar:** {exp['size'] / 1024:.1f} KB")
+                    st.write(f"**Data utworzenia:** {exp['created_at']}")
+
+                    download_url = get_download_url(exp['file_id'])
+                    st.markdown(
+                        f"[📥 Pobierz {exp['format'].upper()}]({download_url})",
+                        unsafe_allow_html=True
+                    )
+        else:
+            st.info("Brak zapisanych exportów dla tego projektu")
 
 
 def page_revise():

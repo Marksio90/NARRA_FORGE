@@ -73,20 +73,21 @@ except Exception as e:
 
 # Test 4: Zmienne środowiskowe
 print("\n[Test 4] Sprawdzanie zmiennych środowiskowych...")
-anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-if anthropic_key:
-    masked_key = anthropic_key[:8] + "..." + anthropic_key[-4:] if len(anthropic_key) > 12 else "***"
-    print(f"  ✓ ANTHROPIC_API_KEY: {masked_key}")
-else:
-    print(f"  ⚠ ANTHROPIC_API_KEY: NIE USTAWIONY")
-    print(f"    Uwaga: Bez klucza API system nie będzie mógł generować treści")
-
 openai_key = os.getenv("OPENAI_API_KEY")
 if openai_key:
     masked_key = openai_key[:8] + "..." + openai_key[-4:] if len(openai_key) > 12 else "***"
-    print(f"  ✓ OPENAI_API_KEY: {masked_key}")
+    print(f"  ✓ OPENAI_API_KEY: {masked_key} (GŁÓWNY)")
 else:
-    print(f"  ℹ OPENAI_API_KEY: NIE USTAWIONY (opcjonalny)")
+    print(f"  ⚠ OPENAI_API_KEY: NIE USTAWIONY")
+    print(f"    Uwaga: Bez klucza API system nie będzie mógł generować treści")
+    print(f"    Pobierz klucz: https://platform.openai.com/api-keys")
+
+anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+if anthropic_key:
+    masked_key = anthropic_key[:8] + "..." + anthropic_key[-4:] if len(anthropic_key) > 12 else "***"
+    print(f"  ✓ ANTHROPIC_API_KEY: {masked_key} (backup)")
+else:
+    print(f"  ℹ ANTHROPIC_API_KEY: NIE USTAWIONY (opcjonalny)")
 
 # Test 5: System pamięci
 print("\n[Test 5] Test systemu pamięci...")
@@ -195,7 +196,7 @@ Struktura:
 Konfiguracja:
   ✓ Config załadowany
   ✓ {len(config.models)} modeli skonfigurowanych
-  {'✓' if anthropic_key else '⚠'} ANTHROPIC_API_KEY {'ustawiony' if anthropic_key else 'BRAK'}
+  {'✓' if openai_key else '⚠'} OPENAI_API_KEY {'ustawiony (GPT-4 Turbo)' if openai_key else 'BRAK'}
 
 Aby uruchomić pełny przykład z generacją:
   docker-compose run narra-forge python przyklad_uzycia_pl.py

@@ -11,6 +11,7 @@ from .types import (
     ProductionContext, PipelineStage
 )
 from .config import SystemConfig
+from .revision import RevisionSystem, RevisionRequest
 from ..models.backend import ModelOrchestrator
 from ..memory.base import SQLiteMemorySystem
 from ..memory.structural import StructuralMemory
@@ -51,6 +52,9 @@ class NarrativeOrchestrator:
         # Initialize model orchestrator
         # (In production, this would be fully initialized with backends)
         self.model_orchestrator = None  # Placeholder
+
+        # Initialize revision system
+        self.revision_system = RevisionSystem()
 
         # Agent registry
         self.agents: Dict[PipelineStage, BaseAgent] = {}
@@ -330,3 +334,187 @@ class NarrativeOrchestrator:
             self.get_production_status(pid)
             for pid in self.active_productions.keys()
         ]
+
+    async def revise_narrative(
+        self,
+        revision_request: RevisionRequest,
+        progress_callback: Optional[callable] = None
+    ) -> Dict[str, Any]:
+        """
+        Rewizja i regeneracja narracji od wybranego etapu.
+
+        Args:
+            revision_request: Żądanie rewizji z informacjami
+            progress_callback: Opcjonalny callback dla postępu
+
+        Returns:
+            Wynik rewizji
+        """
+        project_id = revision_request.project_id
+        from_stage = revision_request.from_stage
+
+        print(f"\n{'='*60}")
+        print(f"NARRA_FORGE REVISION: {project_id}")
+        print(f"Regenerating from stage: {from_stage.name}")
+        print(f"{'='*60}\n")
+
+        try:
+            # Określ numer wersji
+            if revision_request.create_new_version:
+                version = self.revision_system.get_latest_version(project_id) + 1
+                print(f"Creating new version: v{version}")
+            else:
+                version = self.revision_system.get_latest_version(project_id)
+                print(f"Overwriting version: v{version}")
+
+            # Wczytaj kontekst z etapu przed from_stage
+            previous_stage_num = from_stage.value - 1
+            if previous_stage_num < 1:
+                return {
+                    "success": False,
+                    "error": "Cannot revise from first stage. Start a new production instead."
+                }
+
+            # Znajdź poprzedni etap
+            previous_stage = None
+            for stage in PipelineStage:
+                if stage.value == previous_stage_num:
+                    previous_stage = stage
+                    break
+
+            if not previous_stage:
+                return {
+                    "success": False,
+                    "error": f"Could not find stage {previous_stage_num}"
+                }
+
+            # Wczytaj kontekst
+            print(f"Loading context from stage: {previous_stage.name}")
+            context = self.revision_system.load_context_snapshot(
+                project_id,
+                previous_stage,
+                version=version if not revision_request.create_new_version else version - 1
+            )
+
+            if not context:
+                return {
+                    "success": False,
+                    "error": f"Could not load context for stage {previous_stage.name}"
+                }
+
+            # Aplikuj modyfikacje kontekstu jeśli są
+            if revision_request.context_modifications:
+                print(f"Applying context modifications...")
+                context.update(revision_request.context_modifications)
+
+            # Dodaj instrukcje rewizji do kontekstu
+            if revision_request.instructions:
+                context["revision_instructions"] = revision_request.instructions
+
+            context["start_time"] = datetime.now()
+            context["is_revision"] = True
+            context["revision_from_stage"] = from_stage.name
+
+            # Wykonaj etapy od from_stage do końca
+            all_stages = list(PipelineStage)
+            start_index = from_stage.value - 1  # Pipeline stages are 1-indexed
+
+            for stage in all_stages[start_index:]:
+                stage_num = stage.value
+                print(f"\n[STAGE {stage_num}/10] {stage.name}")
+
+                if progress_callback:
+                    await progress_callback(stage.name, {"completed": False})
+
+                result = await self._execute_stage(stage, context)
+
+                if not result.success:
+                    print(f"❌ Stage {stage_num} failed: {result.error}")
+                    if progress_callback:
+                        await progress_callback(stage.name, {"failed": True})
+
+                    return {
+                        "success": False,
+                        "project_id": project_id,
+                        "version": version,
+                        "failed_at_stage": stage.name,
+                        "error": result.error
+                    }
+
+                # Zapisz wynik do kontekstu
+                self._update_context_from_stage_result(stage, result, context)
+
+                # Zapisz snapshot
+                self.revision_system.save_context_snapshot(
+                    project_id,
+                    stage,
+                    context,
+                    version
+                )
+
+                if progress_callback:
+                    await progress_callback(stage.name, {"completed": True})
+
+                print(f"✓ Stage {stage_num} completed")
+
+            # Zakończ
+            end_time = datetime.now()
+            duration = (end_time - context["start_time"]).total_seconds()
+
+            print(f"\n{'='*60}")
+            print(f"REVISION COMPLETE")
+            print(f"Version: v{version}")
+            print(f"Duration: {duration:.2f}s")
+            print(f"{'='*60}\n")
+
+            return {
+                "success": True,
+                "project_id": project_id,
+                "version": version,
+                "from_stage": from_stage.name,
+                "duration_seconds": duration,
+                "output": context.get("output"),
+                "metadata": {
+                    "revision_instructions": revision_request.instructions,
+                    "context_modifications": revision_request.context_modifications
+                }
+            }
+
+        except Exception as e:
+            print(f"\n❌ REVISION FAILED: {e}\n")
+            return {
+                "success": False,
+                "project_id": project_id,
+                "error": str(e)
+            }
+
+    def _update_context_from_stage_result(
+        self,
+        stage: PipelineStage,
+        result: AgentResponse,
+        context: Dict[str, Any]
+    ):
+        """
+        Zaktualizuj kontekst wynikami z etapu.
+
+        Args:
+            stage: Etap pipeline'u
+            result: Wynik wykonania etapu
+            context: Kontekst do aktualizacji
+        """
+        # Mapowanie etapów na klucze kontekstu
+        stage_context_keys = {
+            PipelineStage.BRIEF_INTERPRETATION: "brief",
+            PipelineStage.WORLD_ARCHITECTURE: "world",
+            PipelineStage.CHARACTER_ARCHITECTURE: "characters",
+            PipelineStage.NARRATIVE_STRUCTURE: "structure",
+            PipelineStage.SEGMENT_PLANNING: "segment_plan",
+            PipelineStage.SEQUENTIAL_GENERATION: "segments",
+            PipelineStage.COHERENCE_CONTROL: "coherence_report",
+            PipelineStage.LANGUAGE_STYLIZATION: "stylized_segments",
+            PipelineStage.EDITORIAL_REVIEW: "edited_segments",
+            PipelineStage.FINAL_OUTPUT: "output"
+        }
+
+        if stage in stage_context_keys:
+            context[stage_context_keys[stage]] = result.output

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  narra_forge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: narra_forge:2.0.0
+    container_name: narra_forge_batch
+
+    environment:
+      # Load from .env file
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEFAULT_MINI_MODEL=${DEFAULT_MINI_MODEL:-gpt-4o-mini}
+      - DEFAULT_GPT4_MODEL=${DEFAULT_GPT4_MODEL:-gpt-4o}
+      - MAX_COST_PER_JOB=${MAX_COST_PER_JOB:-10.0}
+      - MIN_COHERENCE_SCORE=${MIN_COHERENCE_SCORE:-0.85}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+    volumes:
+      # Persistent data
+      - ./data:/app/data
+      # Output files
+      - ./output:/app/output
+      # Logs
+      - ./logs:/app/logs
+
+    # Resource limits (adjust based on needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+    # Network mode
+    network_mode: bridge
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import narra_forge; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Optional: separate service for testing
+  narra_forge_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: narra_forge:2.0.0
+    container_name: narra_forge_test
+
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=testing
+      - LOG_LEVEL=DEBUG
+
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./tests:/app/tests
+
+    command: pytest tests/ -v
+
+    profiles:
+      - test
+
+# Volumes for persistence
+volumes:
+  data:
+  output:
+  logs:

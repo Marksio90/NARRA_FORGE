@@ -1,0 +1,33 @@
+# NARRA_FORGE Dependencies
+# Python 3.11+
+
+# OpenAI API (ONLY provider)
+openai==1.54.0
+
+# Data & Storage
+pydantic==2.9.2
+pydantic-settings==2.6.0
+
+# Database
+sqlalchemy==2.0.35
+aiosqlite==0.20.0
+
+# Utilities
+python-dotenv==1.0.1
+tenacity==9.0.0  # Retry logic
+tiktoken==0.8.0  # Token counting
+
+# CLI & UI
+click==8.1.7
+rich==13.9.4  # Beautiful CLI output
+tqdm==4.67.0  # Progress bars
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+
+# Development
+black==24.10.0
+ruff==0.7.4
+mypy==1.13.0

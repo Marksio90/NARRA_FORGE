@@ -82,6 +82,29 @@ export ANTHROPIC_API_KEY="twój-klucz-api"
 python przyklad_uzycia_pl.py
 ```
 
+### Instalacja przez Docker 🐳 (Zalecane)
+
+**Docker zapewnia izolowane, powtarzalne środowisko.**
+
+```bash
+# 1. Sklonuj repozytorium
+git clone https://github.com/Marksio90/NARRA_FORGE.git
+cd NARRA_FORGE
+
+# 2. Skopiuj przykładowy .env
+cp .env.example .env
+# Edytuj .env i dodaj swój ANTHROPIC_API_KEY
+
+# 3. Uruchom automatyczny test
+./run_docker_test.sh
+
+# LUB ręcznie:
+docker-compose build
+docker-compose run --rm narra-forge python test_docker.py
+```
+
+**Szczegóły:** Zobacz [DOCKER.md](DOCKER.md) dla pełnych instrukcji Docker.
+
 ### Pierwszy Tekst w 5 Minut
 
 ```python

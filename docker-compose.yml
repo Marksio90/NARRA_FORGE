@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  narra-forge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: narra-forge:latest
+    container_name: narra-forge-app
+
+    # Przekaż zmienne środowiskowe
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+
+    # Montuj volumes dla persystencji
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Komenda (można override)
+    command: python -u test_docker.py
+
+  # Opcjonalny serwis dla interaktywnej pracy
+  narra-forge-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: narra-forge:latest
+    container_name: narra-forge-dev
+
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - .:/app  # Mount całego kodu dla development
+
+    # Tryb interaktywny
+    stdin_open: true
+    tty: true
+
+    # Override domyślnej komendy
+    command: /bin/bash
+
+    profiles:
+      - dev

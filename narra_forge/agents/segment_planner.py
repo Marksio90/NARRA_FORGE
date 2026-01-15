@@ -50,6 +50,11 @@ KLUCZOWE ZASADY:
    - Którzy bohaterowie biorą udział
    - Gdzie i kiedy to się dzieje
 
+ABSOLUTNIE WYMAGANE:
+   - Wszystkie tytuły segmentów muszą być PO POLSKU
+   - Opisy wydarzeń po polsku
+   - Żadnych angielskich terminów
+
 Planujesz MAPĘ PODRÓŻY NARRACYJNEJ."""
 
     def validate_input(self, context: Dict[str, Any]) -> bool:
@@ -121,7 +126,7 @@ POSTACIE:
 
 Dla każdego segmentu określ:
 
-1. NUMER I TYTUŁ ROBOCZY
+1. NUMER I TYTUŁ ROBOCZY (TYTUŁ MUSI BYĆ PO POLSKU!)
 2. FUNKCJA NARRACYJNA
    - Co ten segment robi w całości
    - Ekspozycja / Rozwój / Konflikt / Transformacja / Rozwiązanie
@@ -143,6 +148,11 @@ Dla każdego segmentu określ:
    - Jak to wpłynie na bohaterów
 
 Stwórz kompletny plan wszystkich {estimated_segments} segmentów.
+
+KRYTYCZNIE WAŻNE:
+- Wszystkie tytuły segmentów muszą być PO POLSKU!
+- Opisy wydarzeń po polsku!
+- Nazwy lokalizacji po polsku!
 
 Odpowiedz JSON array."""
 

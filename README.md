@@ -37,12 +37,38 @@ Narracje **GOTOWE DO SPRZEDAŻY**:
 
 ## ⚡ Szybki Start
 
+### 🖥️ Opcja 1: Web Interface (NAJŁATWIEJSZA!)
+
+```bash
+# 1. Skopiuj .env.example do .env i dodaj klucz OpenAI
+cp .env.example .env
+# Edytuj .env i dodaj: OPENAI_API_KEY=sk-proj-xxx...
+
+# 2. Uruchom wszystko (API + UI)
+./start_all.sh
+
+# 3. Otwórz w przeglądarce
+#    UI:       http://localhost:8501
+#    API Docs: http://localhost:8000/docs
+```
+
+**Gotowe!** Masz teraz:
+- 🖥️ **Streamlit Dashboard** - intuicyjny interfejs do generacji
+- 🔌 **REST API** - do integracji z własnymi aplikacjami
+- 📡 **WebSocket** - real-time monitoring postępu
+
+📖 **Pełna dokumentacja API/UI**: [API_UI.md](API_UI.md)
+
+---
+
+### 🐍 Opcja 2: Python (Programistyczna)
+
 ```bash
 # 1. Instalacja
 pip install -r requirements.txt
 
 # 2. Klucz API
-export ANTHROPIC_API_KEY="twój-klucz"
+export OPENAI_API_KEY="twój-klucz"
 
 # 3. Uruchom przykład
 python przyklad_uzycia_pl.py

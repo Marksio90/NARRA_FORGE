@@ -1,5 +1,12 @@
 """
-Core type definitions for NARRA_FORGE system.
+Podstawowe definicje typów dla systemu NARRA_FORGE.
+
+Ten moduł zawiera wszystkie kluczowe typy danych używane w całym systemie:
+- Formy narracyjne i gatunki
+- Biblie światów (WorldBible)
+- Definicje postaci jako procesów
+- Segmenty narracyjne
+- Kontekst produkcji
 """
 from enum import Enum
 from dataclasses import dataclass, field
@@ -8,156 +15,179 @@ from datetime import datetime
 
 
 class NarrativeForm(Enum):
-    """Narrative form/length."""
-    SHORT_STORY = "short_story"
-    NOVELLA = "novella"
-    NOVEL = "novel"
-    EPIC_SAGA = "epic_saga"
+    """Forma narracyjna / długość utworu."""
+    SHORT_STORY = "short_story"   # Opowiadanie (do 10000 słów)
+    NOVELLA = "novella"           # Nowela (10000-40000 słów)
+    NOVEL = "novel"               # Powieść (40000-120000 słów)
+    EPIC_SAGA = "epic_saga"       # Saga epicka (wielotomowa)
 
 
 class Genre(Enum):
-    """Literary genres."""
-    FANTASY = "fantasy"
-    SCI_FI = "sci_fi"
-    HORROR = "horror"
-    THRILLER = "thriller"
-    MYSTERY = "mystery"
-    LITERARY = "literary"
-    HISTORICAL = "historical"
-    ROMANCE = "romance"
-    HYBRID = "hybrid"
+    """Gatunki literackie."""
+    FANTASY = "fantasy"           # Fantasy
+    SCI_FI = "sci_fi"            # Science fiction
+    HORROR = "horror"            # Horror
+    THRILLER = "thriller"        # Thriller
+    MYSTERY = "mystery"          # Kryminał/tajemnica
+    LITERARY = "literary"        # Proza literacka
+    HISTORICAL = "historical"    # Powieść historyczna
+    ROMANCE = "romance"          # Romans
+    HYBRID = "hybrid"            # Hybrydowy (mieszanka gatunków)
 
 
 class PipelineStage(Enum):
-    """10-stage production pipeline."""
-    BRIEF_INTERPRETATION = 1
-    WORLD_ARCHITECTURE = 2
-    CHARACTER_ARCHITECTURE = 3
-    NARRATIVE_STRUCTURE = 4
-    SEGMENT_PLANNING = 5
-    SEQUENTIAL_GENERATION = 6
-    COHERENCE_CONTROL = 7
-    LANGUAGE_STYLIZATION = 8
-    EDITORIAL_REVIEW = 9
-    FINAL_OUTPUT = 10
+    """10-etapowy pipeline produkcji narracji."""
+    BRIEF_INTERPRETATION = 1      # Interpretacja zlecenia
+    WORLD_ARCHITECTURE = 2        # Architektura świata
+    CHARACTER_ARCHITECTURE = 3    # Architektura postaci
+    NARRATIVE_STRUCTURE = 4       # Struktura narracyjna
+    SEGMENT_PLANNING = 5          # Planowanie segmentów
+    SEQUENTIAL_GENERATION = 6     # Generacja sekwencyjna
+    COHERENCE_CONTROL = 7         # Kontrola koherencji
+    LANGUAGE_STYLIZATION = 8      # Stylizacja językowa
+    EDITORIAL_REVIEW = 9          # Redakcja wydawnicza
+    FINAL_OUTPUT = 10             # Finalne wyjście
 
 
 class MemoryType(Enum):
-    """Triple memory system types."""
-    STRUCTURAL = "structural"      # Worlds, characters, rules
-    SEMANTIC = "semantic"          # Events, motifs, relationships
-    EVOLUTIONARY = "evolutionary"  # Changes over time
+    """Typy pamięci w potrójnym systemie pamięciowym."""
+    STRUCTURAL = "structural"      # Strukturalna: światy, postacie, reguły
+    SEMANTIC = "semantic"          # Semantyczna: wydarzenia, motywy, relacje
+    EVOLUTIONARY = "evolutionary"  # Ewolucyjna: zmiany w czasie
 
 
 @dataclass
 class WorldBible:
-    """Complete world definition - the IP container."""
-    world_id: str
-    name: str
-    created_at: datetime
+    """
+    Kompletna definicja świata narracyjnego - kontener IP.
 
-    # Core world definition
-    laws_of_reality: Dict[str, Any]  # Physical, magical, technological rules
-    boundaries: Dict[str, Any]        # Spatial, temporal, dimensional limits
-    anomalies: List[str]              # Exceptions to rules
+    Biblia Świata to pełna specyfikacja uniwersum narracyjnego,
+    zawierająca prawa rzeczywistości, granice, anomalie i temat egzystencjalny.
+    Każdy świat jest traktowany jako intelektualna własność (IP).
+    """
+    world_id: str                     # Unikalny identyfikator świata
+    name: str                         # Nazwa świata
+    created_at: datetime              # Data utworzenia
 
-    # Meta-information
-    core_conflict: str                # Overarching conflict
-    existential_theme: str            # Why this world exists narratively
-    archetype_system: Dict[str, Any]  # World-specific archetypes
+    # Podstawowa definicja świata
+    laws_of_reality: Dict[str, Any]   # Prawa fizyczne, magiczne, technologiczne
+    boundaries: Dict[str, Any]        # Granice przestrzenne, czasowe, wymiarowe
+    anomalies: List[str]              # Wyjątki od reguł
 
-    # Evolution tracking
-    timeline: List[Dict[str, Any]]    # Historical events
-    current_state: Dict[str, Any]     # Current world state
+    # Meta-informacje
+    core_conflict: str                # Nadrzędny konflikt świata
+    existential_theme: str            # Dlaczego ten świat istnieje narracyjnie
+    archetype_system: Dict[str, Any]  # System archetypów specyficznych dla świata
 
-    # Cross-world relationships
-    related_worlds: List[str] = field(default_factory=list)
+    # Śledzenie ewolucji
+    timeline: List[Dict[str, Any]]    # Wydarzenia historyczne
+    current_state: Dict[str, Any]     # Aktualny stan świata
+
+    # Relacje międzyświatowe
+    related_worlds: List[str] = field(default_factory=list)  # Powiązane światy
     isolation_level: str = "isolated"  # isolated, connected, permeable
 
 
 @dataclass
 class Character:
-    """Character as a process, not a static entity."""
-    character_id: str
-    name: str
-    world_id: str
+    """
+    Postać jako PROCES, nie statyczny byt.
 
-    # Core identity
-    internal_trajectory: str          # Character's internal arc
-    contradictions: List[str]         # Internal conflicts
-    cognitive_limits: List[str]       # What they can't understand/perceive
-    evolution_capacity: float         # 0.0-1.0: resistance to change vs adaptability
+    KLUCZOWE: Postacie są dynamicznymi procesami psychologicznymi,
+    nie opisami. Mają wewnętrzne trajektorie, sprzeczności i zdolność ewolucji.
+    """
+    character_id: str                 # Unikalny identyfikator postaci
+    name: str                         # Imię postaci
+    world_id: str                     # ID świata, do którego należy
 
-    # Psychological model
-    motivations: List[str]
-    fears: List[str]
-    blind_spots: List[str]
+    # Tożsamość podstawowa
+    internal_trajectory: str          # Wewnętrzny łuk postaci (dokąd zmierza psychologicznie)
+    contradictions: List[str]         # Wewnętrzne konflikty i sprzeczności
+    cognitive_limits: List[str]       # Czego nie może zrozumieć/dostrzec
+    evolution_capacity: float         # 0.0-1.0: oporność na zmiany vs adaptacyjność
 
-    # Relational
-    relationships: Dict[str, Dict[str, Any]]  # character_id -> relationship data
+    # Model psychologiczny
+    motivations: List[str]            # Co nią/nim kieruje
+    fears: List[str]                  # Czego się boi
+    blind_spots: List[str]            # Martwe punkty poznawcze
 
-    # State tracking
-    current_state: Dict[str, Any]
-    evolution_history: List[Dict[str, Any]] = field(default_factory=list)
+    # Relacje
+    relationships: Dict[str, Dict[str, Any]]  # character_id -> dane relacji
+
+    # Śledzenie stanu
+    current_state: Dict[str, Any]     # Aktualny stan psychiczny i fizyczny
+    evolution_history: List[Dict[str, Any]] = field(default_factory=list)  # Historia ewolucji
 
 
 @dataclass
 class NarrativeSegment:
-    """Single segment (chapter/scene/sequence)."""
-    segment_id: str
-    order: int
+    """
+    Pojedynczy segment narracyjny (rozdział/scena/sekwencja).
 
-    # Functional
-    narrative_function: str           # What this segment does
-    narrative_weight: float           # Importance (0.0-1.0)
-    world_impact: List[str]           # How it changes the world
+    Każdy segment ma określoną funkcję narracyjną i wpływ na świat.
+    """
+    segment_id: str                   # ID segmentu
+    order: int                        # Kolejność w narracji
 
-    # Content
-    content: str
-    involved_characters: List[str]
-    location: str
-    timestamp: Optional[str] = None
+    # Funkcjonalność
+    narrative_function: str           # Funkcja narracyjna segmentu
+    narrative_weight: float           # Waga/ważność (0.0-1.0)
+    world_impact: List[str]           # Jak zmienia świat
+
+    # Treść
+    content: str                      # Wygenerowana treść segmentu
+    involved_characters: List[str]    # Zaangażowane postacie
+    location: str                     # Lokalizacja
+    timestamp: Optional[str] = None   # Znacznik czasowy w świecie
 
     # Meta
-    generated_at: datetime = field(default_factory=datetime.now)
-    validated: bool = False
+    generated_at: datetime = field(default_factory=datetime.now)  # Kiedy wygenerowano
+    validated: bool = False           # Czy przeszedł walidację
 
 
 @dataclass
 class ProjectBrief:
-    """Initial request interpretation."""
-    form: NarrativeForm
-    genre: Genre
-    world_scale: str                  # "intimate", "regional", "global", "cosmic"
-    expansion_potential: str          # "one_shot", "series", "universe"
+    """
+    Interpretacja początkowego zlecenia.
 
-    # Additional requirements
-    target_audience: Optional[str] = None
-    length_target: Optional[int] = None  # approximate word count
-    special_requirements: List[str] = field(default_factory=list)
+    Zawiera wszystkie wymagania projektu narracyjnego.
+    """
+    form: NarrativeForm               # Forma narracyjna
+    genre: Genre                      # Gatunek
+    world_scale: str                  # Skala: intimate, regional, global, cosmic
+    expansion_potential: str          # Potencjał: one_shot, series, universe
 
-    # Creative direction
-    thematic_focus: List[str] = field(default_factory=list)
-    stylistic_preferences: Dict[str, Any] = field(default_factory=dict)
+    # Dodatkowe wymagania
+    target_audience: Optional[str] = None        # Grupa docelowa
+    length_target: Optional[int] = None          # Przybliżona liczba słów
+    special_requirements: List[str] = field(default_factory=list)  # Specjalne wymagania
+
+    # Kierunek kreatywny
+    thematic_focus: List[str] = field(default_factory=list)        # Tematy przewodnie
+    stylistic_preferences: Dict[str, Any] = field(default_factory=dict)  # Preferencje stylistyczne
 
 
 @dataclass
 class ProductionContext:
-    """Complete production state for a narrative."""
-    project_id: str
-    brief: ProjectBrief
-    world: WorldBible
-    characters: Dict[str, Character]
-    segments: List[NarrativeSegment]
+    """
+    Kompletny kontekst produkcji narracji.
 
-    # Pipeline state
-    current_stage: PipelineStage
-    stage_outputs: Dict[PipelineStage, Any] = field(default_factory=dict)
+    Przechowuje cały stan produkcji przez wszystkie etapy pipeline'u.
+    """
+    project_id: str                   # ID projektu
+    brief: ProjectBrief               # Brief projektu
+    world: WorldBible                 # Świat narracji
+    characters: Dict[str, Character]  # Postacie (character_id -> Character)
+    segments: List[NarrativeSegment]  # Wygenerowane segmenty
 
-    # Quality metrics
-    coherence_score: float = 0.0
-    quality_checks: Dict[str, bool] = field(default_factory=dict)
+    # Stan pipeline'u
+    current_stage: PipelineStage      # Aktualny etap
+    stage_outputs: Dict[PipelineStage, Any] = field(default_factory=dict)  # Wyjścia z etapów
 
-    # Metadata
-    created_at: datetime = field(default_factory=datetime.now)
-    last_updated: datetime = field(default_factory=datetime.now)
+    # Metryki jakości
+    coherence_score: float = 0.0      # Wynik koherencji (0.0-1.0)
+    quality_checks: Dict[str, bool] = field(default_factory=dict)  # Testy jakości
+
+    # Metadane
+    created_at: datetime = field(default_factory=datetime.now)       # Data utworzenia
+    last_updated: datetime = field(default_factory=datetime.now)     # Ostatnia aktualizacja

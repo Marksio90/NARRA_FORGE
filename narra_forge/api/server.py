@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any, List
 import asyncio
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 from ..core.orchestrator import NarrativeOrchestrator
 from ..core.config import get_default_config
@@ -86,6 +87,25 @@ class VersionInfo(BaseModel):
     version: int
     stages: List[Dict[str, Any]]
     created_at: str
+
+
+class ExportRequest(BaseModel):
+    """Żądanie exportu narracji."""
+    project_id: str
+    format: str  # "epub" or "pdf"
+    version: Optional[int] = None  # Która wersja (domyślnie: najnowsza)
+    metadata: Optional[Dict[str, str]] = None  # Dodatkowe metadane (title, author, etc.)
+    include_toc: bool = False  # Tylko dla PDF: czy dodać spis treści
+
+
+class ExportResponse(BaseModel):
+    """Odpowiedź na żądanie exportu."""
+    success: bool
+    message: str
+    file_id: Optional[str] = None
+    download_url: Optional[str] = None
+    format: str
+    file_size: Optional[int] = None
 
 
 # ============================================================================
@@ -470,6 +490,196 @@ async def compare_versions(
         )
 
     return comparison
+
+
+@app.post("/api/export", response_model=ExportResponse)
+async def export_narrative(request: ExportRequest):
+    """
+    Exportuj narrację do formatu ePub lub PDF.
+
+    Generuje plik ePub lub PDF z narracji i zwraca URL do pobrania.
+    """
+    if orchestrator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="System nie jest gotowy"
+        )
+
+    # Validate format
+    if request.format not in ["epub", "pdf"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Nieprawidłowy format. Dozwolone: epub, pdf"
+        )
+
+    # Get version to export (default: latest)
+    if request.version is None:
+        request.version = orchestrator.revision_system.get_latest_version(request.project_id)
+
+    # Load project context
+    context = orchestrator.revision_system.load_context_snapshot(
+        request.project_id,
+        PipelineStage.FINAL_OUTPUT,
+        request.version
+    )
+
+    if not context:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Nie znaleziono projektu {request.project_id} wersji {request.version}"
+        )
+
+    # Prepare narrative data for export
+    narrative_data = {
+        "output": context.get("output"),
+        "metadata": {
+            "brief": context.get("brief"),
+            "world": context.get("world"),
+            "characters": context.get("characters"),
+            "edited_segments": context.get("edited_segments"),
+            "stylized_segments": context.get("stylized_segments"),
+            "segments": context.get("segments")
+        }
+    }
+
+    # Generate export file
+    try:
+        import os
+        from ..export import EpubExporter, PdfExporter
+
+        # Create exports directory
+        exports_dir = Path("data/exports")
+        exports_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate file ID
+        file_id = f"{request.project_id}_v{request.version}_{request.format}_{uuid.uuid4().hex[:8]}"
+        output_path = exports_dir / f"{file_id}.{request.format}"
+
+        if request.format == "epub":
+            exporter = EpubExporter()
+            file_path = exporter.export(
+                narrative_data=narrative_data,
+                output_path=str(output_path),
+                metadata=request.metadata
+            )
+        else:  # pdf
+            exporter = PdfExporter()
+            file_path = exporter.export(
+                narrative_data=narrative_data,
+                output_path=str(output_path),
+                metadata=request.metadata,
+                include_toc=request.include_toc
+            )
+
+        # Get file size
+        file_size = os.path.getsize(file_path)
+
+        return ExportResponse(
+            success=True,
+            message="Export zakończony pomyślnie",
+            file_id=file_id,
+            download_url=f"/api/download/{file_id}",
+            format=request.format,
+            file_size=file_size
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Błąd podczas exportu: {str(e)}"
+        )
+
+
+@app.get("/api/download/{file_id}")
+async def download_file(file_id: str):
+    """
+    Pobierz wyexportowany plik.
+
+    Zwraca plik ePub lub PDF do pobrania.
+    """
+    from fastapi.responses import FileResponse
+    import os
+
+    # Determine format from file_id
+    if "_epub_" in file_id:
+        format_ext = "epub"
+        media_type = "application/epub+zip"
+    elif "_pdf_" in file_id:
+        format_ext = "pdf"
+        media_type = "application/pdf"
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Nieprawidłowy ID pliku"
+        )
+
+    file_path = Path(f"data/exports/{file_id}.{format_ext}")
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Plik nie został znaleziony"
+        )
+
+    # Extract project_id for filename
+    project_id = file_id.split("_")[0]
+    filename = f"narracja_{project_id}.{format_ext}"
+
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        filename=filename
+    )
+
+
+@app.get("/api/exports/{project_id}")
+async def list_exports(project_id: str):
+    """
+    Lista wszystkich exportów dla projektu.
+
+    Zwraca listę dostępnych plików do pobrania.
+    """
+    import os
+    exports_dir = Path("data/exports")
+
+    if not exports_dir.exists():
+        return {"project_id": project_id, "exports": []}
+
+    # Find all export files for this project
+    exports = []
+    for file in exports_dir.glob(f"{project_id}_*"):
+        stat = file.stat()
+        file_id = file.stem  # bez rozszerzenia
+
+        # Determine format
+        if file.suffix == ".epub":
+            format_type = "epub"
+        elif file.suffix == ".pdf":
+            format_type = "pdf"
+        else:
+            continue
+
+        # Extract version
+        parts = file_id.split("_")
+        version = parts[1] if len(parts) > 1 and parts[1].startswith("v") else "unknown"
+
+        exports.append({
+            "file_id": file_id,
+            "format": format_type,
+            "version": version,
+            "size": stat.st_size,
+            "created_at": datetime.fromtimestamp(stat.st_ctime).isoformat(),
+            "download_url": f"/api/download/{file_id}"
+        })
+
+    # Sort by creation time (newest first)
+    exports.sort(key=lambda x: x['created_at'], reverse=True)
+
+    return {
+        "project_id": project_id,
+        "total_exports": len(exports),
+        "exports": exports
+    }
 
 
 # ============================================================================

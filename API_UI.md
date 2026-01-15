@@ -7,8 +7,9 @@
 3. [Streamlit UI](#streamlit-ui)
 4. [WebSocket](#websocket)
 5. [System Iteracji i Rewizji](#system-iteracji-i-rewizji)
-6. [Przykłady użycia](#przykłady-użycia)
-7. [Deployment](#deployment)
+6. [Export do ePub i PDF](#export-do-epub-i-pdf)
+7. [Przykłady użycia](#przykłady-użycia)
+8. [Deployment](#deployment)
 
 ---
 
@@ -829,6 +830,380 @@ data/revisions/
 ```
 
 Każdy snapshot zawiera pełny kontekst produkcji na danym etapie, co pozwala na wznowienie generacji z dowolnego punktu.
+
+---
+
+## 📥 Export do ePub i PDF
+
+System exportu pozwala na publikację wygenerowanych narracji w formacie ePub (e-booki) i PDF (druk/universal). Każdy export zachowuje metadane, formatowanie i strukturę narracji.
+
+### Obsługiwane formaty
+
+#### ePub
+- **Przeznaczenie**: E-readery (Kindle, Kobo, iBooks), aplikacje mobilne
+- **Funkcje**:
+  - Metadane książki (tytuł, autor, język, identyfikator)
+  - Rozdziały jako pliki HTML
+  - Spis treści (TOC)
+  - Stylowanie CSS (czcionki, marginesy, wcięcia)
+  - Automatyczne formatowanie dialogów
+- **Kompatybilność**: EPUB 3.0 standard
+
+#### PDF
+- **Przeznaczenie**: Druk, podgląd uniwersalny, archiwizacja
+- **Funkcje**:
+  - Strona tytułowa z metadanymi
+  - Opcjonalny spis treści
+  - Formatowanie akapitów (justowanie, wcięcia)
+  - Numeracja stron
+  - Stylizacja rozdziałów
+  - Obsługa dialogów (kursywa, wcięcia)
+- **Format**: A4, marginesy 2.5cm
+
+### Architektura modułów
+
+#### EpubExporter (`narra_forge/export/epub_exporter.py`)
+
+```python
+from narra_forge.export import EpubExporter
+
+exporter = EpubExporter()
+
+file_path = exporter.export(
+    narrative_data={
+        "output": {...},  # Treść narracji
+        "metadata": {...}  # Metadane projektu
+    },
+    output_path="output/narracja.epub",
+    metadata={
+        "title": "Tytuł Narracji",
+        "author": "Autor",
+        "description": "Opis",
+        "language": "pl"
+    }
+)
+```
+
+**Kluczowe metody:**
+- `_prepare_metadata()` - Przygotowanie metadanych książki
+- `_create_chapters()` - Tworzenie rozdziałów HTML
+- `_extract_segments()` - Wyciąganie segmentów z danych narracji
+- `_format_text()` - Formatowanie tekstu (akapity, dialogi)
+- `_get_default_css()` - Domyślne stylowanie CSS
+
+#### PdfExporter (`narra_forge/export/pdf_exporter.py`)
+
+```python
+from narra_forge.export import PdfExporter
+
+exporter = PdfExporter()
+
+file_path = exporter.export(
+    narrative_data={...},
+    output_path="output/narracja.pdf",
+    metadata={
+        "title": "Tytuł",
+        "author": "Autor"
+    },
+    include_toc=True  # Dodaj spis treści
+)
+```
+
+**Kluczowe metody:**
+- `_create_title_page()` - Strona tytułowa
+- `_create_toc()` - Spis treści
+- `_create_chapters()` - Rozdziały z formatowaniem
+- `_add_page_number()` - Numeracja stron
+
+### API Endpoints
+
+#### 1. Export narracji
+
+```http
+POST /api/export
+```
+
+**Request Body:**
+```json
+{
+  "project_id": "abc-123",
+  "format": "epub",
+  "version": 1,
+  "metadata": {
+    "title": "Moja Narracja",
+    "author": "Jan Kowalski",
+    "description": "Krótki opis..."
+  },
+  "include_toc": false
+}
+```
+
+**Parameters:**
+
+| Parametr | Typ | Wymagane | Opis |
+|----------|-----|----------|------|
+| `project_id` | string | ✅ | ID projektu do exportu |
+| `format` | string | ✅ | Format: `"epub"` lub `"pdf"` |
+| `version` | int | ❌ | Numer wersji (domyślnie: najnowsza) |
+| `metadata` | object | ❌ | Metadane (title, author, description) |
+| `include_toc` | boolean | ❌ | Tylko PDF: czy dodać spis treści (domyślnie: false) |
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Export zakończony pomyślnie",
+  "file_id": "abc-123_v1_epub_a1b2c3d4",
+  "download_url": "/api/download/abc-123_v1_epub_a1b2c3d4",
+  "format": "epub",
+  "file_size": 125678
+}
+```
+
+---
+
+#### 2. Pobierz plik
+
+```http
+GET /api/download/{file_id}
+```
+
+**Parameters:**
+- `file_id` - ID pliku zwrócony przez `/api/export`
+
+**Response:**
+- Plik do pobrania (ePub lub PDF)
+- Content-Type: `application/epub+zip` lub `application/pdf`
+- Filename: `narracja_{project_id}.{format}`
+
+---
+
+#### 3. Lista exportów projektu
+
+```http
+GET /api/exports/{project_id}
+```
+
+**Response:**
+```json
+{
+  "project_id": "abc-123",
+  "total_exports": 3,
+  "exports": [
+    {
+      "file_id": "abc-123_v2_pdf_x9y8z7w6",
+      "format": "pdf",
+      "version": "v2",
+      "size": 234567,
+      "created_at": "2024-01-15T14:30:00",
+      "download_url": "/api/download/abc-123_v2_pdf_x9y8z7w6"
+    },
+    {
+      "file_id": "abc-123_v1_epub_a1b2c3d4",
+      "format": "epub",
+      "version": "v1",
+      "size": 125678,
+      "created_at": "2024-01-15T12:00:00",
+      "download_url": "/api/download/abc-123_v1_epub_a1b2c3d4"
+    }
+  ]
+}
+```
+
+### Użycie w Streamlit UI
+
+#### Strona Projektów (📚 Wszystkie Projekty)
+
+1. **Przycisk Export**
+   - Dostępny dla ukończonych projektów
+   - Otwiera dialog exportu
+
+2. **Dialog exportu**
+   - **Wybór formatu**: ePub lub PDF (radio buttons)
+   - **Metadane**:
+     - Tytuł (text input)
+     - Autor (text input, domyślnie: "NARRA_FORGE")
+     - Opis (textarea)
+   - **Opcje PDF**: Checkbox "Dodaj spis treści"
+   - Przyciski: "📥 Exportuj" / "❌ Anuluj"
+
+3. **Po exportie**
+   - Wyświetla sukces i rozmiar pliku
+   - Link do pobrania pliku
+   - Lista istniejących exportów projektu
+
+4. **Lista istniejących exportów**
+   - Pokazuje wszystkie poprzednie exporty
+   - Format, wersja, rozmiar, data utworzenia
+   - Link do pobrania każdego pliku
+
+### Przykłady użycia
+
+#### Przykład 1: Export do ePub przez API
+
+```python
+import requests
+
+# Export projektu do ePub
+response = requests.post("http://localhost:8000/api/export", json={
+    "project_id": "abc-123",
+    "format": "epub",
+    "metadata": {
+        "title": "Opowieść z Przyszłości",
+        "author": "AI Narrator",
+        "description": "Mroczna opowieść science fiction o samotności w kosmosie"
+    }
+})
+
+result = response.json()
+print(f"Export utworzony: {result['file_id']}")
+print(f"Rozmiar: {result['file_size'] / 1024:.1f} KB")
+print(f"Download URL: {result['download_url']}")
+```
+
+#### Przykład 2: Export do PDF ze spisem treści
+
+```python
+# Export projektu do PDF ze spisem treści
+response = requests.post("http://localhost:8000/api/export", json={
+    "project_id": "abc-123",
+    "format": "pdf",
+    "metadata": {
+        "title": "Zbiór Opowiadań",
+        "author": "NARRA_FORGE"
+    },
+    "include_toc": True  # Dodaj spis treści
+})
+
+result = response.json()
+download_url = f"http://localhost:8000{result['download_url']}"
+print(f"Pobierz PDF: {download_url}")
+```
+
+#### Przykład 3: Lista wszystkich exportów
+
+```python
+# Pobierz listę exportów dla projektu
+response = requests.get("http://localhost:8000/api/exports/abc-123")
+exports_data = response.json()
+
+print(f"Znaleziono {exports_data['total_exports']} exportów:")
+for exp in exports_data['exports']:
+    print(f"  - {exp['format'].upper()}: {exp['size'] / 1024:.1f} KB ({exp['created_at']})")
+    print(f"    Download: {exp['download_url']}")
+```
+
+#### Przykład 4: Download pliku w Python
+
+```python
+import requests
+
+# Pobierz plik
+file_id = "abc-123_v1_epub_a1b2c3d4"
+response = requests.get(f"http://localhost:8000/api/download/{file_id}")
+
+# Zapisz lokalnie
+with open("narracja.epub", "wb") as f:
+    f.write(response.content)
+
+print(f"Pobrano: {len(response.content)} bajtów")
+```
+
+### Struktura plików
+
+```
+data/exports/
+└── abc-123_v1_epub_a1b2c3d4.epub
+└── abc-123_v1_pdf_x9y8z7w6.pdf
+└── abc-123_v2_epub_q5r6s7t8.epub
+```
+
+Nazwa pliku: `{project_id}_v{version}_{format}_{random_id}.{format}`
+
+### Formatowanie tekstu
+
+#### Akapity
+- Automatyczne wykrywanie podziału na akapity (podwójny enter)
+- Justowanie tekstu
+- Wcięcie pierwszej linii (1.5em w ePub, 20pt w PDF)
+- Brak wcięcia po nagłówkach
+
+#### Dialogi
+- Automatyczne wykrywanie (linie zaczynające się od `—`, `–`, `-`)
+- Stylowanie:
+  - ePub: Kursywa, lewe wcięcie 2em
+  - PDF: Kursywa, lewe wcięcie 1cm
+
+#### Rozdziały
+- Każdy segment narracji = osobny rozdział
+- Tytuły centrowane
+- Automatyczny page break (PDF) / nowy plik (ePub)
+
+### Najlepsze praktyki
+
+#### 1. Metadane
+- **Zawsze podawaj tytuł**: Poprawia doświadczenie czytania
+- **Autor**: Jeśli publikujesz publicznie, zmień z "NARRA_FORGE" na swoje nazwisko
+- **Opis**: Krótkie 1-2 zdania, max 300 znaków
+
+#### 2. Format
+- **ePub**: Preferuj dla:
+  - E-readerów (Kindle, Kobo)
+  - Aplikacji mobilnych
+  - Elastycznego fontu i rozmiaru
+- **PDF**: Preferuj dla:
+  - Druku fizycznego
+  - Archiwizacji
+  - Dokładnego layoutu
+
+#### 3. Spis treści
+- **ePub**: Zawsze generowany automatycznie
+- **PDF**: Włącz `include_toc=True` tylko dla dłuższych form (novella, novel)
+
+#### 4. Wersjonowanie
+- Każdy export może być z innej wersji projektu
+- Możesz wyexportować v1, v2, v3 osobno i porównać
+- Stare exporty nie są automatycznie usuwane
+
+### Ograniczenia
+
+1. **Rozmiar pliku**:
+   - ePub: ~100-500 KB dla typowej narracji
+   - PDF: ~200 KB - 2 MB (zależnie od długości)
+
+2. **Obrazy**:
+   - Brak wsparcia dla okładek (planowane w przyszłości)
+   - Brak ilustracji w tekście
+
+3. **Formatowanie zaawansowane**:
+   - Brak wsparcia dla stopek/nagłówków niestandardowych
+   - Brak stylów per-rozdział
+
+4. **Metadane**:
+   - Brak wsparcia dla ISBN, wydawcy, kategorii (można dodać ręcznie po exportie)
+
+### Troubleshooting
+
+#### Export nie działa
+```bash
+# Sprawdź czy katalog exports istnieje
+ls -la data/exports/
+
+# Sprawdź logi API
+docker-compose logs -f narra-forge-api
+```
+
+#### Plik jest uszkodzony
+- **ePub**: Zwaliduj używając https://validator.idpf.org/
+- **PDF**: Otwórz w Adobe Reader lub innym profesjonalnym czytniku
+
+#### Brak linkdownload w UI
+- Sprawdź czy API działa: `curl http://localhost:8000/health`
+- Sprawdź konsole przeglądarki (F12)
+
+#### Czcionki nie wyświetlają się poprawnie
+- **ePub**: E-reader używa własnych czcionek (to normalne)
+- **PDF**: Zainstaluj dodatkowe czcionki systemowe
 
 ---
 

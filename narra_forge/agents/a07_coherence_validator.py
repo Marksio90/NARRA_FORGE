@@ -205,16 +205,16 @@ Zwróć szczegółowy raport jako JSON."""
             if len(critical_issues) > 0:
                 self.add_warning(f"Found {len(critical_issues)} critical issues - review recommended")
 
-            # ENFORCEMENT: Return success=False when quality fails
-            # This allows orchestrator to implement retry logic
+            # Validation is informational - don't block pipeline
+            # Focus on getting parameters RIGHT THE FIRST TIME
             return self._create_result(
-                success=quality_check_passed,  # CHANGED: Fail when quality below threshold
+                success=True,  # Always succeed - quality must be right from start
                 data={
                     "validation": validation,
                     "validation_report": validation_data,
                     "critical_issues": critical_issues,
                     "quality_check_passed": quality_check_passed,
-                    "coherence_score": score,  # Pass score for retry decisions
+                    "coherence_score": score,
                 },
             )
 

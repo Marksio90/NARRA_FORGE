@@ -199,15 +199,7 @@ class BatchOrchestrator:
 
         total_start = time.time()
 
-        # Track which stage to skip (for retry loop handling)
-        skip_next_stage = False
-
         for i, stage in enumerate(stages, 1):
-            # Skip COHERENCE_VALIDATION if already handled in retry loop
-            if skip_next_stage and stage == PipelineStage.COHERENCE_VALIDATION:
-                skip_next_stage = False
-                continue
-
             if show_progress:
                 console.print(f"[cyan]⚙ Stage {i}/10:[/] {self._stage_name(stage)}")
 
@@ -216,39 +208,13 @@ class BatchOrchestrator:
 
             stage_start = time.time()
 
-            # RETRY LOOP: Handle generation + validation together
-            if stage == PipelineStage.SEQUENTIAL_GENERATION:
-                if show_progress:
-                    console.print(f"[dim]  Using retry loop (max 3 attempts)[/]")
-
-                # Build context for generation
-                gen_context = self._build_stage_context(job, stage)
-
-                # Execute with retry loop
-                success, val_result = await self._execute_generation_with_retry(
-                    job, gen_context, max_retries=3
-                )
-
-                # Mark both stages as completed
-                job.stages_completed.append(PipelineStage.SEQUENTIAL_GENERATION)
-                job.stages_completed.append(PipelineStage.COHERENCE_VALIDATION)
-
-                # Skip next stage (COHERENCE_VALIDATION) since handled in retry loop
-                skip_next_stage = True
-
-                if not success:
-                    console.print(
-                        f"[yellow]⚠  Quality below threshold even after retries - "
-                        f"continuing with best attempt[/yellow]"
-                    )
-            else:
-                # Execute stage normally
-                await self._execute_stage(job, stage)
-
-                # Mark completed
-                job.stages_completed.append(stage)
+            # Execute stage - ONE attempt with PERFECT parameters
+            await self._execute_stage(job, stage)
 
             stage_time = time.time() - stage_start
+
+            # Mark completed
+            job.stages_completed.append(stage)
             await self._save_job(job)
 
             if show_progress:
@@ -270,96 +236,6 @@ class BatchOrchestrator:
         output = await self._build_output(job, total_time)
 
         return output
-
-    async def _execute_generation_with_retry(
-        self,
-        job: ProductionJob,
-        context: Dict[str, Any],
-        max_retries: int = 3,
-    ) -> tuple[bool, Optional[Any]]:
-        """
-        Execute narrative generation with validation retry loop.
-
-        Returns:
-            (success, validation_result) tuple
-        """
-        best_attempt = None
-        best_score = 0.0
-
-        for attempt in range(1, max_retries + 1):
-            console.print(f"[dim]  Attempt {attempt}/{max_retries}[/]")
-
-            # Calculate temperature decay
-            base_temp = 0.95
-            temperature = max(0.7, base_temp - (attempt - 1) * 0.1)
-
-            # Add retry hints to context if not first attempt
-            if attempt > 1:
-                context["retry_attempt"] = attempt
-                context["retry_hints"] = {
-                    "previous_score": best_score,
-                    "temperature": temperature,
-                    "strict_mode": True,
-                    "warnings": [
-                        "AVOID purple prose - NO 'tajemniczy', 'cienie tańczyły'",
-                        "SHOW not tell - NO 'czuł', 'był smutny'",
-                        "USE strong verbs - NO 'był + adjective'",
-                        "BE concrete - specific nouns only",
-                    ],
-                }
-
-            # Execute generation
-            gen_agent = SequentialGeneratorAgent(self.config, self.memory, self.router)
-            gen_result = await gen_agent.run(context)
-
-            if not gen_result.success:
-                console.print(f"[yellow]⚠  Generation failed on attempt {attempt}[/yellow]")
-                continue
-
-            # Store generated text
-            narrative_text = gen_result.data.get("narrative_text")
-            job._narrative_text = narrative_text
-
-            # Execute validation
-            val_context = self._build_stage_context(job, PipelineStage.COHERENCE_VALIDATION)
-            val_agent = CoherenceValidatorAgent(self.config, self.memory, self.router)
-            val_result = await val_agent.run(val_context)
-
-            score = val_result.data.get("coherence_score", 0.0)
-
-            # Track best attempt
-            if score > best_score:
-                best_score = score
-                best_attempt = {
-                    "narrative_text": narrative_text,
-                    "validation": val_result,
-                    "attempt": attempt,
-                }
-
-            # Success - quality passed!
-            if val_result.success:
-                console.print(f"[green]✓ Quality passed![/] (score: {score:.2f}, attempt: {attempt})")
-                job._validation_result = val_result.data.get("validation")
-                return True, val_result
-
-            # Failed but not last attempt
-            if attempt < max_retries:
-                console.print(
-                    f"[yellow]⚠  Quality below threshold[/] "
-                    f"(score: {score:.2f}, min: {self.config.min_coherence_score})"
-                )
-
-        # All attempts exhausted - use best
-        console.print(
-            f"[yellow]⚠  Max retries reached. Using best attempt[/] "
-            f"(score: {best_score:.2f}, attempt: {best_attempt['attempt']})"
-        )
-
-        # Restore best attempt
-        job._narrative_text = best_attempt["narrative_text"]
-        job._validation_result = best_attempt["validation"].data.get("validation")
-
-        return False, best_attempt["validation"]
 
     async def _execute_stage(
         self,

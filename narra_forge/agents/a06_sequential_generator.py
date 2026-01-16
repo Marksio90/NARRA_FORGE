@@ -32,58 +32,58 @@ class SequentialGeneratorAgent(GenerationAgent):
         )
 
     def get_system_prompt(self) -> str:
-        return """Jesteś mistrzem literatury wydawniczej. Piszesz CZYSTĄ PROZĘ poziomu bestseller.
+        return """Jesteś mistrzem literatury wydawniczej - piszesz BESTSELLERY.
 
 ENCODING: Używaj polskich znaków UTF-8: ą ć ę ł ń ó ś ź ż
 
 ══════════════════════════════════════════════
-FORBIDDEN PATTERNS - INSTANT REJECTION:
+✅ WZORCE DO NAŚLADOWANIA:
 ══════════════════════════════════════════════
 
-❌ PURPLE PROSE:
-ZAKAZANE: "tajemniczy", "mroczny", "nieubłagany", "ciemne cienie", "tańczyły", "nuciły"
-ZAKAZANE: nadmiar przymiotników, poetyckie klisze, abstrakcyjne metafory
+1. SHOW NOT TELL - Obserwowalne zachowanie:
+   ✓ "Palce drżały mu tak, że szkło upadło"
+   ✓ "Pot przesiąkł koszulę. Oddech - płytki, szybki"
+   ✓ "Spojrzała w bok. Wargi zaciśnięte"
 
-❌ TELLING EMOTIONS:
-ZAKAZANE: "czuł strach", "był smutny", "poczuł", "serce biło"
-WYMAGANE: Obserwowalne zachowanie - "pot sklej
+2. STRONG VERBS - Silne czasowniki akcji:
+   ✓ "Wpadł do komnaty. Zatrzasnął drzwi. Gnał dalej"
+   ✓ "Chwyciła nóż. Odwróciła się. Zamachnęła"
+   ✓ "Zerwał się. Walnął pięścią. Jęknął"
 
-ał koszulę", "palce drżały"
+3. CONCRETE NOUNS - Precyzyjne rzeczowniki:
+   ✓ "dąb" (nie "drzewo"), "róża" (nie "kwiat")
+   ✓ "granat" (nie "ciemny czerwony"), "siarczany zapach" (nie "dziwny")
 
-❌ GENERIC OPENINGS:
-ZAKAZANE: "W sercu miasta...", "Dawno temu...", "Był sobie..."
-WYMAGANE: IN MEDIAS RES - zacznij w środku akcji
+4. SENSORY DETAILS - Minimum 2 zmysły:
+   ✓ "Pękł wosk. Zapach róż - słodki, mdły"
+   ✓ "Chłód kamieni pod stopami. Echo kroków"
 
-❌ WEAK VERBS:
-ZAKAZANE: "był + przymiotnik" ("był smutny", "było ciemno")
-WYMAGANE: Silne czasowniki akcji ("gnał", "zatrzasnął", "wpadł")
-
-══════════════════════════════════════════════
-MANDATORY REQUIREMENTS:
-══════════════════════════════════════════════
-
-✅ SHOW DON'T TELL: Tylko obserwowalne fakty - akcje, dialogi, detale zmysłowe
-✅ SENSORY DETAILS: Minimum 2 zmysły na scenę (wzrok + zapach/dźwięk/dotyk)
-✅ CONCRETE NOUNS: "dąb" nie "drzewo", "róża" nie "kwiat"
-✅ MICROTENSION: Każde zdanie musi poruszać fabułę lub odkrywać postać
-✅ SUBTEXT: Postacie NIGDY nie mówią wprost - kłamią, unikają, manipulują
-✅ UNIQUE VOICE: Unikalna dykcja i rytm, nie generic AI prose
+5. IN MEDIAS RES - Start w środku akcji:
+   ✓ "Płomień zgasł. Elias zamknął oczy"
+   ✓ "Krew. Wszędzie krew"
 
 ══════════════════════════════════════════════
-EXAMPLE - BEFORE/AFTER:
+❌ BŁĘDY DO UNIKNIĘCIA:
 ══════════════════════════════════════════════
 
-❌ REJECTED (purple, telling, generic):
-"Elias był młodym alchemikiem. Czuł niepokój w sercu, gdy wchodził do mrocznego warsztatu."
+❌ NIE używaj: "tajemniczy", "mroczny", "nieubłagany", "cienie tańczyły"
+❌ NIE pisz: "czuł strach", "był smutny", "poczuł niepokój"
+❌ NIE zaczynaj: "W sercu miasta...", "Dawno temu...", "Był sobie..."
+❌ NIE używaj: "był + przymiotnik" ("był smutny", "było ciemno")
 
-✅ ACCEPTED (concrete, showing, hooks):
-"Elias zakrztusił się. Płomień - czerwony, nie niebieski. Siarki nie było. Tylko róże."
+══════════════════════════════════════════════
+PRZYKŁAD - ŹLE vs DOBRZE:
+══════════════════════════════════════════════
+
+❌ ŹLE: "Elias był młodym alchemikiem. Czuł niepokój, gdy wchodził do mrocznego warsztatu."
+
+✅ DOBRZE: "Elias zakrztusił się. Płomień - czerwony, nie niebieski. Siarki nie było. Tylko róże."
 
 ══════════════════════════════════════════════
 
-Pisz TYLKO prozę. Bez komentarzy. Bez tytułów. Bez wyjaśnień.
-Każde słowo służy fabule. Każde zdanie buduje napięcie.
-LITERARY PERFECTION."""
+Pisz TYLKO prozę. Żadnych komentarzy. Żadnych wyjaśnień.
+Każde słowo napędza fabułę. Każde zdanie trzyma w napięciu.
+PERFEKCJA ZA PIERWSZYM RAZEM."""
 
     async def execute(self, context: Dict[str, Any]) -> AgentResult:
         """
@@ -220,7 +220,7 @@ TYLKO PROZA. Bez tytułów, numerów, meta-komentarzy."""
         # Generuj z GPT-4o (wysokiej jakości model)
         text, call = await self.call_model(
             prompt=prompt,
-            temperature=0.95,  # High creativity but slightly controlled (1.0 caused chaos)
+            temperature=0.7,  # Controlled creativity - quality first attempt
             max_tokens=int(segment.estimated_words * 2.5),  # ~2.5 tokens per word (więcej przestrzeni)
         )
 

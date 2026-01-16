@@ -48,6 +48,10 @@ setup(
             "ruff>=0.7.0",
             "mypy>=1.13.0",
         ],
+        "monitoring": [
+            "prometheus-client>=0.20.0",
+            "structlog>=24.1.0",
+        ],
     },
     entry_points={
         "console_scripts": [

@@ -163,10 +163,29 @@ Zwróć TYLKO poprawiony tekst. Bez komentarzy, bez wyjaśnień."""
         stylized, call = await self.call_model(
             prompt=prompt,
             temperature=0.3,  # LOW - only grammar fixes, no creativity
-            max_tokens=len(text.split()) * 2,  # ~2 tokens per word
+            max_tokens=len(text.split()) * 3,  # ~3 tokens per word (Polish needs more!)
         )
 
-        return stylized.strip()
+        stylized_clean = stylized.strip()
+
+        # CHECK: Detect potential cutoff
+        input_words = len(text.split())
+        output_words = len(stylized_clean.split())
+
+        # If output is significantly shorter (>10% loss), warn about potential cutoff
+        if output_words < input_words * 0.9:
+            self.add_warning(
+                f"⚠️  POTENTIAL CUTOFF: Input {input_words}w → Output {output_words}w "
+                f"({((input_words - output_words) / input_words * 100):.1f}% loss)"
+            )
+
+        # Check if text ends mid-sentence (no proper ending punctuation)
+        if stylized_clean and stylized_clean[-1] not in '.!?"':
+            self.add_warning(
+                f"⚠️  TEXT ENDS ABRUPTLY: Last char is '{stylized_clean[-1]}' (not sentence ending)"
+            )
+
+        return stylized_clean
 
     async def _stylize_in_chunks(self, text: str) -> list[str]:
         """Stylizuj długi tekst w częściach"""

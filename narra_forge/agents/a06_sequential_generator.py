@@ -296,6 +296,23 @@ TYLKO PROZA. Bez tytułów, numerów, meta-komentarzy."""
         generation_time = time.time() - start_time
         word_count = len(text.split())
 
+        # CHECK: Detect incomplete generation
+        text_clean = text.strip()
+
+        # Warn if text is significantly shorter than estimated
+        if word_count < segment.estimated_words * 0.7:
+            self.add_warning(
+                f"⚠️  SEGMENT {segment_number}: Generated {word_count}w, "
+                f"expected ~{segment.estimated_words}w "
+                f"({(word_count / segment.estimated_words * 100):.1f}% of target)"
+            )
+
+        # Warn if text ends abruptly (no proper ending)
+        if text_clean and text_clean[-1] not in '.!?"':
+            self.add_warning(
+                f"⚠️  SEGMENT {segment_number} CUTOFF: Last char is '{text_clean[-1]}' (incomplete!)"
+            )
+
         generated_segment = GeneratedSegment(
             segment=segment,
             text=text,

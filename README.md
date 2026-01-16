@@ -7,8 +7,8 @@
 [![Python](https://img.shields.io/badge/python-3.11+-green.svg)](README.md)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20Only-orange.svg)](README.md)
 [![Tests](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/badge/coverage-80.5%25-brightgreen.svg)](README.md)
-[![Tests Passing](https://img.shields.io/badge/tests-254%20passing-success.svg)](README.md)
+[![Coverage](https://img.shields.io/badge/coverage-86.5%25-brightgreen.svg)](README.md)
+[![Tests Passing](https://img.shields.io/badge/tests-279%20passing-success.svg)](README.md)
 
 ---
 
@@ -81,21 +81,25 @@ Zaimplementowano:
 - ✅ **Orchestrator**: 36.68% → 82.97% (+46pp)
 - ✅ **Memory Modules**: 48% → 100% (semantic, evolutionary)
 - ✅ **Architecture Agents**: 32-37% → 90%+ (a02-a05)
-- ✅ **Overall Coverage**: 67.50% → **80.48%** 🎯
-- ✅ **Test Suite**: 191 → **254 testów**
+- ✅ **CLI**: 0% → **100%** (+100pp!) 🚀
+- ✅ **Overall Coverage**: 67.50% → **86.45%** 🎯
+- ✅ **Test Suite**: 191 → **279 testów**
 
 **Pokrycie testami:**
 - 24 testy pipeline orchestratora
 - 26 testów memory modules
 - 13 testów architecture agents
+- 25 testów CLI (interactive, direct, list-jobs modes)
 - Pełna walidacja error handling
 - Testy integracyjne E2E
+
+**10 modułów z 100% coverage!**
 
 ### 📅 FAZA 4: OPTIMIZATION & SCALING
 
 - [ ] Performance optimization & benchmarking
-- [ ] Advanced monitoring dashboards
-- [ ] CLI enhancement (0% → 60%+)
+- [ ] Advanced monitoring dashboards (Grafana)
+- [ ] Dociągnięcie coverage do 90%+
 - [ ] Load testing & stress tests
 
 ---
@@ -343,19 +347,20 @@ collector.quality_score.labels(
 ### 🔬 Testing & Quality
 
 **Test Suite:**
-- **254 tests** passing (unit, integration, E2E) ✅
-- **80.48% code coverage** (cel osiągnięty!) 🎯
+- **279 tests** passing (unit, integration, E2E) ✅
+- **86.45% code coverage** 🎯
 - **CI/CD** with GitHub Actions
-- **100% coverage**: 2 moduły (semantic, evolutionary memory)
+- **100% coverage**: **10 modułów** (CLI, types, memory, init modules)
 - **90%+ coverage**: 5 agentów (a02, a03, a04, a05, a06)
 - **82% coverage**: Orchestrator
 
 **Test categories:**
-- Unit tests: Agents, models, utils, memory
+- Unit tests: Agents, models, utils, memory, CLI
 - Integration tests: Pipeline, memory, orchestrator
 - E2E tests: Full brief→narrative pipeline
 - Monitoring tests: Prometheus metrics
 - Architecture tests: World/Character/Structure/Segment design
+- CLI tests: Interactive, direct, list-jobs modes
 
 Run tests:
 ```bash

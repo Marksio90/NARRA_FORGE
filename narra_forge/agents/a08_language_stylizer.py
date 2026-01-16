@@ -132,7 +132,7 @@ Zwróć TYLKO zrafinowany tekst. Bez komentarzy, bez wyjaśnień."""
 
         stylized, call = await self.call_model(
             prompt=prompt,
-            temperature=0.9,  # QUALITY-FIRST: Higher creativity for GPT-4o stylization
+            temperature=0.7,  # Controlled - avoid purple prose
             max_tokens=len(text.split()) * 2,  # ~2 tokens per word
         )
 

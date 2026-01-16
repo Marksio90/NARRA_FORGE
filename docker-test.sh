@@ -31,10 +31,16 @@ docker-compose build narra_forge
 echo "✓ Image built"
 echo ""
 
-# Run tests
-echo "Running test suite..."
-docker-compose run --rm narra_forge_test
+# Run tests (using test profile)
+echo "Running pytest test suite..."
+docker-compose --profile test run --rm narra_forge_test
 echo "✓ Tests passed"
+echo ""
+
+# Optional: Run quick example
+echo "Running quick example (example_basic.py)..."
+docker-compose run --rm narra_forge python example_basic.py
+echo "✓ Example completed"
 echo ""
 
 echo "═══════════════════════════════════════════"

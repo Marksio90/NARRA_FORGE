@@ -38,6 +38,11 @@ COPY --from=dependencies /usr/local/bin /usr/local/bin
 COPY narra_forge/ /app/narra_forge/
 COPY setup.py pyproject.toml README.md /app/
 
+# Copy examples
+COPY example_basic.py /app/
+COPY examples/ /app/examples/
+COPY tests/ /app/tests/
+
 # Install application
 RUN pip install -e .
 

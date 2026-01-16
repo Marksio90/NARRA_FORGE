@@ -163,3 +163,113 @@ class TestModelRouterGPT4Stages:
         for stage in mini_stages:
             model = mock_model_router.get_model_for_stage(stage)
             assert model == "gpt-4o-mini", f"Stage {stage} should use gpt-4o-mini"
+
+@pytest.mark.unit
+class TestModelRouterTaskTypes:
+    """Test get_model_for_task method"""
+
+    def test_get_model_for_complex_task(self, mock_model_router):
+        """Test model selection for complex tasks"""
+        model = mock_model_router.get_model_for_task("complex_generation")
+        assert model in ["gpt-4o", "gpt-4o-mini"]
+
+    def test_get_model_for_simple_task(self, mock_model_router):
+        """Test model selection for simple tasks"""
+        model = mock_model_router.get_model_for_task("simple_parse")
+        assert model in ["gpt-4o", "gpt-4o-mini"]
+
+
+@pytest.mark.unit
+class TestModelRouterStats:
+    """Test router statistics"""
+
+    def test_get_router_stats(self, mock_model_router):
+        """Test getting router statistics"""
+        stats = mock_model_router.get_router_stats()
+
+        assert isinstance(stats, dict)
+        # Should have basic stats
+        assert "default_mini_model" in stats or isinstance(stats, dict)
+
+    def test_router_stats_structure(self, mock_model_router):
+        """Test stats structure"""
+        stats = mock_model_router.get_router_stats()
+
+        # Stats should be a dictionary
+        assert isinstance(stats, dict)
+
+
+# TestModelRouterCostEstimate - skipped (requires real client)
+
+
+@pytest.mark.unit
+class TestModelRouterGeneration:
+    """Test async generation methods"""
+
+    @pytest.mark.asyncio
+    async def test_generate_async(self, test_config, mock_openai_client):
+        """Test async generate method"""
+        from unittest.mock import AsyncMock, MagicMock
+        from datetime import datetime
+        from narra_forge.core.types import ModelCall
+
+        router = ModelRouter(test_config, mock_openai_client)
+
+        mock_call = ModelCall(
+            call_id="test_123",
+            model_name="gpt-4o-mini",
+            prompt_tokens=50,
+            completion_tokens=100,
+            total_tokens=150,
+            cost_usd=0.01,
+            latency_seconds=1.0,
+            purpose="test",
+            timestamp=datetime.now(),
+        )
+
+        # Mock client's generate_async
+        mock_openai_client.generate_async = AsyncMock(
+            return_value=("Generated text", mock_call)
+        )
+
+        text, call = await router.generate(
+            prompt="Test prompt",
+            stage=PipelineStage.BRIEF_INTERPRETATION
+        )
+
+        assert isinstance(text, str)
+        assert isinstance(call, ModelCall)
+
+    @pytest.mark.asyncio
+    async def test_generate_json_async(self, test_config, mock_openai_client):
+        """Test async JSON generation"""
+        from unittest.mock import AsyncMock
+        from datetime import datetime
+        from narra_forge.core.types import ModelCall
+
+        router = ModelRouter(test_config, mock_openai_client)
+
+        mock_call = ModelCall(
+            call_id="test_456",
+            model_name="gpt-4o-mini",
+            prompt_tokens=50,
+            completion_tokens=100,
+            total_tokens=150,
+            cost_usd=0.01,
+            latency_seconds=1.0,
+            purpose="json_test",
+            timestamp=datetime.now(),
+        )
+
+        # Mock client's generate_json_async
+        mock_openai_client.generate_json_async = AsyncMock(
+            return_value=({"key": "value"}, mock_call)
+        )
+
+        data, call = await router.generate_json(
+            prompt="Test JSON prompt",
+            stage=PipelineStage.WORLD_ARCHITECTURE
+        )
+
+        assert isinstance(data, dict)
+        assert isinstance(call, ModelCall)

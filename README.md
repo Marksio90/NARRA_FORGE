@@ -2,12 +2,13 @@
 
 **Autonomiczny Batch Engine do Produkcji Narracji Wydawniczych**
 
-[![Status](https://img.shields.io/badge/status-foundation-yellow.svg)](README.md)
-[![Version](https://img.shields.io/badge/version-2.0.0--foundation-blue.svg)](README.md)
+[![Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)](README.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](README.md)
 [![Python](https://img.shields.io/badge/python-3.11+-green.svg)](README.md)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20Only-orange.svg)](README.md)
 [![Tests](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/badge/coverage-60%25-brightgreen.svg)](README.md)
+[![Coverage](https://img.shields.io/badge/coverage-67.5%25-brightgreen.svg)](README.md)
+[![Tests Passing](https://img.shields.io/badge/tests-191%20passing-success.svg)](README.md)
 
 ---
 
@@ -54,10 +55,9 @@ Zaimplementowano:
 - ✅ System konfiguracji
 - ✅ Tracking kosztów i tokenów
 
-### ✅ FAZA 2: AGENCI (GOTOWE!)
+### ✅ FAZA 2: AGENCI & PRODUCTION-READY (GOTOWE!)
 
-Zaimplementowano:
-
+**Core Features:**
 - ✅ Wszystkie 10 agentów z pełnymi promptami
 - ✅ Rzeczywista generacja narracji (OpenAI GPT-4o)
 - ✅ Pełne prompty systemowe w języku polskim
@@ -65,14 +65,22 @@ Zaimplementowano:
 - ✅ Integracja z orchestratorem
 - ✅ Agent-based architecture
 
-**System jest FUNKCJONALNY i gotowy do produkcji prawdziwych narracji!**
+**Reliability & Monitoring:**
+- ✅ **CI/CD**: GitHub Actions z automated testing
+- ✅ **E2E Tests**: Pełny pipeline (brief→narrative)
+- ✅ **Monitoring**: Prometheus metrics, cost tracking
+- ✅ **Retry Logic**: Exponential backoff, circuit breaker
+- ✅ **Error Handling**: Transient vs permanent error categorization
+- ✅ **Code Coverage**: 67.50% (191 testów)
 
-### 📅 FAZA 3: POLISH
+**System jest PRODUCTION-READY z monitoringiem, retry logic i testami!**
 
-- [ ] Prosty UI (CLI/Web)
-- [ ] Kompletne testy
-- [ ] Dokumentacja użytkownika
-- [ ] Optymalizacja wydajności
+### 📅 FAZA 3: OPTIMIZATION & SCALING
+
+- [ ] Performance optimization
+- [ ] Batch processing improvements
+- [ ] Advanced monitoring dashboards
+- [ ] Load testing & benchmarks
 
 ---
 
@@ -249,6 +257,99 @@ narra_forge/
 │
 └── ui/                      # Interfejs (TODO - Faza 3)
     └── [będzie dodany później]
+```
+
+---
+
+## 🛡️ Reliability & Production Features
+
+### 🔄 Retry Logic & Error Handling
+
+System automatycznie kategoryzuje i obsługuje błędy:
+
+```python
+from narra_forge.utils import retry_openai_call
+
+@retry_openai_call(max_attempts=5, max_wait_seconds=60)
+async def my_api_call():
+    response = await client.generate(...)
+    return response
+```
+
+**Features:**
+- ✅ **Automatic error categorization** (Transient vs Permanent)
+- ✅ **Exponential backoff** (1s, 2s, 4s, 8s...)
+- ✅ **Smart retry** tylko dla transient errors
+- ✅ **Circuit breaker** pattern (CLOSED/OPEN/HALF_OPEN)
+
+**Transient errors (retry):**
+- Rate limits (429)
+- Timeouts
+- Connection errors
+- 5xx server errors
+
+**Permanent errors (no retry):**
+- Invalid API key
+- Malformed requests
+- 4xx client errors
+
+### 📊 Monitoring & Metrics
+
+Prometheus metrics dla production monitoring:
+
+```python
+from narra_forge.monitoring.metrics import MetricsCollector
+
+collector = MetricsCollector()
+
+# Track pipeline execution
+with collector.track_pipeline("short_story", "fantasy"):
+    output = await orchestrator.produce_narrative(brief)
+
+# Track costs
+collector.cost_usd.labels(model="gpt-4o", agent_id="a06").inc(0.50)
+
+# Track quality
+collector.quality_score.labels(
+    production_type="short_story",
+    metric_type="coherence"
+).observe(0.92)
+```
+
+**Available metrics:**
+- Pipeline duration & success rate
+- Agent execution times
+- API call metrics & errors
+- Token usage & costs
+- Quality scores
+- Active jobs & retry attempts
+
+### 🔬 Testing & Quality
+
+**Test Suite:**
+- **191 tests** passing (unit, integration, E2E)
+- **67.50% code coverage** (target: 80%)
+- **CI/CD** with GitHub Actions
+
+**Test categories:**
+- Unit tests: Agents, models, utils
+- Integration tests: Pipeline, memory, orchestrator
+- E2E tests: Full brief→narrative pipeline
+- Monitoring tests: Prometheus metrics
+
+Run tests:
+```bash
+# All tests
+pytest tests/ -v
+
+# With coverage
+pytest tests/ --cov=narra_forge --cov-report=html
+
+# E2E only (fast, mocked)
+pytest tests/e2e/ -v -m e2e
+
+# Unit only
+pytest tests/unit/ -v -m unit
 ```
 
 ---

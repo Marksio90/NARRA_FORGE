@@ -185,6 +185,16 @@ class MemoryStorage:
                     return dict(row)
                 return None
 
+    async def list_worlds(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """List all worlds (for programmatic API)"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM worlds ORDER BY updated_at DESC LIMIT ?", (limit,)
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(row) for row in rows]
+
     async def save_character(self, character: Dict[str, Any]) -> None:
         """Save or update character"""
         async with aiosqlite.connect(self.db_path) as db:

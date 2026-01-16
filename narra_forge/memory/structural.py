@@ -110,6 +110,35 @@ class StructuralMemory:
             linked_worlds=json.loads(world_dict.get("linked_worlds", "[]")),
         )
 
+    async def list_worlds(self, limit: int = 100) -> List[World]:
+        """List all worlds (for programmatic API)"""
+        from narra_forge.core.types import Genre, RealityLaws, WorldBoundaries
+        import json
+
+        world_dicts = await self.storage.list_worlds(limit)
+        worlds = []
+
+        for world_dict in world_dicts:
+            try:
+                world = World(
+                    world_id=world_dict["world_id"],
+                    name=world_dict["name"],
+                    genre=Genre(world_dict["genre"]),
+                    reality_laws=RealityLaws(**json.loads(world_dict["reality_laws"])),
+                    boundaries=WorldBoundaries(**json.loads(world_dict["boundaries"])),
+                    anomalies=json.loads(world_dict["anomalies"]),
+                    core_conflict=world_dict["core_conflict"],
+                    existential_theme=world_dict["existential_theme"],
+                    description=world_dict.get("description"),
+                    linked_worlds=json.loads(world_dict.get("linked_worlds", "[]")),
+                )
+                worlds.append(world)
+            except Exception:
+                # Skip corrupted worlds
+                continue
+
+        return worlds
+
     async def create_character(
         self,
         world_id: str,

@@ -6,6 +6,7 @@ Odpowiedzialność:
 - Wychwytywanie drobnych błędów
 - Sprawdzanie flow narracji
 - Finalne cięcia i poprawki
+- QUALITY CONTROL: Cliché detection & repetition analysis
 
 Model: gpt-4o-mini (może oceniać i sugerować bez bycia najlepszym)
 """
@@ -13,6 +14,7 @@ from typing import Any, Dict, List
 
 from narra_forge.agents.base_agent import AnalysisAgent
 from narra_forge.core.types import AgentResult, PipelineStage
+from narra_forge.utils.text_utils import analyze_text_quality
 
 
 class EditorialReviewerAgent(AnalysisAgent):
@@ -130,6 +132,31 @@ Oceniaj SUROWO. Znajduj KAŻDY problem. Myśl jak WYDAWCA."""
             self.add_error("No text to review in context")
             return self._create_result(success=False, data={})
 
+        # ═══════════════════════════════════════════
+        # QUALITY CONTROL: Run cliché & repetition analysis FIRST
+        # ═══════════════════════════════════════════
+        quality_analysis = analyze_text_quality(text)
+
+        # Log quality issues
+        if quality_analysis['cliches']:
+            self.add_warning(f"⚠️  CLICHÉS DETECTED ({len(quality_analysis['cliches'])} types):")
+            for cliche_info in quality_analysis['cliches'][:5]:  # Show first 5
+                self.add_warning(f"  - '{cliche_info['cliche']}' używane {cliche_info['count']}x")
+
+        if quality_analysis['repetitions']['high_risk']:
+            self.add_warning("⚠️  HIGH-RISK REPETITIONS:")
+            for issue in quality_analysis['repetitions']['high_risk']:
+                self.add_warning(f"  - {issue}")
+
+        if quality_analysis['repetitions']['warnings']:
+            self.add_warning("⚠️  REPETITION WARNINGS:")
+            for warning in quality_analysis['repetitions']['warnings']:
+                self.add_warning(f"  - {warning}")
+
+        # Overall quality score
+        quality_score = quality_analysis['quality_score']
+        self.add_warning(f"📊 Quality Score: {quality_score:.2f}/1.0 (clichés & repetitions)")
+
         # Dla bardzo długich tekstów - próbkuj
         words = text.split()
         if len(words) > 12000:
@@ -194,6 +221,11 @@ Zwróć szczegółowy raport redakcyjny jako JSON."""
                     "issues_count": len(issues),
                     "critical_issues": critical,
                     "final_text": final_text,  # In future, might apply fixes
+                    # Quality control data
+                    "quality_analysis": quality_analysis,
+                    "quality_score": quality_score,
+                    "cliches_detected": len(quality_analysis['cliches']),
+                    "high_risk_repetitions": len(quality_analysis['repetitions']['high_risk']),
                 },
             )
 

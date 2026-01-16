@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""
+NARRA_FORGE CLI Entry Point
+
+Simple wrapper to run the CLI.
+"""
+import sys
+from narra_forge.cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())

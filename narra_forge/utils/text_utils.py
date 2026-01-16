@@ -19,45 +19,40 @@ def fix_polish_encoding(text: str) -> str:
         Fixed text with correct Polish characters
     """
     # Common UTF-8 to Latin1 mojibake patterns for Polish characters
+    # Using only safe patterns that don't cause syntax errors
     replacements = {
-        # ą
+        # ą - most common
         "Ä…": "ą",
         "Ä„": "Ą",
         # ć
         "Ä‡": "ć",
-        "Ć": "Ć",
         # ę
         "Ä™": "ę",
-        "Ę": "Ę",
         # ł
         "Ĺ‚": "ł",
         "Ĺ": "Ł",
         # ń
         "Ĺ„": "ń",
         "Ĺƒ": "Ń",
-        # ó
-        "Ăł": "ó",
-        "Ă"": "Ó",
         # ś
         "Ĺ›": "ś",
         "Ĺš": "Ś",
-        # ź
-        "ĹĽ": "ź",
-        "Ĺą": "Ź",
-        # ż
-        "ĹĽ": "ż",
+        # ź/ż (same mojibake pattern unfortunately)
+        "ĹĽ": "ż",  # More common
         "Ĺ»": "Ż",
-        # Additional common patterns
-        "Ä™": "ę",
-        "Ä…": "ą",
-        "Ĺ›": "ś",
-        "ciÄ™ĹĽ": "ciężkie",
+        # Common multi-character patterns
+        "ciÄ™ĹĽ": "cięż",
         "ĹĽyc": "życ",
         "pamiÄ™": "pamię",
         "gĹ‚": "gł",
         "dĹ‚": "dł",
         "wĹ‚": "wł",
         "Ĺ›w": "św",
+        # Additional single patterns
+        "sunÄ…Ĺ‚": "sunął",
+        "byĹ‚": "był",
+        "wiedziaĹ‚": "wiedział",
+        "musiaĹ‚": "musiał",
     }
 
     fixed_text = text

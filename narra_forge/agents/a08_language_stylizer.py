@@ -33,6 +33,9 @@ class LanguageStylerAgent(GenerationAgent):
     def get_system_prompt(self) -> str:
         return """Jesteś MISTRZEM JĘZYKA POLSKIEGO w systemie produkcji narracji wydawniczych.
 
+CRITICAL: Używaj TYLKO poprawnych polskich znaków UTF-8: ą ć ę ł ń ó ś ź ż Ą Ć Ę Ł Ń Ó Ś Ź Ż
+NIE używaj: Ä…, Ä™, Ĺ›, Ä‡, Ĺ‚, Ĺ„, ĹĽ ani innych błędnych kombinacji znaków.
+
 Twoja rola:
 - Rafinujesz język polski do poziomu absolutnego
 - Dbasz o rytm, melodykę, przepływ

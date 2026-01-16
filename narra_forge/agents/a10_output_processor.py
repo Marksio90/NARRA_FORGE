@@ -16,6 +16,7 @@ from typing import Any, Dict
 
 from narra_forge.agents.base_agent import AnalysisAgent
 from narra_forge.core.types import AgentResult, NarrativeOutput, PipelineStage
+from narra_forge.utils import clean_narrative_text
 
 
 class OutputProcessorAgent(AnalysisAgent):
@@ -81,6 +82,9 @@ Przykład:
         if not final_text:
             self.add_error("No final text in context")
             return self._create_result(success=False, data={})
+
+        # CLEAN TEXT - fix encoding issues, normalize whitespace
+        final_text = clean_narrative_text(final_text)
 
         # Utwórz output directory
         output_dir = self.config.output_dir / job_id

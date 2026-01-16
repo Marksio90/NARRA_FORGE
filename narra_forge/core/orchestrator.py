@@ -254,6 +254,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job._analyzed_brief = result.data.get("analyzed_brief")
 
         elif stage == PipelineStage.WORLD_ARCHITECTURE:
@@ -261,6 +266,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job.world = result.data.get("world")
 
         elif stage == PipelineStage.CHARACTER_ARCHITECTURE:
@@ -268,6 +278,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job.characters = result.data.get("characters", [])
 
         elif stage == PipelineStage.STRUCTURE_DESIGN:
@@ -275,6 +290,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job.structure = result.data.get("structure")
 
         elif stage == PipelineStage.SEGMENT_PLANNING:
@@ -282,6 +302,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job.segments = result.data.get("segments", [])
 
         elif stage == PipelineStage.SEQUENTIAL_GENERATION:
@@ -289,6 +314,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job._narrative_text = result.data.get("narrative_text")
 
         elif stage == PipelineStage.COHERENCE_VALIDATION:
@@ -304,6 +334,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job._stylized_text = result.data.get("stylized_text")
 
         elif stage == PipelineStage.EDITORIAL_REVIEW:
@@ -322,6 +357,11 @@ class BatchOrchestrator:
             result = await agent.run(context)
 
             if result.success:
+        else:
+        else:
+            if result.errors:
+                console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
+            console.print(f"[yellow]⚠  {self.__class__.__name__} failed: {result.errors}[/yellow]")
                 job.output = result.data.get("output")
 
         else:

@@ -6,6 +6,8 @@
 [![Version](https://img.shields.io/badge/version-2.0.0--foundation-blue.svg)](README.md)
 [![Python](https://img.shields.io/badge/python-3.11+-green.svg)](README.md)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20Only-orange.svg)](README.md)
+[![Tests](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Marksio90/NARRA_FORGE/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-60%25-brightgreen.svg)](README.md)
 
 ---
 

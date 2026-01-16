@@ -385,6 +385,23 @@ class BatchOrchestrator:
         if hasattr(job, '_final_text'):
             context["final_text"] = job._final_text
 
+        # Add validation results and metrics for final stages
+        if hasattr(job, '_validation_result'):
+            validation = job._validation_result
+            context["quality_metrics"] = {
+                "coherence_score": validation.coherence_score,
+                "logical_consistency": validation.logical_consistency,
+                "psychological_consistency": validation.psychological_consistency,
+                "temporal_consistency": validation.temporal_consistency,
+                "passed": validation.passed,
+                "issues_count": len(validation.issues),
+            }
+
+        # Add cost and token tracking for OutputProcessor
+        context["total_cost"] = job.cost_usd
+        context["total_tokens"] = job.tokens_used
+        context["started_at"] = job.started_at
+
         return context
 
     def _handle_editorial_issues(self, result):
@@ -400,8 +417,10 @@ class BatchOrchestrator:
     ) -> NarrativeOutput:
         """Build final NarrativeOutput from job results"""
 
-        # If output was already built by OutputProcessorAgent, return it
+        # If output was already built by OutputProcessorAgent, update timing and return
         if job.output:
+            # Update generation_time with actual total_time (OutputProcessor doesn't know it)
+            job.output.generation_time_seconds = total_time
             return job.output
 
         # Otherwise, build a minimal output (fallback)

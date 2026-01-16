@@ -31,40 +31,44 @@ class LanguageStylerAgent(GenerationAgent):
         )
 
     def get_system_prompt(self) -> str:
-        return """Rafinujesz PROZĘ do doskonałości językowej. TREŚĆ niezmieniona, FORMA perfekcyjna.
+        return """Polish language PERFECTION. Minimal changes, maximum quality.
 
 ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 
 ══════════════════════════════════════════════
-FORBIDDEN - INSTANT REJECTION:
+YOUR JOB: Fix ONLY language mistakes
 ══════════════════════════════════════════════
 
-❌ Przepisywanie fabuły lub zmienianie wydarzeń
-❌ Pleonazmy: "niebieski kolor", "wstał z pozycji siedzącej"
-❌ Anglicyzmy: "realizować", "absolutnie"
-❌ Weak verbs: "był smutny", "była ciemna"
-❌ Generic nouns: "drzewo" (zamiast "dąb"), "kwiat" (zamiast "róża")
+✅ FIX grammatical errors (wrong cases, verb forms)
+✅ FIX pleonasms ("niebieski kolor" → "niebieski")
+✅ FIX anglicisms ("realizować" → "urzeczywistniać")
+✅ FIX euphony (clumsy Polish word order)
+
+❌ DO NOT change story, plot, events, characters
+❌ DO NOT add adjectives or adverbs
+❌ DO NOT add "poetic" language
+❌ DO NOT rewrite - only POLISH GRAMMAR
 
 ══════════════════════════════════════════════
-MANDATORY OPERATIONS:
+CRITICAL: PRESERVE THE ORIGINAL STYLE
 ══════════════════════════════════════════════
 
-✅ KILL WEAK VERBS: "był smutny" → "pogrążył się", "szedł" → "pędził/sunął/mknął"
-✅ SENSORY PRECISION: "drzewo"→"dąb", "zimno"→"mróz kąsał", "cicho"→"wyszeptał"
-✅ VARIUJ RYTM: Napięcie=krótko. Refleksja=długo. Kulminacja=jedno.słowo.per.zdanie.
-✅ POLISH PERFECTION: Dopełniacz po negacji, zero anglicyzmów, euphonia
+If text is already good → change NOTHING
+If text is minimal and punchy → KEEP IT MINIMAL
+If text uses short sentences → KEEP THEM SHORT
+
+Example:
+ORIGINAL: "Płomień zgasł. Elias zamknął oczy."
+POLISHED: "Płomień zgasł. Elias zamknął oczy." (NO CHANGE - already perfect!)
+
+Example:
+ORIGINAL: "Elias realizował swój plan"
+POLISHED: "Elias urzeczywistniał swój plan" (fixed anglicism)
 
 ══════════════════════════════════════════════
-EXAMPLE:
-══════════════════════════════════════════════
 
-❌ BEFORE: "Elias był przestraszony. Szedł wolno."
-✅ AFTER: "Lęk ściskał Eliasowi gardło. Sunął ostrożnie."
-
-══════════════════════════════════════════════
-
-Rafinuj TYLKO język. Zachowaj fabułę, ton, atmosferę.
-FORMA doskonała. TREŚĆ nietknięta."""
+MINIMAL INTERVENTION. MAXIMUM RESPECT for original prose.
+Only fix GRAMMAR and POLISH LANGUAGE mistakes."""
 
     async def execute(self, context: Dict[str, Any]) -> AgentResult:
         """
@@ -132,7 +136,7 @@ Zwróć TYLKO zrafinowany tekst. Bez komentarzy, bez wyjaśnień."""
 
         stylized, call = await self.call_model(
             prompt=prompt,
-            temperature=0.7,  # Controlled - avoid purple prose
+            temperature=0.3,  # LOW - only grammar fixes, no creativity
             max_tokens=len(text.split()) * 2,  # ~2 tokens per word
         )
 

@@ -255,6 +255,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job._analyzed_brief = result.data.get("analyzed_brief")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.WORLD_ARCHITECTURE:
             agent = WorldArchitectAgent(self.config, self.memory, self.router)
@@ -262,6 +265,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job.world = result.data.get("world")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.CHARACTER_ARCHITECTURE:
             agent = CharacterArchitectAgent(self.config, self.memory, self.router)
@@ -269,6 +275,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job.characters = result.data.get("characters", [])
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.STRUCTURE_DESIGN:
             agent = StructureDesignerAgent(self.config, self.memory, self.router)
@@ -276,6 +285,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job.structure = result.data.get("structure")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.SEGMENT_PLANNING:
             agent = SegmentPlannerAgent(self.config, self.memory, self.router)
@@ -283,6 +295,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job.segments = result.data.get("segments", [])
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.SEQUENTIAL_GENERATION:
             agent = SequentialGeneratorAgent(self.config, self.memory, self.router)
@@ -290,6 +305,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job._narrative_text = result.data.get("narrative_text")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.COHERENCE_VALIDATION:
             agent = CoherenceValidatorAgent(self.config, self.memory, self.router)
@@ -305,6 +323,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job._stylized_text = result.data.get("stylized_text")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         elif stage == PipelineStage.EDITORIAL_REVIEW:
             agent = EditorialReviewerAgent(self.config, self.memory, self.router)
@@ -323,6 +344,9 @@ class BatchOrchestrator:
 
             if result.success:
                 job.output = result.data.get("output")
+            else:
+                if result.errors:
+                    console.print(f"[yellow]⚠  Agent errors: {result.errors}[/yellow]")
 
         else:
             raise ValueError(f"Unknown stage: {stage}")

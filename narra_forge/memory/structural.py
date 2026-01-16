@@ -189,6 +189,24 @@ class StructuralMemory:
 
         return characters
 
+    async def save_world(self, world_dict: dict) -> None:
+        """
+        Save world directly (for agents that construct their own World objects).
+
+        Args:
+            world_dict: World data dictionary
+        """
+        await self.storage.save_world(world_dict)
+
+    async def save_character(self, char_dict: dict) -> None:
+        """
+        Save character directly (for agents that construct their own Character objects).
+
+        Args:
+            char_dict: Character data dictionary
+        """
+        await self.storage.save_character(char_dict)
+
     async def link_worlds(self, world_id_a: str, world_id_b: str) -> None:
         """
         Link two worlds (multi-universe).

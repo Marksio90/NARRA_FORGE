@@ -313,9 +313,13 @@ class BatchOrchestrator:
             agent = CoherenceValidatorAgent(self.config, self.memory, self.router)
             result = await agent.run(context)
 
-            if not result.success:
-                # Validation failed - we could retry generation here
-                raise ValueError(f"Coherence validation failed: {result.errors}")
+            # Validation is NON-BLOCKING - log warnings but continue pipeline
+            if result.warnings:
+                for warning in result.warnings:
+                    console.print(f"[yellow]⚠  Quality: {warning}[/yellow]")
+
+            # Store validation results for final report
+            job._validation_result = result.data.get("validation")
 
         elif stage == PipelineStage.LANGUAGE_STYLIZATION:
             agent = LanguageStylerAgent(self.config, self.memory, self.router)

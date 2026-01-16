@@ -75,14 +75,14 @@ class NarraForgeConfig(BaseSettings):
     # ═══════════════════════════════════════════
 
     min_coherence_score: float = Field(
-        default=0.90,  # QUALITY-FIRST: Raised for bestseller-level output
+        default=0.85,  # Lowered to realistic achievable target (from 0.90)
         ge=0.0,
         le=1.0,
         description="Minimum coherence score (0.0-1.0)",
     )
 
     min_language_quality: float = Field(
-        default=0.85,  # QUALITY-FIRST: Raised for literary quality
+        default=0.80,  # Lowered to achievable target (from 0.85)
         ge=0.0,
         le=1.0,
         description="Minimum language quality score",

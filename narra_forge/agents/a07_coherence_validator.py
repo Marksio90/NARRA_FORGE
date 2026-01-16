@@ -178,7 +178,7 @@ Zwróć szczegółowy raport jako JSON."""
             issues = validation_data.get("issues", [])
             critical_issues = [i for i in issues if i.get("severity") == "critical"]
 
-            # Determine if passed (for informational purposes)
+            # Determine if passed
             score = validation_data.get("coherence_score", 0.0)
             quality_check_passed = (
                 score >= self.config.min_coherence_score
@@ -195,8 +195,7 @@ Zwróć szczegółowy raport jako JSON."""
                 warnings=validation_data.get("warnings", []),
             )
 
-            # Log warnings but DON'T block pipeline
-            # Batch production philosophy: complete first, iterate later
+            # Log quality check result
             if not quality_check_passed:
                 self.add_warning(
                     f"Quality below threshold: score={score:.2f} (min={self.config.min_coherence_score}), "
@@ -206,14 +205,16 @@ Zwróć szczegółowy raport jako JSON."""
             if len(critical_issues) > 0:
                 self.add_warning(f"Found {len(critical_issues)} critical issues - review recommended")
 
-            # ALWAYS return success=True - validation is NON-BLOCKING
+            # ENFORCEMENT: Return success=False when quality fails
+            # This allows orchestrator to implement retry logic
             return self._create_result(
-                success=True,  # Always succeed - validation is informational
+                success=quality_check_passed,  # CHANGED: Fail when quality below threshold
                 data={
                     "validation": validation,
                     "validation_report": validation_data,
                     "critical_issues": critical_issues,
                     "quality_check_passed": quality_check_passed,
+                    "coherence_score": score,  # Pass score for retry decisions
                 },
             )
 

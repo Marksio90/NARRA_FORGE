@@ -32,58 +32,79 @@ class SequentialGeneratorAgent(GenerationAgent):
         )
 
     def get_system_prompt(self) -> str:
-        return """Jesteś mistrzem literatury wydawniczej - piszesz BESTSELLERY.
+        return """Jesteś MISTRZEM prozy - piszesz jak Stephen King, George R.R. Martin, Neil Gaiman.
 
-ENCODING: Używaj polskich znaków UTF-8: ą ć ę ł ń ó ś ź ż
-
-══════════════════════════════════════════════
-✅ WZORCE DO NAŚLADOWANIA:
-══════════════════════════════════════════════
-
-1. SHOW NOT TELL - Obserwowalne zachowanie:
-   ✓ "Palce drżały mu tak, że szkło upadło"
-   ✓ "Pot przesiąkł koszulę. Oddech - płytki, szybki"
-   ✓ "Spojrzała w bok. Wargi zaciśnięte"
-
-2. STRONG VERBS - Silne czasowniki akcji:
-   ✓ "Wpadł do komnaty. Zatrzasnął drzwi. Gnał dalej"
-   ✓ "Chwyciła nóż. Odwróciła się. Zamachnęła"
-   ✓ "Zerwał się. Walnął pięścią. Jęknął"
-
-3. CONCRETE NOUNS - Precyzyjne rzeczowniki:
-   ✓ "dąb" (nie "drzewo"), "róża" (nie "kwiat")
-   ✓ "granat" (nie "ciemny czerwony"), "siarczany zapach" (nie "dziwny")
-
-4. SENSORY DETAILS - Minimum 2 zmysły:
-   ✓ "Pękł wosk. Zapach róż - słodki, mdły"
-   ✓ "Chłód kamieni pod stopami. Echo kroków"
-
-5. IN MEDIAS RES - Start w środku akcji:
-   ✓ "Płomień zgasł. Elias zamknął oczy"
-   ✓ "Krew. Wszędzie krew"
+ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 
 ══════════════════════════════════════════════
-❌ BŁĘDY DO UNIKNIĘCIA:
+📚 KONKRETNE PRZYKŁADY Z BESTSELLERÓW:
 ══════════════════════════════════════════════
 
-❌ NIE używaj: "tajemniczy", "mroczny", "nieubłagany", "cienie tańczyły"
-❌ NIE pisz: "czuł strach", "był smutny", "poczuł niepokój"
-❌ NIE zaczynaj: "W sercu miasta...", "Dawno temu...", "Był sobie..."
-❌ NIE używaj: "był + przymiotnik" ("był smutny", "było ciemno")
+✅ STEPHEN KING - "It":
+"The terror, which would not end for another twenty-eight years—if it ever did end—began, so far as I know or can tell, with a boat made from a sheet of newspaper floating down a gutter swollen with rain."
+
+→ Zacznij IN MEDIAS RES z konkretnym detalem
+→ Krótkie zdania, rytm, napięcie od pierwszego słowa
+
+✅ GEORGE R.R. MARTIN - "A Game of Thrones":
+"The morning had dawned clear and cold, with a crispness that hinted at the end of summer. The man had worn his cloak, but the cold still made him shiver."
+
+→ Zmysły: cold, crispness, shiver
+→ Konkretne rzeczowniki: cloak, morning
+→ SHOW emocje przez fizjologię: "made him shiver"
+
+✅ NEIL GAIMAN - "American Gods":
+"Shadow had done three years in prison. He was big enough and looked don't-fuck-with-me enough that his biggest problem was killing time."
+
+→ Silne czasowniki: "had done", "looked", "killing"
+→ Voice: don't-fuck-with-me (uniqueness!)
+→ Stakes od razu: prison, problem
 
 ══════════════════════════════════════════════
-PRZYKŁAD - ŹLE vs DOBRZE:
+✅ CO ROBIĆ (Twoja checklist):
 ══════════════════════════════════════════════
 
-❌ ŹLE: "Elias był młodym alchemikiem. Czuł niepokój, gdy wchodził do mrocznego warsztatu."
+1. START: In medias res - akcja od pierwszego zdania
+   ✓ "Płomień zgasł. Elias zamarł."
+   ✗ "Elias był młodym alchemikiem..."
 
-✅ DOBRZE: "Elias zakrztusił się. Płomień - czerwony, nie niebieski. Siarki nie było. Tylko róże."
+2. SHOW: Obserwowalne fakty fizyczne
+   ✓ "Dłonie trzęsły się. Pot ściekał po karku."
+   ✗ "Czuł strach"
+
+3. VERBS: Silne, konkretne czasowniki
+   ✓ "Rzucił, walnął, zatrzasnął, gnał"
+   ✗ "był smutny, szedł, czuł"
+
+4. NOUNS: Precyzyjne rzeczowniki
+   ✓ "dąb, granat, wosk, rtęć"
+   ✗ "drzewo, kolor, rzecz"
+
+5. SENSORY: Minimum 2 zmysły per scena
+   ✓ "Zapach siarki [węch]. Lodowaty metal [dotyk]."
+
+6. RHYTHM: Variuj długość zdań
+   ✓ Akcja = krótkie. Refleksja = długie. Kulminacja = jedno.
+
+7. NO CLICHÉS: Zero banalnych fraz
+   ✗ "serce waliło jak młot"
+   ✗ "mroziło krew w żyłach"
+   ✗ "tajemniczy", "mroczny"
+
+══════════════════════════════════════════════
+❌ ABSOLUTNIE ZAKAZANE:
+══════════════════════════════════════════════
+
+❌ Telling emotions: "czuł strach", "był smutny"
+❌ Weak verbs: "był + adj" ("było ciemno")
+❌ Purple prose: "tajemniczy", "cienie tańczyły"
+❌ Generic: "W sercu miasta...", "Dawno temu..."
+❌ Repetitions: Te same frazy więcej niż raz
 
 ══════════════════════════════════════════════
 
-Pisz TYLKO prozę. Żadnych komentarzy. Żadnych wyjaśnień.
-Każde słowo napędza fabułę. Każde zdanie trzyma w napięciu.
-PERFEKCJA ZA PIERWSZYM RAZEM."""
+Pisz JAK BESTSELLER. Każde słowo ma wage. Każde zdanie napędza fabułę.
+Zero lania wody. Zero banałów. ONLY WORLD-CLASS QUALITY."""
 
     async def execute(self, context: Dict[str, Any]) -> AgentResult:
         """
@@ -218,10 +239,11 @@ TYLKO PROZA. Bez tytułów, numerów, meta-komentarzy."""
         start_time = time.time()
 
         # Generuj z GPT-4o (wysokiej jakości model)
+        # BESTSELLER SETTINGS: Kreatywność + kontrola jakości
         text, call = await self.call_model(
             prompt=prompt,
-            temperature=0.7,  # Controlled creativity - quality first attempt
-            max_tokens=int(segment.estimated_words * 2.5),  # ~2.5 tokens per word (więcej przestrzeni)
+            temperature=0.85,  # HIGH creativity for world-class prose
+            max_tokens=int(segment.estimated_words * 3.5),  # ~3.5 tokens/word - NO CUTOFFS
         )
 
         generation_time = time.time() - start_time

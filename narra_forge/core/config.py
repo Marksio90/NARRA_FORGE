@@ -75,7 +75,7 @@ class NarraForgeConfig(BaseSettings):
     # ═══════════════════════════════════════════
 
     min_coherence_score: float = Field(
-        default=0.80,  # Realistic target - quality from FIRST attempt
+        default=0.85,  # WORLD-CLASS QUALITY - bestseller standard
         ge=0.0,
         le=1.0,
         description="Minimum coherence score (0.0-1.0)",

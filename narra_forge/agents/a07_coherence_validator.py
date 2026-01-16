@@ -77,14 +77,17 @@ TRZY POZIOMY SPÓJNOŚCI:
    - "Rana goi się zbyt szybko/wolno"
    - "Wydarzenia się nakładają czasowo"
 
-SCORING:
+SCORING - BESTSELLER STANDARDS:
 
 Coherence Score: 0.0-1.0
-- 1.0 = Perfekcyjna spójność
-- 0.9-1.0 = Bardzo dobra (akceptowalne)
-- 0.85-0.9 = Dobra (minimalne issues)
-- 0.8-0.85 = Przeciętna (wymagane poprawki)
-- <0.8 = Słaba (wymaga rewrite)
+- 1.0 = PERFEKCJA (Stephen King, Neil Gaiman level)
+- 0.90-1.0 = BESTSELLER (publication-ready)
+- 0.85-0.90 = DOBRA (minor polish needed)
+- 0.80-0.85 = PRZECIĘTNA (needs work)
+- <0.80 = SŁABA (major rewrite required)
+
+CRITICAL: Bądź SUROWY. To musi być world-class quality.
+Any logical gap, character inconsistency, timeline error = LOWER SCORE.
 
 Format wyjścia (JSON):
 {

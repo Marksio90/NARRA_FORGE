@@ -25,18 +25,19 @@ class ModelRouter:
     """
 
     # Stages that REQUIRE gpt-4o (high quality)
+    # COST OPTIMIZATION: Only core narrative generation uses GPT-4o
     GPT4_REQUIRED_STAGES = {
-        PipelineStage.SEQUENTIAL_GENERATION,  # The actual narrative
-        PipelineStage.LANGUAGE_STYLIZATION,  # Polish language refinement
+        PipelineStage.SEQUENTIAL_GENERATION,  # The actual narrative - MUST be GPT-4o
     }
 
-    # All other stages use mini
+    # All other stages use mini (including stylization - prompts are good enough)
     MINI_STAGES = {
         PipelineStage.BRIEF_INTERPRETATION,
         PipelineStage.WORLD_ARCHITECTURE,
         PipelineStage.CHARACTER_ARCHITECTURE,
         PipelineStage.STRUCTURE_DESIGN,
         PipelineStage.SEGMENT_PLANNING,
+        PipelineStage.LANGUAGE_STYLIZATION,  # Moved to mini - refinement doesn't need GPT-4o
         PipelineStage.COHERENCE_VALIDATION,  # Can validate without being best
         PipelineStage.EDITORIAL_REVIEW,  # Can review without being best
         PipelineStage.OUTPUT_PROCESSING,  # Local processing mostly

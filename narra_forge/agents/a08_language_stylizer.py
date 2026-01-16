@@ -221,7 +221,7 @@ Zwróć TYLKO zrafinowany tekst. Bez komentarzy, bez wyjaśnień."""
 
         stylized, call = await self.call_model(
             prompt=prompt,
-            temperature=0.9,  # Higher creativity dla stylizacji
+            temperature=0.7,  # COST OPTIMIZATION: Lower temp for refinement (mini + good prompts = enough)
             max_tokens=len(text.split()) * 2,  # ~2 tokens per word
         )
 

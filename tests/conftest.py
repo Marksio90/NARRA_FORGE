@@ -58,33 +58,42 @@ def sample_production_brief() -> ProductionBrief:
         production_type=ProductionType.SHORT_STORY,
         genre=Genre.FANTASY,
         inspiration="A young alchemist discovers her master's dark secret about the price of immortality",
-        tone="dark",
-        target_word_count=7000,
+        additional_params={"tone": "dark", "target_word_count": 7000},
     )
 
 
 @pytest.fixture
 def mock_openai_client():
     """Create mock OpenAI client for testing without API calls"""
-    mock = AsyncMock()
+    from narra_forge.models.openai_client import OpenAIClient
 
-    # Mock chat completion response
-    mock.chat.completions.create.return_value = MagicMock(
-        choices=[
-            MagicMock(
-                message=MagicMock(
-                    content="Test generated content"
-                )
-            )
-        ],
-        usage=MagicMock(
-            prompt_tokens=100,
-            completion_tokens=200,
-            total_tokens=300
+    mock = AsyncMock(spec=OpenAIClient)
+
+    # Mock chat_completion method (returns tuple: content, metadata)
+    async def mock_chat_completion(*args, **kwargs):
+        return (
+            "Test generated content",
+            {
+                "model": "gpt-4o-mini",
+                "prompt_tokens": 100,
+                "completion_tokens": 200,
+                "total_tokens": 300,
+                "cost_usd": 0.01
+            }
         )
-    )
+
+    mock.chat_completion = mock_chat_completion
 
     return mock
+
+
+@pytest.fixture
+def mock_model_router(test_config, mock_openai_client):
+    """Create ModelRouter with mocked OpenAI client"""
+    from narra_forge.models.model_router import ModelRouter
+
+    router = ModelRouter(config=test_config, client=mock_openai_client)
+    return router
 
 
 @pytest.fixture

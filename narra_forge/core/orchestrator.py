@@ -413,6 +413,19 @@ class BatchOrchestrator:
         narrative_file = output_dir / "narrative.txt"
         narrative_file.write_text(narrative_text or "Production incomplete", encoding="utf-8")
 
+        # Build quality_metrics from validation results
+        validation_result = getattr(job, '_validation_result', None)
+        quality_metrics = {}
+        if validation_result:
+            quality_metrics = {
+                "coherence_score": validation_result.coherence_score,
+                "logical_consistency": validation_result.logical_consistency,
+                "psychological_consistency": validation_result.psychological_consistency,
+                "temporal_consistency": validation_result.temporal_consistency,
+                "passed": validation_result.passed,
+                "issues_count": len(validation_result.issues),
+            }
+
         output = NarrativeOutput(
             job_id=job.job_id,
             success=bool(narrative_text),
@@ -424,7 +437,7 @@ class BatchOrchestrator:
             production_type=job.brief.production_type,
             genre=job.brief.genre,
             word_count=len(narrative_text.split()) if narrative_text else 0,
-            quality_metrics={},
+            quality_metrics=quality_metrics,
             total_tokens=job.tokens_used,
             total_cost_usd=job.cost_usd,
             generation_time_seconds=total_time,
@@ -484,19 +497,28 @@ class BatchOrchestrator:
         console.print(f"[cyan]Type:[/] {output.production_type.value}")
         console.print(f"[cyan]Genre:[/] {output.genre.value}")
         console.print(f"[cyan]Word Count:[/] {output.word_count:,}")
-        console.print(f"\n[cyan]Quality:[/]")
-        console.print(
-            f"  Coherence: {output.quality_metrics['coherence_score']:.2f}/1.0"
-        )
-        console.print(
-            f"  Logical: {'✓' if output.quality_metrics['logical_consistency'] else '✗'}"
-        )
-        console.print(
-            f"  Psychological: {'✓' if output.quality_metrics['psychological_consistency'] else '✗'}"
-        )
-        console.print(
-            f"  Temporal: {'✓' if output.quality_metrics['temporal_consistency'] else '✗'}"
-        )
+
+        # Quality metrics (safe access with defaults)
+        if output.quality_metrics:
+            console.print(f"\n[cyan]Quality:[/]")
+            score = output.quality_metrics.get('coherence_score', 0.0)
+            console.print(f"  Coherence: {score:.2f}/1.0")
+
+            logical = output.quality_metrics.get('logical_consistency', False)
+            console.print(f"  Logical: {'✓' if logical else '✗'}")
+
+            psych = output.quality_metrics.get('psychological_consistency', False)
+            console.print(f"  Psychological: {'✓' if psych else '✗'}")
+
+            temp = output.quality_metrics.get('temporal_consistency', False)
+            console.print(f"  Temporal: {'✓' if temp else '✗'}")
+
+            passed = output.quality_metrics.get('passed', False)
+            issues = output.quality_metrics.get('issues_count', 0)
+            if not passed:
+                console.print(f"  [yellow]⚠  Quality below threshold ({issues} issues)[/]")
+        else:
+            console.print(f"\n[cyan]Quality:[/] [dim]Not validated[/]")
 
         console.print(f"\n[cyan]Cost:[/] ${output.total_cost_usd:.2f} USD")
         console.print(f"[cyan]Tokens:[/] {output.total_tokens:,}")

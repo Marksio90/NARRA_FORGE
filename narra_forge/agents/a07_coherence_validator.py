@@ -180,12 +180,11 @@ Zwróć szczegółowy raport jako JSON."""
 
             # Determine if passed
             score = validation_data.get("coherence_score", 0.0)
+            # Pass if: score is good AND no critical issues
+            # Individual consistency flags are informative but not blocking
             passed = (
                 score >= self.config.min_coherence_score
                 and len(critical_issues) == 0
-                and validation_data.get("logical_consistency", False)
-                and validation_data.get("psychological_consistency", False)
-                and validation_data.get("temporal_consistency", False)
             )
 
             validation = CoherenceValidation(

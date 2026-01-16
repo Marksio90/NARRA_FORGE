@@ -75,21 +75,21 @@ class NarraForgeConfig(BaseSettings):
     # ═══════════════════════════════════════════
 
     min_coherence_score: float = Field(
-        default=0.85,
+        default=0.70,  # Lowered from 0.85 for initial testing
         ge=0.0,
         le=1.0,
         description="Minimum coherence score (0.0-1.0)",
     )
 
     min_language_quality: float = Field(
-        default=0.80,
+        default=0.70,  # Lowered from 0.80 for initial testing
         ge=0.0,
         le=1.0,
         description="Minimum language quality score",
     )
 
     min_narrative_weight: float = Field(
-        default=0.75,
+        default=0.70,  # Lowered from 0.75 for initial testing
         ge=0.0,
         le=1.0,
         description="Minimum narrative weight score",

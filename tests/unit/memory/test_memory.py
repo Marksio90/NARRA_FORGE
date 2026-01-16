@@ -44,7 +44,10 @@ async def test_save_and_retrieve_world(memory_system):
         "name": "Test World",
         "genre": Genre.FANTASY.value,
         "reality_laws": {"physics": {"type": "standard"}},
-        "boundaries": {"spatial": {"size": "small"}},
+        "boundaries": {
+            "spatial": {"size": "small"},
+            "temporal": {"flow": "linear"}
+        },
         "anomalies": [],
         "core_conflict": "Test conflict",
         "existential_theme": "Test theme",
@@ -59,8 +62,8 @@ async def test_save_and_retrieve_world(memory_system):
     retrieved = await memory_system.structural.get_world("test_world_123")
 
     assert retrieved is not None
-    assert retrieved["name"] == "Test World"
-    assert retrieved["genre"] == Genre.FANTASY.value
+    assert retrieved.name == "Test World"
+    assert retrieved.genre == Genre.FANTASY
 
 
 @pytest.mark.asyncio
@@ -87,10 +90,10 @@ async def test_save_and_retrieve_character(memory_system):
     await memory_system.structural.save_character(character_dict)
 
     # Retrieve
-    characters = await memory_system.structural.get_characters_by_world("world_123")
+    characters = await memory_system.structural.get_characters_in_world("world_123")
 
     assert len(characters) == 1
-    assert characters[0]["name"] == "Test Character"
+    assert characters[0].name == "Test Character"
 
 
 @pytest.mark.asyncio

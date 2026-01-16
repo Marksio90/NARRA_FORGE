@@ -96,7 +96,8 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 ══════════════════════════════════════════════
 
 🚫 METAPHOR CLICHÉS (BANNED):
-❌ "serce waliło/biło jak młot" → use: "Serce przyspieszyło" or SHOW physically
+❌ "serce waliło" / "serce biło" - BOTH BANNED! → use: "Serce przyspieszyło", "Puls przyspieszył"
+   (These verbs "waliło"/"biło" are CLICHÉS even without "jak młot")
 ❌ "krew zamarzła/mroziło w żyłach" → use: "Zadrżał" or SHOW reaction
 ❌ "struna gotowa do pęknięcia" → use: "Ciało napięte" (no metaphor!)
 ❌ "studnie pełne tajemnic" → use: "Oczy ciemne" (concrete!)
@@ -127,7 +128,8 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 🚫 REPETITIONS (BANNED):
 ❌ Same phrase 2+ times → rephrase or cut
 ❌ "jakby" more than 3x per 1000 words → cut most of them
-❌ "serce biło/waliło" more than 1x per story → use once max!
+❌ "niczym" more than 3x per 1000 words → cut most of them
+❌ NEVER USE "serce waliło" or "serce biło" → ALWAYS: "serce przyspieszyło"
 
 ══════════════════════════════════════════════
 🎯 LINGUISTIC DIVERSITY (REQUIRED):

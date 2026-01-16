@@ -151,10 +151,14 @@ def clean_narrative_text(text: str) -> str:
 
 # Banned clichés list (from Agent 06 system prompt)
 BANNED_CLICHES = [
-    # Metaphor clichés
+    # Metaphor clichés - HEART
+    "serce waliło",  # BANNED verb for heart
+    "serce biło",    # BANNED verb for heart
     "jak młot",
     "waliło jak młot",
     "biło jak młot",
+
+    # Other metaphor clichés
     "krew zamarzła",
     "mroziło krew",
     "mroziło w żyłach",

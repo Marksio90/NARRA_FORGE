@@ -151,12 +151,18 @@ def clean_narrative_text(text: str) -> str:
 
 # Banned clichés list (from Agent 06 system prompt)
 BANNED_CLICHES = [
-    # Metaphor clichés - HEART
-    "serce waliło",  # BANNED verb for heart
-    "serce biło",    # BANNED verb for heart
-    "jak młot",
+    # Metaphor clichés - HEART (ALL FORMS)
+    "serce waliło",  # BANNED
+    "serce biło",    # BANNED
+    "jak młot",      # BANNED
+    "jak zegar",     # BANNED (new - found in test #4)
+    "jak bęben",     # BANNED
     "waliło jak młot",
     "biło jak młot",
+    "bijąc jak",     # Catches "bijąc jak zegar/młot/etc"
+
+    # Weak metaphors - ALWAYS BANNED
+    "niczym",        # COMPLETELY BANNED (was overused 9x in test #4)
 
     # Other metaphor clichés
     "krew zamarzła",
@@ -274,19 +280,19 @@ def detect_repetitions(text: str, threshold: int = 3) -> dict:
     elif word_count < 1000 and stats['wiedział_że'] > 1:
         warnings.append(f"'wiedział, że' używane {stats['wiedział_że']}x (zalecane: 1x max dla krótkiego tekstu)")
 
-    # "jakby" - should be max 3x per 1000 words
-    if word_count >= 1000 and stats['jakby'] > 3:
-        high_risk.append(f"'jakby' używane {stats['jakby']}x (limit: 3x/1000 słów)")
+    # "jakby" - STRICT: should be max 2x per 1000 words (was 17x in test #4!)
+    if word_count >= 1000 and stats['jakby'] > 2:
+        high_risk.append(f"'jakby' używane {stats['jakby']}x (limit: 2x/1000 słów - STRICT!)")
     elif word_count < 1000 and stats['jakby'] > 2:
-        warnings.append(f"'jakby' używane {stats['jakby']}x")
+        warnings.append(f"'jakby' używane {stats['jakby']}x (limit: 2x max)")
 
     # "serce biło/waliło" - should be 1x max per story
     if stats['serce_biło'] > 1:
         high_risk.append(f"'serce biło/waliło' używane {stats['serce_biło']}x (limit: 1x per story!)")
 
-    # "niczym" - should be limited
-    if stats['niczym'] > 3:
-        warnings.append(f"'niczym' używane {stats['niczym']}x (lepiej limitować)")
+    # "niczym" - COMPLETELY BANNED (was 9x in test #4!)
+    if stats['niczym'] > 0:
+        high_risk.append(f"'niczym' używane {stats['niczym']}x (BANNED - should be 0x!)")
 
     return {
         'high_risk': high_risk,

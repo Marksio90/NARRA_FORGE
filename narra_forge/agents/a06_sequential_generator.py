@@ -96,8 +96,9 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 ══════════════════════════════════════════════
 
 🚫 METAPHOR CLICHÉS (BANNED):
-❌ "serce waliło" / "serce biło" - BOTH BANNED! → use: "Serce przyspieszyło", "Puls przyspieszył"
-   (These verbs "waliło"/"biło" are CLICHÉS even without "jak młot")
+❌ "serce waliło" / "serce biło" / "serce + jak [X]" - ALL BANNED!
+   → use: "Serce przyspieszyło", "Puls przyspieszył" (NO metaphors!)
+   → NEVER: "jak młot", "jak zegar", "jak bęben", ANY "jak [thing]"
 ❌ "krew zamarzła/mroziło w żyłach" → use: "Zadrżał" or SHOW reaction
 ❌ "struna gotowa do pęknięcia" → use: "Ciało napięte" (no metaphor!)
 ❌ "studnie pełne tajemnic" → use: "Oczy ciemne" (concrete!)
@@ -106,7 +107,7 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 ❌ "kusiła go jak nic dotąd" → use: "Nie mógł się oprzeć"
 ❌ "cienie tańczyły" → use: "Cienie przesuwały się"
 ❌ "jak żywe" (oczy jak żywe) → delete metaphor
-❌ "niczym [X]" → limit to 1x per 1000 words
+❌ "niczym [X]" - BANNED! → use direct comparison or delete
 
 🚫 WEAK WORDS (BANNED):
 ❌ "tajemniczy" → be SPECIFIC what's mysterious
@@ -127,9 +128,11 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 
 🚫 REPETITIONS (BANNED):
 ❌ Same phrase 2+ times → rephrase or cut
-❌ "jakby" more than 3x per 1000 words → cut most of them
-❌ "niczym" more than 3x per 1000 words → cut most of them
-❌ NEVER USE "serce waliło" or "serce biło" → ALWAYS: "serce przyspieszyło"
+❌ "jakby" - ULTRA-STRICT LIMIT: MAX 2x per segment! (was appearing 17x - UNACCEPTABLE!)
+   → If you wrote "jakby" once, DON'T use it again in same paragraph
+   → Prefer: direct statements, concrete actions, eliminate similes
+❌ "niczym" - COMPLETELY BANNED! → use direct comparison or delete
+❌ NEVER USE "serce waliło/biło/jak [X]" → ALWAYS: "serce przyspieszyło"
 
 ══════════════════════════════════════════════
 🎯 LINGUISTIC DIVERSITY (REQUIRED):
@@ -153,7 +156,18 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
 Pisz JAK BESTSELLER. Każde słowo ma wagę. Każde zdanie napędza fabułę.
 Zero lania wody. Zero banałów. ONLY WORLD-CLASS QUALITY.
 
-READ the banned list carefully. DON'T use those clichés even once."""
+══════════════════════════════════════════════
+🚨 FINAL ENFORCEMENT - READ CAREFULLY:
+══════════════════════════════════════════════
+
+Before you finish writing, COUNT and CHECK:
+1. "jakby" count → if > 2, DELETE excess (recent text had 17x - FAILED!)
+2. "niczym" count → if > 0, DELETE ALL (BANNED!)
+3. Any "serce + jak [X]" → DELETE and use "serce przyspieszyło"
+4. Any other banned clichés → DELETE
+
+This is NOT optional. Bestsellers don't have clichés or repetitive constructions.
+Your reputation depends on following these rules EXACTLY."""
 
     async def execute(self, context: Dict[str, Any]) -> AgentResult:
         """

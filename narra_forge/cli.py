@@ -196,7 +196,7 @@ async def list_jobs(config: NarraForgeConfig, status: Optional[str] = None):
 @click.option("--type", "prod_type", type=click.Choice([t.value for t in ProductionType]), help="Typ produkcji")
 @click.option("--genre", type=click.Choice([g.value for g in Genre]), help="Gatunek")
 @click.option("--inspiration", help="Inspiracja / pomysł")
-@click.option("--list-jobs", is_flag=True, help="Lista zadań produkcyjnych")
+@click.option("--list-jobs", "list_jobs_flag", is_flag=True, help="Lista zadań produkcyjnych")
 @click.option("--status", type=click.Choice(["pending", "in_progress", "completed", "failed"]), help="Filtruj po statusie")
 def main(
     prod_type: Optional[str],

@@ -9,7 +9,16 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
 from narra_forge.core.config import NarraForgeConfig, create_default_config
-from narra_forge.core.types import Genre, ProductionType, ProductionBrief
+from narra_forge.core.types import (
+    Genre,
+    ProductionType,
+    ProductionBrief,
+    World,
+    Character,
+    RealityLaws,
+    WorldBoundaries,
+    InternalTrajectory,
+)
 from narra_forge.memory import MemorySystem
 
 
@@ -39,6 +48,13 @@ async def temp_db_path():
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "test.db"
         yield db_path
+
+
+@pytest.fixture
+def temp_dir():
+    """Create temporary directory for testing"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
 
 
 @pytest.fixture
@@ -120,6 +136,28 @@ def sample_world_dict():
 
 
 @pytest.fixture
+def sample_world():
+    """Sample World object for testing"""
+    return World(
+        world_id="test_world_123",
+        name="Eldoria",
+        genre=Genre.FANTASY,
+        reality_laws=RealityLaws(
+            physics={"type": "standard"},
+            magic={"exists": True, "cost": "life_essence"},
+        ),
+        boundaries=WorldBoundaries(
+            spatial={"size": "small_continent"},
+            temporal={"flow": "linear", "history_depth": 500},
+        ),
+        anomalies=["unstable_magic_zones"],
+        core_conflict="The price of immortality threatens the natural order",
+        existential_theme="All power requires sacrifice",
+        description="A world where alchemy is the dominant force",
+    )
+
+
+@pytest.fixture
 def sample_character_dict():
     """Sample character data for testing"""
     return {
@@ -148,6 +186,37 @@ def sample_character_dict():
         "archetype": "innocent_to_experienced",
         "role": "protagonist",
     }
+
+
+@pytest.fixture
+def sample_character():
+    """Sample Character object for testing"""
+    return Character(
+        character_id="char_lyra_001",
+        world_id="test_world_123",
+        name="Lyra Silvermoon",
+        internal_trajectory=InternalTrajectory(
+            starting_state={
+                "belief": "Alchemy can solve any problem",
+                "fear": "Being powerless",
+                "desire": "Master all alchemical arts",
+            },
+            potential_arcs=[
+                {"arc": "Realizes power has a terrible cost"},
+                {"arc": "Must choose between knowledge and innocence"},
+            ],
+            triggers=["Discovery of master's secret"],
+            resistance_points=["Loyalty to master", "Fear of truth"],
+        ),
+        contradictions=[
+            "Seeks power but fears its consequences",
+            "Values life but pursues death-defying alchemy",
+        ],
+        cognitive_limits=["Naive about human nature", "Overconfident in abilities"],
+        evolution_capacity=0.8,
+        archetype="innocent_to_experienced",
+        role="protagonist",
+    )
 
 
 @pytest.fixture

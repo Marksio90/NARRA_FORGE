@@ -2,197 +2,162 @@
 Integration tests for the full production pipeline
 """
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-import json
 
-from narra_forge.core.orchestrator import ProductionOrchestrator
+from narra_forge.core.orchestrator import BatchOrchestrator
 from narra_forge.core.types import ProductionBrief, ProductionType, Genre
 
 
 @pytest.mark.integration
-class TestPipelineIntegration:
-    """Test full pipeline integration"""
+class TestBatchOrchestratorIntegration:
+    """Test BatchOrchestrator integration"""
 
     @pytest.mark.asyncio
     async def test_orchestrator_initialization(self, test_config, memory_system):
         """Test orchestrator can be initialized with config and memory"""
-        orchestrator = ProductionOrchestrator(
+        orchestrator = BatchOrchestrator(
             config=test_config,
-            memory_system=memory_system
+            memory=memory_system
         )
 
         assert orchestrator.config == test_config
         assert orchestrator.memory == memory_system
-        assert len(orchestrator.agents) == 10  # All 10 agents initialized
+        assert orchestrator.client is not None
+        assert orchestrator.router is not None
 
     @pytest.mark.asyncio
-    async def test_pipeline_creates_all_agents(self, test_config, memory_system):
-        """Test that pipeline initializes all 10 agents"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
-        )
+    async def test_orchestrator_without_memory(self, test_config):
+        """Test orchestrator can be initialized without providing memory"""
+        orchestrator = BatchOrchestrator(config=test_config)
 
-        agent_ids = [agent.agent_id for agent in orchestrator.agents]
-
-        expected_agents = [
-            "a01_brief_interpreter",
-            "a02_world_architect",
-            "a03_character_architect",
-            "a04_structure_designer",
-            "a05_segment_planner",
-            "a06_sequential_generator",
-            "a07_coherence_validator",
-            "a08_language_stylizer",
-            "a09_editorial_reviewer",
-            "a10_output_processor",
-        ]
-
-        for expected in expected_agents:
-            assert expected in agent_ids
+        assert orchestrator.config == test_config
+        assert orchestrator.memory is None  # Lazy init
+        assert orchestrator.client is not None
+        assert orchestrator.router is not None
 
     @pytest.mark.asyncio
-    @pytest.mark.slow
-    async def test_full_pipeline_with_mocked_api(self, test_config, memory_system, sample_production_brief):
-        """Test full pipeline execution with mocked OpenAI API calls"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
-        )
+    async def test_orchestrator_memory_lazy_initialization(self, test_config):
+        """Test that memory is initialized lazily when needed"""
+        orchestrator = BatchOrchestrator(config=test_config)
 
-        # Mock responses for each agent
-        mock_responses = {
-            "a01_brief_interpreter": {
-                "interpretation": {
-                    "production_intent": "Fantasy short story about alchemy",
-                    "core_themes": ["sacrifice", "power"],
-                    "world_requirements": {"genre": "fantasy"}
-                }
-            },
-            "a02_world_architect": {
-                "world": {
-                    "world_id": "test_world_001",
-                    "name": "Eldoria",
-                    "genre": "fantasy",
-                    "reality_laws": {},
-                    "boundaries": {"spatial": {}, "temporal": {}},
-                    "core_conflict": "Test conflict"
-                }
-            },
-            "a03_character_architect": {
-                "characters": [{
-                    "character_id": "char_001",
-                    "name": "Lyra",
-                    "archetype": "seeker"
-                }]
-            },
-            "a04_structure_designer": {
-                "structure": {
-                    "structure_type": "three_act",
-                    "acts": [{"act_number": 1, "target_word_count": 2000}]
-                }
-            },
-            "a05_segment_planner": {
-                "segments": [{
-                    "segment_id": "seg_001",
-                    "type": "chapter",
-                    "target_word_count": 2000
-                }]
-            },
-            "a06_sequential_generator": {
-                "narrative_text": "Once upon a time in Eldoria...",
-                "total_words": 2000
-            },
-            "a07_coherence_validator": {
-                "quality_metrics": {
-                    "coherence_score": 0.88,
-                    "validation_passed": True
-                }
-            },
-            "a08_language_stylizer": {
-                "refined_text": "Once upon a time in Eldoria...",
-                "refinements_applied": 5
-            },
-            "a09_editorial_reviewer": {
-                "final_review": {
-                    "approved": True,
-                    "final_quality_score": 0.90
-                }
-            },
-            "a10_output_processor": {
-                "output": {
-                    "narrative_text": "Once upon a time in Eldoria...",
-                    "files_created": ["narrative.txt"]
-                }
-            }
-        }
+        # Memory should be None initially
+        assert orchestrator.memory is None
+        assert not orchestrator._memory_initialized
 
-        # Patch all agents' execute methods
-        async def mock_agent_execute(agent_id, input_data):
-            return mock_responses.get(agent_id, {"result": "mock"})
+        # Initialize memory
+        await orchestrator._ensure_memory_initialized()
 
-        with patch.object(orchestrator, '_execute_agent', side_effect=lambda agent, data: mock_agent_execute(agent.agent_id, data)):
-            result = await orchestrator.produce_narrative(sample_production_brief)
-
-            assert result is not None
-            assert "narrative_text" in result or "output" in result
-
-
-@pytest.mark.integration
-class TestPipelineStageFlow:
-    """Test data flow between pipeline stages"""
-
-    @pytest.mark.asyncio
-    async def test_stage_1_output_feeds_stage_2(self, test_config, memory_system):
-        """Test that Stage 1 output is used as Stage 2 input"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
-        )
-
-        # This is more of a structural test - verify pipeline setup
-        assert len(orchestrator.agents) >= 2
-
-    @pytest.mark.asyncio
-    async def test_pipeline_maintains_context_between_stages(self, test_config, memory_system):
-        """Test that context is maintained between stages"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
-        )
-
-        # Verify memory system is shared across all agents
+        # Memory should now be initialized
         assert orchestrator.memory is not None
+        assert orchestrator._memory_initialized
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_with_provided_components(
+        self, test_config, memory_system, mock_openai_client, mock_model_router
+    ):
+        """Test orchestrator can use provided client and router"""
+        orchestrator = BatchOrchestrator(
+            config=test_config,
+            memory=memory_system,
+            client=mock_openai_client,
+            router=mock_model_router
+        )
+
+        assert orchestrator.client == mock_openai_client
+        assert orchestrator.router == mock_model_router
 
 
 @pytest.mark.integration
-class TestPipelineErrorHandling:
-    """Test error handling in pipeline"""
+class TestProductionBriefValidation:
+    """Test ProductionBrief validation and usage"""
 
-    @pytest.mark.asyncio
-    async def test_pipeline_handles_agent_failure(self, test_config, memory_system, sample_production_brief):
-        """Test pipeline handles agent failure gracefully"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
+    def test_production_brief_creation(self):
+        """Test creating a ProductionBrief"""
+        brief = ProductionBrief(
+            production_type=ProductionType.SHORT_STORY,
+            genre=Genre.FANTASY,
+            inspiration="Test story about magic"
         )
 
-        # Mock an agent to fail
-        async def failing_execute(*args, **kwargs):
-            raise ValueError("Simulated agent failure")
+        assert brief.production_type == ProductionType.SHORT_STORY
+        assert brief.genre == Genre.FANTASY
+        assert brief.inspiration == "Test story about magic"
+        assert brief.brief_id.startswith("brief_")
+        assert brief.created_at is not None
 
-        with patch.object(orchestrator.agents[0], 'execute', side_effect=failing_execute):
-            with pytest.raises(Exception):  # Should propagate error
-                await orchestrator.produce_narrative(sample_production_brief)
-
-    @pytest.mark.asyncio
-    async def test_pipeline_tracks_cost(self, test_config, memory_system):
-        """Test that pipeline tracks cost across all stages"""
-        orchestrator = ProductionOrchestrator(
-            config=test_config,
-            memory_system=memory_system
+    def test_production_brief_with_world_id(self):
+        """Test ProductionBrief with existing world reference"""
+        brief = ProductionBrief(
+            production_type=ProductionType.SHORT_STORY,
+            genre=Genre.FANTASY,
+            world_id="world_existing_123"
         )
 
-        # Verify orchestrator has cost tracking capability
-        assert hasattr(orchestrator, 'config')
-        assert orchestrator.config.max_cost_per_job > 0
+        assert brief.world_id == "world_existing_123"
+
+    def test_production_brief_with_additional_params(self):
+        """Test ProductionBrief with additional parameters"""
+        brief = ProductionBrief(
+            production_type=ProductionType.NOVELLA,
+            genre=Genre.SCIFI,
+            additional_params={
+                "tone": "dark",
+                "target_word_count": 15000,
+                "themes": ["technology", "humanity"]
+            }
+        )
+
+        assert brief.additional_params["tone"] == "dark"
+        assert brief.additional_params["target_word_count"] == 15000
+        assert "technology" in brief.additional_params["themes"]
+
+
+@pytest.mark.integration
+class TestMemorySystemIntegration:
+    """Test memory system integration with orchestrator"""
+
+    @pytest.mark.asyncio
+    async def test_memory_persistence_between_orchestrators(self, test_config, temp_db_path, sample_world_dict):
+        """Test that memory persists across orchestrator instances"""
+        from narra_forge.memory import MemorySystem
+
+        # Configure with same DB path
+        test_config.db_path = temp_db_path
+
+        # Create first orchestrator and initialize memory
+        orchestrator1 = BatchOrchestrator(config=test_config)
+        await orchestrator1._ensure_memory_initialized()
+
+        # Save a world to memory using sample_world_dict fixture
+        await orchestrator1.memory.structural.save_world(sample_world_dict)
+
+        # Create second orchestrator with same config
+        orchestrator2 = BatchOrchestrator(config=test_config)
+        await orchestrator2._ensure_memory_initialized()
+
+        # Retrieve world from second orchestrator
+        retrieved = await orchestrator2.memory.structural.get_world(sample_world_dict["world_id"])
+
+        assert retrieved is not None
+        assert retrieved.name == sample_world_dict["name"]
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+class TestOrchestratorConfiguration:
+    """Test orchestrator configuration options"""
+
+    def test_orchestrator_respects_cost_limit(self, test_config):
+        """Test that orchestrator respects max_cost_per_job setting"""
+        test_config.max_cost_per_job = 5.0
+
+        orchestrator = BatchOrchestrator(config=test_config)
+
+        assert orchestrator.config.max_cost_per_job == 5.0
+
+    def test_orchestrator_respects_coherence_threshold(self, test_config):
+        """Test that orchestrator respects min_coherence_score setting"""
+        test_config.min_coherence_score = 0.90
+
+        orchestrator = BatchOrchestrator(config=test_config)
+
+        assert orchestrator.config.min_coherence_score == 0.90

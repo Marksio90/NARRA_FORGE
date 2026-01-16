@@ -25,22 +25,23 @@ class ModelRouter:
     """
 
     # Stages that REQUIRE gpt-4o (high quality)
-    # COST OPTIMIZATION: Only core narrative generation uses GPT-4o
+    # QUALITY-FIRST: Core narrative + stylization + validation use GPT-4o
+    # User feedback: mini produces low-quality output even with excellent prompts
     GPT4_REQUIRED_STAGES = {
-        PipelineStage.SEQUENTIAL_GENERATION,  # The actual narrative - MUST be GPT-4o
+        PipelineStage.SEQUENTIAL_GENERATION,  # Core narrative - MUST be GPT-4o
+        PipelineStage.LANGUAGE_STYLIZATION,   # REVERTED: mini can't follow complex craft rules
+        PipelineStage.COHERENCE_VALIDATION,   # UPGRADED: better validation catches issues
     }
 
-    # All other stages use mini (including stylization - prompts are good enough)
+    # Cost-optimized stages (planning, architecture, output)
     MINI_STAGES = {
         PipelineStage.BRIEF_INTERPRETATION,
         PipelineStage.WORLD_ARCHITECTURE,
         PipelineStage.CHARACTER_ARCHITECTURE,
         PipelineStage.STRUCTURE_DESIGN,
         PipelineStage.SEGMENT_PLANNING,
-        PipelineStage.LANGUAGE_STYLIZATION,  # Moved to mini - refinement doesn't need GPT-4o
-        PipelineStage.COHERENCE_VALIDATION,  # Can validate without being best
-        PipelineStage.EDITORIAL_REVIEW,  # Can review without being best
-        PipelineStage.OUTPUT_PROCESSING,  # Local processing mostly
+        PipelineStage.EDITORIAL_REVIEW,      # Can review without being best
+        PipelineStage.OUTPUT_PROCESSING,     # Local processing mostly
     }
 
     def __init__(self, config: NarraForgeConfig, client: OpenAIClient):

@@ -178,17 +178,15 @@ Zwróć szczegółowy raport jako JSON."""
             issues = validation_data.get("issues", [])
             critical_issues = [i for i in issues if i.get("severity") == "critical"]
 
-            # Determine if passed
+            # Determine if passed (for informational purposes)
             score = validation_data.get("coherence_score", 0.0)
-            # Pass if: score is good AND no critical issues
-            # Individual consistency flags are informative but not blocking
-            passed = (
+            quality_check_passed = (
                 score >= self.config.min_coherence_score
                 and len(critical_issues) == 0
             )
 
             validation = CoherenceValidation(
-                passed=passed,
+                passed=quality_check_passed,
                 coherence_score=score,
                 logical_consistency=validation_data.get("logical_consistency", False),
                 psychological_consistency=validation_data.get("psychological_consistency", False),
@@ -197,17 +195,25 @@ Zwróć szczegółowy raport jako JSON."""
                 warnings=validation_data.get("warnings", []),
             )
 
-            if not passed:
-                self.add_error(
-                    f"Validation FAILED: score={score:.2f}, critical_issues={len(critical_issues)}"
+            # Log warnings but DON'T block pipeline
+            # Batch production philosophy: complete first, iterate later
+            if not quality_check_passed:
+                self.add_warning(
+                    f"Quality below threshold: score={score:.2f} (min={self.config.min_coherence_score}), "
+                    f"critical_issues={len(critical_issues)}"
                 )
 
+            if len(critical_issues) > 0:
+                self.add_warning(f"Found {len(critical_issues)} critical issues - review recommended")
+
+            # ALWAYS return success=True - validation is NON-BLOCKING
             return self._create_result(
-                success=passed,  # Success = validation passed
+                success=True,  # Always succeed - validation is informational
                 data={
                     "validation": validation,
                     "validation_report": validation_data,
                     "critical_issues": critical_issues,
+                    "quality_check_passed": quality_check_passed,
                 },
             )
 

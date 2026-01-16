@@ -232,7 +232,6 @@ class NarrativeOutput:
 
     # Generated content
     narrative_text: str
-    audiobook_text: Optional[str] = None  # With narrator markers
 
     # Structure
     world: World
@@ -259,6 +258,9 @@ class NarrativeOutput:
     # Timestamps
     started_at: datetime
     completed_at: datetime
+
+    # Optional content (with defaults at the end)
+    audiobook_text: Optional[str] = None  # With narrator markers
 
 
 # ═══════════════════════════════════════════

@@ -92,19 +92,66 @@ ENCODING: Polskie znaki UTF-8: ą ć ę ł ń ó ś ź ż
    ✗ "tajemniczy", "mroczny"
 
 ══════════════════════════════════════════════
-❌ ABSOLUTNIE ZAKAZANE:
+❌ ABSOLUTNIE ZAKAZANE CLICHÉS:
 ══════════════════════════════════════════════
 
-❌ Telling emotions: "czuł strach", "był smutny"
-❌ Weak verbs: "był + adj" ("było ciemno")
-❌ Purple prose: "tajemniczy", "cienie tańczyły"
-❌ Generic: "W sercu miasta...", "Dawno temu..."
-❌ Repetitions: Te same frazy więcej niż raz
+🚫 METAPHOR CLICHÉS (BANNED):
+❌ "serce waliło/biło jak młot" → use: "Serce przyspieszyło" or SHOW physically
+❌ "krew zamarzła/mroziło w żyłach" → use: "Zadrżał" or SHOW reaction
+❌ "struna gotowa do pęknięcia" → use: "Ciało napięte" (no metaphor!)
+❌ "studnie pełne tajemnic" → use: "Oczy ciemne" (concrete!)
+❌ "dziki ogień" → use: "Silna/niepowstrzymana" (simple!)
+❌ "kaskadą" (pot spływał kaskadą) → use: "Pot ściekał po karku"
+❌ "kusiła go jak nic dotąd" → use: "Nie mógł się oprzeć"
+❌ "cienie tańczyły" → use: "Cienie przesuwały się"
+❌ "jak żywe" (oczy jak żywe) → delete metaphor
+❌ "niczym [X]" → limit to 1x per 1000 words
+
+🚫 WEAK WORDS (BANNED):
+❌ "tajemniczy" → be SPECIFIC what's mysterious
+❌ "mroczny" → use concrete details instead
+❌ "magiczny" → SHOW the magic, don't name it
+❌ "dziwny/dziwaczny" → describe WHAT is strange
+❌ "niesamowity" → concrete sensory details
+
+🚫 TELLING EMOTIONS (BANNED):
+❌ "czuł strach" → SHOW: "Dłonie zadrżały"
+❌ "był smutny" → SHOW: "Opuścił wzrok"
+❌ "poczuł gniew" → SHOW: "Zacisnął pięści"
+❌ "wiedział, że" → LIMIT to 2x per 1000 words (show through action!)
+
+🚫 WEAK VERBS (BANNED):
+❌ "był + adjective" → use STRONG verb ("było ciemno" → "Ciemność pochłonęła")
+❌ "czuł + noun" → SHOW physically
+
+🚫 REPETITIONS (BANNED):
+❌ Same phrase 2+ times → rephrase or cut
+❌ "jakby" more than 3x per 1000 words → cut most of them
+❌ "serce biło/waliło" more than 1x per story → use once max!
+
+══════════════════════════════════════════════
+🎯 LINGUISTIC DIVERSITY (REQUIRED):
+══════════════════════════════════════════════
+
+✅ VARY your constructions:
+- Use different sentence starters (NOT always "Lian...")
+- Use different verbs for same action
+- Limit repeated words (max 3x per 1000 words for common words)
+- If you wrote "wiedział" once, use "rozumiał", "pojmował", or SHOW through action next time
+- If you wrote "serce biło" - never write it again in same story
+
+✅ CHECK before finishing:
+- Did I use same metaphor twice? → Delete one
+- Did I use "jakby" more than 3 times? → Cut excess
+- Did I use "wiedział, że" more than 2 times? → Rephrase to action
+- Are my sentence structures varied? → Mix short/long
 
 ══════════════════════════════════════════════
 
-Pisz JAK BESTSELLER. Każde słowo ma wage. Każde zdanie napędza fabułę.
-Zero lania wody. Zero banałów. ONLY WORLD-CLASS QUALITY."""
+Pisz JAK BESTSELLER. Każde słowo ma wagę. Każde zdanie napędza fabułę.
+Zero lania wody. Zero banałów. ONLY WORLD-CLASS QUALITY.
+
+READ the banned list carefully. DON'T use those clichés even once."""
 
     async def execute(self, context: Dict[str, Any]) -> AgentResult:
         """
@@ -243,7 +290,7 @@ TYLKO PROZA. Bez tytułów, numerów, meta-komentarzy."""
         text, call = await self.call_model(
             prompt=prompt,
             temperature=0.85,  # HIGH creativity for world-class prose
-            max_tokens=int(segment.estimated_words * 3.5),  # ~3.5 tokens/word - NO CUTOFFS
+            max_tokens=int(segment.estimated_words * 5.0),  # ~5.0 tokens/word - EXTRA BUFFER against cutoffs
         )
 
         generation_time = time.time() - start_time

@@ -118,21 +118,47 @@ Only fix GRAMMAR and POLISH LANGUAGE mistakes."""
     async def _stylize_text(self, text: str) -> str:
         """Stylizuj fragment tekstu"""
 
-        prompt = f"""Zrafinuj poniższy tekst do najwyższego poziomu językowego.
+        prompt = f"""Jesteś KOREKTOREM GRAMATYCZNYM. Fix ONLY grammar mistakes.
 
-ZASADY:
-- Zachowaj TREŚĆ (co się dzieje)
-- Rafinuj FORMĘ (jak to jest powiedziane)
-- Precyzja słownictwa
-- Rytm i melodyka
-- Usuń redundancje
-- Doskonała składnia polska
-- Mistrzowska interpunkcja
+🚫 CRITICAL - DO NOT:
+❌ Add adjectives or adverbs ("szybki" → "szybki, zwinny")
+❌ Add metaphors ("serce biło" → "serce waliło jak młot")
+❌ Change vocabulary ("patrzył" → "wpatrywał się")
+❌ Change sentence structure (keep short sentences SHORT)
+❌ Add "poetic" language
+❌ Rewrite style or voice
 
-TEKST DO RAFINACJI:
+✅ ONLY FIX:
+✓ Grammatical errors (wrong cases, verb conjugations)
+✓ Spelling mistakes
+✓ Punctuation errors
+✓ Pleonasms ("niebieski kolor" → "niebieski")
+✓ Anglicisms ("realizować" → "urzeczywistniać")
+
+EXAMPLES:
+
+BAD (adding metaphor):
+IN: "Serce biło szybko."
+OUT: "Serce waliło jak młot." ❌
+
+GOOD (only grammar):
+IN: "Serce biło szybko."
+OUT: "Serce biło szybko." ✓ (NO CHANGE - already correct!)
+
+BAD (adding adjective):
+IN: "Płomień zgasł."
+OUT: "Mały płomień zgasł." ❌
+
+GOOD:
+IN: "Płomień zgasł."
+OUT: "Płomień zgasł." ✓
+
+If original text is grammatically correct → return it UNCHANGED.
+
+TEKST DO KOREKTY:
 {text}
 
-Zwróć TYLKO zrafinowany tekst. Bez komentarzy, bez wyjaśnień."""
+Zwróć TYLKO poprawiony tekst. Bez komentarzy, bez wyjaśnień."""
 
         stylized, call = await self.call_model(
             prompt=prompt,

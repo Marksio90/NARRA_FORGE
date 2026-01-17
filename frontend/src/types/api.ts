@@ -120,6 +120,7 @@ export interface Narrative {
   narrative_metadata?: any;
   quality_metrics?: any;
   overall_quality_score: number;
+  quality_score?: number; // Alias for overall_quality_score
   generation_cost_usd: number;
   tokens_used: number;
   version: number;

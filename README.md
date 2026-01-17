@@ -190,16 +190,50 @@ python example_basic.py
 
 **Docker = główne środowisko deweloperskie i testowe**
 
+### Quick Start z Docker Compose
+
 ```bash
-# Build
-docker-compose build
+# 1. Skopiuj .env (zawiera konfigurację kolorowego buildu!)
+cp .env.example .env
 
-# Uruchom przykład
-docker-compose run --rm narra_forge python example_basic.py
+# 2. Edytuj .env i ustaw swoje klucze API:
+#    OPENAI_API_KEY=sk-...
+#    ANTHROPIC_API_KEY=sk-ant-...
+#    DB_PASSWORD=twoje-haslo
+#    REDIS_PASSWORD=twoje-haslo-redis
+#    JWT_SECRET_KEY=min-32-znaki-losowe
 
-# Testy (gdy zaimplementowane)
-./docker-test.sh
+# 3. Uruchom całą platformę (z kolorowym buildkiem! 🎨)
+docker-compose up -d
+
+# 4. Sprawdź status
+docker-compose ps
+
+# 5. Zobacz logi
+docker-compose logs -f backend
 ```
+
+### Dostępne Serwisy
+
+Po uruchomieniu `docker-compose up -d`:
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001
+
+### Kolorowy Build Output 🎨
+
+Plik `.env` zawiera automatyczną konfigurację dla **ładnego kolorowego interfejsu BuildKit**:
+
+```bash
+BUILDKIT_PROGRESS=auto      # Kolorowy output z paskami postępu
+COMPOSE_DOCKER_CLI_BUILD=1  # Włącz BuildKit
+DOCKER_BUILDKIT=1           # Włącz BuildKit dla Docker
+```
+
+Po prostu skopiuj `.env.example` do `.env` i gotowe! Każdy build będzie kolorowy! 💙
 
 **Zasada:** Nic nie idzie do produkcji bez pełnego przejścia testów w Docker.
 

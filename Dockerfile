@@ -1,7 +1,4 @@
-# NARRA_FORGE Docker Image
-# Multi-stage build for optimization
-
-# Stage 1: Base image with Python
+# Backend Dockerfile for NARRA_FORGE V2 API
 FROM python:3.11-slim as base
 
 # Set environment variables
@@ -10,15 +7,14 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Create app directory
+# Set working directory
 WORKDIR /app
 
-# Stage 2: Dependencies
-FROM base as dependencies
-
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     gcc \
+    postgresql-client \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -27,30 +23,32 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 3: Application
-FROM base as application
-
-# Copy installed packages from dependencies stage
-COPY --from=dependencies /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=dependencies /usr/local/bin /usr/local/bin
-
 # Copy application code
-COPY narra_forge/ /app/narra_forge/
-COPY setup.py pyproject.toml README.md /app/
+COPY . .
 
-# Copy examples
-COPY example_basic.py /app/
-COPY examples/ /app/examples/
-COPY tests/ /app/tests/
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
-# Install application
-RUN pip install -e .
+# Switch to non-root user
+USER appuser
 
-# Create data and output directories
-RUN mkdir -p /app/data /app/output /app/logs
+# Expose port
+EXPOSE 8000
 
-# Set working directory
-WORKDIR /app
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command (can be overridden)
-CMD ["python", "-m", "narra_forge.ui.batch_ui"]
+# Run migrations and start server
+CMD ["sh", "-c", "alembic upgrade head && uvicorn api.main:app --host 0.0.0.0 --port 8000"]
+
+
+# Production stage with optimizations
+FROM base as production
+
+# Install production-only dependencies
+RUN pip install gunicorn
+
+# Run with Gunicorn for production
+CMD ["sh", "-c", "alembic upgrade head && gunicorn api.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --access-logfile - --error-logfile -"]

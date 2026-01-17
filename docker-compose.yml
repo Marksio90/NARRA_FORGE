@@ -1,78 +1,120 @@
+version: '3.8'
+
 services:
-  narra_forge:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: narra_forge_db
+    environment:
+      POSTGRES_USER: narra_forge
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-narra_forge_dev}
+      POSTGRES_DB: narra_forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U narra_forge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - narra_network
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: narra_forge_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - narra_network
+
+  # Backend API
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: narra_forge:2.0.0
-    container_name: narra_forge_batch
-
+      target: base
+    container_name: narra_forge_api
+    ports:
+      - "8000:8000"
     environment:
-      # Load from .env file
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
-      - DEFAULT_MINI_MODEL=${DEFAULT_MINI_MODEL:-gpt-4o-mini}
-      - DEFAULT_GPT4_MODEL=${DEFAULT_GPT4_MODEL:-gpt-4o}
-      - MAX_COST_PER_JOB=${MAX_COST_PER_JOB:-10.0}
-      - MIN_COHERENCE_SCORE=${MIN_COHERENCE_SCORE:-0.70}  # Lowered from 0.85
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-
+      - DATABASE_URL=postgresql+asyncpg://narra_forge:${DB_PASSWORD:-narra_forge_dev}@postgres:5432/narra_forge
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      - DEBUG=true
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      # Persistent data
-      - ./data:/app/data
-      # Output files
-      - ./output:/app/output
-      # Logs
-      - ./logs:/app/logs
-
-    # Resource limits (adjust based on needs)
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '1.0'
-          memory: 1G
-
-    # Network mode
-    network_mode: bridge
-
-    # Restart policy
+      - ./api:/app/api
+      - ./narra_forge:/app/narra_forge
+      - ./alembic:/app/alembic
+    networks:
+      - narra_network
     restart: unless-stopped
 
-    # Health check
-    healthcheck:
-      test: ["CMD", "python", "-c", "import narra_forge; print('OK')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-# Optional: separate service for testing
-  narra_forge_test:
+  # Celery Worker
+  celery_worker:
     build:
       context: .
       dockerfile: Dockerfile
-    image: narra_forge:2.0.0
-    container_name: narra_forge_test
-
+      target: base
+    container_name: narra_forge_celery
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=2
     environment:
+      - DATABASE_URL=postgresql+asyncpg://narra_forge:${DB_PASSWORD:-narra_forge_dev}@postgres:5432/narra_forge
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ENVIRONMENT=testing
-      - LOG_LEVEL=DEBUG
-
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./data:/app/data
-      - ./output:/app/output
-      - ./tests:/app/tests
+      - ./api:/app/api
+      - ./narra_forge:/app/narra_forge
+    networks:
+      - narra_network
+    restart: unless-stopped
 
-    command: pytest tests/ -v
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: narra_forge_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - narra_network
+    restart: unless-stopped
 
-    profiles:
-      - test
-
-# Volumes for persistence
 volumes:
-  data:
-  output:
-  logs:
+  postgres_data:
+  redis_data:
+
+networks:
+  narra_network:
+    driver: bridge

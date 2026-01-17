@@ -1,0 +1,50 @@
+# Additional dependencies for NARRA_FORGE API (Phase 2)
+# Install with: pip install -r requirements.txt -r requirements-api.txt
+
+# FastAPI & Server
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12  # For file uploads
+
+# Database (Async PostgreSQL)
+asyncpg==0.29.0  # Async PostgreSQL driver
+psycopg2-binary==2.9.9  # Already in main requirements, but listed for clarity
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0  # JWT tokens
+passlib[bcrypt]==1.7.4  # Password hashing
+bcrypt==4.2.0
+
+# OAuth2 Providers
+authlib==1.3.2  # OAuth2 client
+
+# Celery & Task Queue
+celery[redis]==5.4.0
+redis==5.2.0
+
+# WebSocket Support
+websockets==13.1
+python-socketio==5.11.4
+
+# Caching
+aiocache==0.12.3
+
+# Email (for future use)
+aiosmtplib==3.0.2
+email-validator==2.2.0
+
+# Rate Limiting
+slowapi==0.1.9
+
+# HTTP Client
+httpx==0.27.2  # For OAuth2 callbacks
+
+# Background Tasks & Scheduling
+apscheduler==3.10.4  # For scheduled tasks (optional)
+
+# Monitoring (already in main requirements, but confirmed)
+# prometheus-client==0.21.0  # Already installed
+# sentry-sdk==1.40.0  # Already installed
+
+# Development Tools (optional)
+# uvicorn[standard] includes watchfiles for auto-reload

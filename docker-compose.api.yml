@@ -1,0 +1,169 @@
+# Docker Compose for NARRA_FORGE API Stack
+# Backend services: PostgreSQL, Redis, FastAPI, Celery
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: narra_forge_postgres
+    environment:
+      POSTGRES_USER: narra_forge
+      POSTGRES_PASSWORD: narra_forge_dev_password
+      POSTGRES_DB: narra_forge
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U narra_forge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - narra_forge_network
+
+  # Redis for Celery & Caching
+  redis:
+    image: redis:7-alpine
+    container_name: narra_forge_redis
+    command: redis-server --appendonly yes --requirepass narra_forge_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - narra_forge_network
+
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: narra_forge_api
+    environment:
+      # Database
+      DATABASE_URL: "postgresql+asyncpg://narra_forge:narra_forge_dev_password@postgres:5432/narra_forge"
+
+      # Redis & Celery
+      CELERY_BROKER_URL: "redis://:narra_forge_redis_password@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:narra_forge_redis_password@redis:6379/1"
+
+      # JWT Secrets (CHANGE IN PRODUCTION!)
+      JWT_SECRET_KEY: "dev_secret_key_change_in_production"
+      JWT_ALGORITHM: "HS256"
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+
+      # OAuth2 (configure with real credentials)
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GITHUB_CLIENT_ID: ""
+      GITHUB_CLIENT_SECRET: ""
+
+      # API Settings
+      DEBUG: "true"
+      LOG_LEVEL: "INFO"
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:8080"]'
+
+      # OpenAI (for narrative generation)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Monitoring (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      PROMETHEUS_PORT: "9090"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app/api
+      - ./narra_forge:/app/narra_forge
+      - ./data:/app/data
+      - ./output:/app/output
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - narra_forge_network
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker for Async Tasks
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: narra_forge_celery_worker
+    environment:
+      # Database
+      DATABASE_URL: "postgresql+asyncpg://narra_forge:narra_forge_dev_password@postgres:5432/narra_forge"
+
+      # Redis & Celery
+      CELERY_BROKER_URL: "redis://:narra_forge_redis_password@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:narra_forge_redis_password@redis:6379/1"
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Settings
+      LOG_LEVEL: "INFO"
+    volumes:
+      - ./api:/app/api
+      - ./narra_forge:/app/narra_forge
+      - ./data:/app/data
+      - ./output:/app/output
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - narra_forge_network
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=2
+
+  # Celery Beat (for scheduled tasks - optional)
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: narra_forge_celery_beat
+    environment:
+      CELERY_BROKER_URL: "redis://:narra_forge_redis_password@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:narra_forge_redis_password@redis:6379/1"
+      LOG_LEVEL: "INFO"
+    volumes:
+      - ./api:/app/api
+      - ./narra_forge:/app/narra_forge
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - narra_forge_network
+    command: celery -A api.celery_app beat --loglevel=info
+    profiles:
+      - full  # Only start with --profile full
+
+networks:
+  narra_forge_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

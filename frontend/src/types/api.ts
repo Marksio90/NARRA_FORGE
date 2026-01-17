@@ -116,6 +116,7 @@ export interface Narrative {
   production_type: string;
   genre: string;
   narrative_text: string;
+  summary?: string; // Optional narrative summary
   word_count: number;
   narrative_metadata?: any;
   quality_metrics?: any;

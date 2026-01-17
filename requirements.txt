@@ -36,3 +36,25 @@ mypy==1.13.0
 # Monitoring & Observability
 structlog==24.4.0  # Structured logging
 prometheus-client==0.21.0  # Prometheus metrics
+sentry-sdk==1.40.0  # Error tracking & performance monitoring
+
+# API & Backend (Phase 2)
+fastapi==0.109.0  # Web framework
+uvicorn[standard]==0.27.0  # ASGI server
+sqlalchemy==2.0.25  # ORM (already installed but pinning version)
+alembic==1.13.1  # Database migrations
+psycopg2-binary==2.9.9  # PostgreSQL adapter
+asyncpg==0.29.0  # Async PostgreSQL adapter
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0  # JWT tokens
+passlib[bcrypt]==1.7.4  # Password hashing
+python-multipart==0.0.6  # Form data parsing
+
+# Task Queue
+celery==5.3.6  # Distributed task queue
+redis==5.0.1  # Redis client
+flower==2.0.1  # Celery monitoring
+
+# WebSockets
+websockets==12.0  # WebSocket support

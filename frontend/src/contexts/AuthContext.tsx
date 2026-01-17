@@ -19,6 +19,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+    api.setToken(null);
+    setUser(null);
+  }, []);
+
+  const refreshAuth = useCallback(async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+      logout();
+      return;
+    }
+
+    try {
+      const response = await api.refreshToken(refreshToken);
+      saveAuthData(response);
+    } catch (error) {
+      logout();
+      throw error;
+    }
+  }, [logout]);
+
   // Load user from localStorage on mount
   useEffect(() => {
     const accessToken = localStorage.getItem("access_token");
@@ -32,9 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Try to refresh token
       refreshAuth().catch(() => logout());
     }
-    
+
     setLoading(false);
-  }, []);
+  }, [refreshAuth, logout]);
 
   const saveAuthData = (response: AuthResponse) => {
     localStorage.setItem("access_token", response.access_token);
@@ -54,29 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveAuthData(response);
   };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    api.setToken(null);
-    setUser(null);
-  }, []);
-
-  const refreshAuth = async () => {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) {
-      logout();
-      return;
-    }
-
-    try {
-      const response = await api.refreshToken(refreshToken);
-      saveAuthData(response);
-    } catch (error) {
-      logout();
-      throw error;
-    }
-  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, refreshAuth }}>

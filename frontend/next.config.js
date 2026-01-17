@@ -12,7 +12,7 @@ const nextConfig = {
 
   // Optimize images
   images: {
-    domains: [],
+    remotePatterns: [],
     formats: ['image/avif', 'image/webp'],
   },
 

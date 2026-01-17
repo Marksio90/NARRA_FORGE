@@ -125,6 +125,10 @@ export interface Narrative {
   generation_cost_usd: number;
   tokens_used: number;
   version: number;
+  parent_narrative_id?: string;
+  exported_formats?: string[];
+  view_count: number;
+  download_count: number;
   created_at: string;
   updated_at: string;
 }

@@ -117,3 +117,6 @@ celerybeat.pid
 
 # Redis
 dump.rdb
+
+# Exception: Frontend lib directory should NOT be ignored
+!frontend/src/lib/

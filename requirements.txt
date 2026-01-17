@@ -36,3 +36,4 @@ mypy==1.13.0
 # Monitoring & Observability
 structlog==24.4.0  # Structured logging
 prometheus-client==0.21.0  # Prometheus metrics
+sentry-sdk==1.40.0  # Error tracking & performance monitoring

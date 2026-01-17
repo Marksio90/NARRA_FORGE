@@ -5,6 +5,7 @@ Exports:
 - NarraForgeConfig: Configuration
 - BatchOrchestrator: Main production engine
 - Types: All data types
+- Checkpointing: State management
 """
 from narra_forge.core.config import NarraForgeConfig, get_config
 from narra_forge.core.orchestrator import BatchOrchestrator, create_orchestrator
@@ -17,6 +18,7 @@ from narra_forge.core.types import (
     ProductionJob,
     ProductionType,
 )
+from narra_forge.core.checkpointing import CheckpointManager, PipelineStateManager
 
 __all__ = [
     # Config
@@ -33,4 +35,7 @@ __all__ = [
     "JobStatus",
     "PipelineStage",
     "NarrativeOutput",
+    # Checkpointing
+    "CheckpointManager",
+    "PipelineStateManager",
 ]

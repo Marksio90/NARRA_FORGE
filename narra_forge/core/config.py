@@ -186,6 +186,49 @@ class NarraForgeConfig(BaseSettings):
     )
 
     # ═══════════════════════════════════════════
+    # OBSERVABILITY & MONITORING
+    # ═══════════════════════════════════════════
+
+    enable_metrics: bool = Field(
+        default=True,
+        description="Enable Prometheus metrics collection",
+    )
+
+    enable_logging: bool = Field(
+        default=True,
+        description="Enable structured logging",
+    )
+
+    enable_sentry: bool = Field(
+        default=False,
+        description="Enable Sentry error tracking",
+    )
+
+    sentry_dsn: str = Field(
+        default="",
+        description="Sentry DSN (Data Source Name)",
+    )
+
+    sentry_environment: str = Field(
+        default="development",
+        description="Sentry environment (development/staging/production)",
+    )
+
+    sentry_traces_sample_rate: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Percentage of traces to send to Sentry (0.0-1.0)",
+    )
+
+    sentry_profiles_sample_rate: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Percentage of profiles to send to Sentry (0.0-1.0)",
+    )
+
+    # ═══════════════════════════════════════════
     # VALIDATORS
     # ═══════════════════════════════════════════
 

@@ -62,7 +62,8 @@ class Narrative(Base):
     word_count: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Metadata (from NarrativeOutput)
-    metadata: Mapped[dict] = mapped_column(JSON, nullable=False)  # Characters, structure, segments, etc.
+    # NOTE: Use 'narrative_metadata' as Python attribute name to avoid conflict with Base.metadata
+    narrative_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False)  # Characters, structure, segments, etc.
 
     # Quality metrics
     quality_metrics: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Coherence, logic, etc.

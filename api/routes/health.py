@@ -4,7 +4,7 @@ Health Check Routes.
 Provides endpoints for monitoring service health and readiness.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, status
@@ -28,7 +28,7 @@ async def health_check() -> Dict[str, Any]:
     """
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "service": settings.app_name,
         "version": settings.app_version
     }
@@ -77,7 +77,7 @@ async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
 
     return {
         "status": "ready" if all_ok else "not_ready",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "checks": checks
     }
 
@@ -92,7 +92,7 @@ async def liveness_check() -> Dict[str, str]:
     """
     return {
         "status": "alive",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 

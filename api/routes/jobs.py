@@ -5,7 +5,7 @@ Handles narrative generation job management and monitoring.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Optional
 from math import ceil
 
@@ -271,7 +271,7 @@ async def cancel_job(
     # Update job status
     job.status = JobStatus.CANCELLED
     job.error_message = "Job cancelled by user"
-    job.completed_at = datetime.utcnow()
+    job.completed_at = datetime.now(timezone.utc)
 
     if job.started_at:
         duration = (job.completed_at - job.started_at).total_seconds()

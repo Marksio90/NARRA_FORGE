@@ -6,7 +6,7 @@ Integrates NarraForge core pipeline with async Celery workers.
 
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from celery import Task
@@ -45,7 +45,7 @@ class NarrativeGenerationTask(Task):
             if job:
                 job.status = JobStatus.FAILED
                 job.error_message = error_message
-                job.completed_at = datetime.utcnow()
+                job.completed_at = datetime.now(timezone.utc)
                 
                 if job.started_at:
                     duration = (job.completed_at - job.started_at).total_seconds()
@@ -109,7 +109,7 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
         
         # Update job status to RUNNING
         job.status = JobStatus.RUNNING
-        job.started_at = datetime.utcnow()
+        job.started_at = datetime.now(timezone.utc)
         job.current_stage = "Initializing pipeline"
         job.progress_percentage = 0.0
         await db.commit()
@@ -159,11 +159,10 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
             
             # Run pipeline (synchronous - NarraForge is not async yet)
             await update_progress("Starting generation", 5.0)
-            
+
             # Execute in thread pool to not block event loop
             from concurrent.futures import ThreadPoolExecutor
-            import asyncio
-            
+
             loop = asyncio.get_event_loop()
             with ThreadPoolExecutor(max_workers=1) as executor:
                 narrative_output = await loop.run_in_executor(
@@ -210,7 +209,7 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
             }
             job.actual_cost_usd = orchestrator.total_cost
             job.tokens_used = orchestrator.total_tokens
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.duration_seconds = int((job.completed_at - job.started_at).total_seconds())
             job.progress_percentage = 100.0
             job.current_stage = "Completed"
@@ -249,7 +248,7 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
             # Mark job as failed
             job.status = JobStatus.FAILED
             job.error_message = str(e)
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             
             if job.started_at:
                 duration = (job.completed_at - job.started_at).total_seconds()
@@ -269,7 +268,7 @@ async def _handle_timeout(job_id: str):
         if job:
             job.status = JobStatus.FAILED
             job.error_message = "Task timed out (exceeded time limit)"
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.can_resume = True  # Allow resume from checkpoint
             
             if job.started_at:

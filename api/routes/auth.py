@@ -5,7 +5,7 @@ Handles user authentication, registration, and OAuth2 flows.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -131,7 +131,7 @@ async def login(
         )
 
     # Update last login timestamp
-    user.last_login_at = datetime.utcnow()
+    user.last_login_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(user)
 

@@ -2,7 +2,8 @@
 Base database model and session management.
 """
 
-from datetime import datetime
+import os
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import DateTime, create_engine
@@ -10,9 +11,31 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 from sqlalchemy.pool import NullPool
 
-# Database URL (will be configured from settings)
-DATABASE_URL = "postgresql+asyncpg://user:password@localhost/narra_forge"
-SYNC_DATABASE_URL = "postgresql+psycopg2://user:password@localhost/narra_forge"
+
+def get_database_url() -> str:
+    """Get database URL from environment variables."""
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return db_url
+
+    # Build from components
+    user = os.getenv("DB_USER", "narra_forge")
+    password = os.getenv("DB_PASSWORD", "password")
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "5432")
+    name = os.getenv("DB_NAME", "narra_forge")
+    return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
+
+
+def get_sync_database_url() -> str:
+    """Get sync database URL for migrations."""
+    async_url = get_database_url()
+    return async_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+
+
+# Database URLs
+DATABASE_URL = get_database_url()
+SYNC_DATABASE_URL = get_sync_database_url()
 
 
 class Base(DeclarativeBase):
@@ -37,13 +60,13 @@ class Base(DeclarativeBase):
     id: Mapped[str] = mapped_column(primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 

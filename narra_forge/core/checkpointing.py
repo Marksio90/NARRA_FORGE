@@ -10,7 +10,7 @@ Allows:
 
 import json
 import pickle
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -69,7 +69,7 @@ class CheckpointManager:
         checkpoint = {
             "job_id": job_id,
             "stage_name": stage_name,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "stage_output": stage_output,
             "metadata": metadata or {},
         }
@@ -340,7 +340,7 @@ class PipelineStateManager:
             "stage_outputs": {},
             "cumulative_cost_usd": 0.0,
             "cumulative_tokens": 0,
-            "started_at": datetime.utcnow().isoformat(),
+            "started_at": datetime.now(timezone.utc).isoformat(),
         }
 
     def resume_job(self, job_id: str) -> Dict:
@@ -380,7 +380,7 @@ class PipelineStateManager:
             "stage_outputs": stage_outputs,
             "cumulative_cost_usd": cumulative_cost,
             "cumulative_tokens": cumulative_tokens,
-            "resumed_at": datetime.utcnow().isoformat(),
+            "resumed_at": datetime.now(timezone.utc).isoformat(),
         }
 
     def save_stage_result(
@@ -475,7 +475,7 @@ class PipelineStateManager:
         metadata = self.checkpoint_manager.load_metadata(job_id) or {}
         metadata["last_failure"] = {
             "stage": failed_stage,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         self.checkpoint_manager.save_metadata(job_id, metadata)
 

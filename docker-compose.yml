@@ -45,7 +45,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,7 +59,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: narra_forge_api
     environment:
       - DATABASE_URL=postgresql+asyncpg://narra_forge:${DB_PASSWORD}@postgres:5432/narra_forge
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
@@ -95,7 +94,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: narra_forge_celery
     command: celery -A api.celery_app worker --loglevel=info --concurrency=4
     environment:
       - DATABASE_URL=postgresql+asyncpg://narra_forge:${DB_PASSWORD}@postgres:5432/narra_forge
@@ -138,7 +136,10 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - narra_network
     restart: always
@@ -149,7 +150,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: runner
-    container_name: narra_forge_frontend
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NODE_ENV=production

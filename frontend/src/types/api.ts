@@ -39,6 +39,9 @@ export interface Project {
   user_id: string;
   name: string;
   description?: string;
+  world_id?: string;
+  default_genre?: string;
+  default_production_type?: string;
   narrative_count: number;
   total_word_count: number;
   total_cost_usd: number;

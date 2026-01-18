@@ -69,13 +69,23 @@ repos:
   # TypeScript/Frontend checks
   - repo: local
     hooks:
-      # Regenerate TypeScript types from OpenAPI
-      - id: regenerate-types
-        name: Regenerate TypeScript types
-        entry: ./scripts/regenerate-types.sh --local
+      # Generate OpenAPI spec from backend
+      - id: generate-openapi-spec
+        name: Generate OpenAPI specification
+        entry: python scripts/generate_openapi_spec.py --output api-spec.json
         language: system
         pass_filenames: false
         files: ^api/(schemas|models|routes)/.*\.py$
+        stages: [commit]
+        verbose: true
+
+      # Regenerate TypeScript types from OpenAPI
+      - id: regenerate-types
+        name: Regenerate TypeScript types
+        entry: bash -c 'cd frontend && npm run generate:types:local'
+        language: system
+        pass_filenames: false
+        files: ^api/(schemas|models|routes)/.*\.py$|^api-spec\.json$
         stages: [commit]
         verbose: true
 

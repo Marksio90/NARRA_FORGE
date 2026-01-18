@@ -1,4 +1,6 @@
 # Frontend Dockerfile for NARRA_FORGE V2
+# Automatic TypeScript type generation from OpenAPI spec
+
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
@@ -10,7 +12,6 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-# Use npm install if package-lock.json doesn't exist, otherwise use npm ci
 RUN if [ -f package-lock.json ]; then npm ci; else npm install && npm install --package-lock-only; fi
 
 
@@ -28,6 +29,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js application
+# The prebuild hook automatically runs type-check
+# Types are auto-generated from committed api-spec.json by pre-commit hook
 RUN npm run build
 
 

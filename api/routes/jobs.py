@@ -120,24 +120,36 @@ async def create_job(
             detail="Project not found"
         )
 
-    # Check user's monthly limits
-    if current_user.monthly_generations_used >= current_user.monthly_generation_limit:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Monthly generation limit reached ({current_user.monthly_generation_limit})"
-        )
-
     # Estimate cost (rough estimate based on target length)
     target_length = request.production_brief.get("target_length", 5000)
     estimated_cost = (target_length / 1000) * 0.05  # $0.05 per 1000 words estimate
 
-    # Check cost limit
-    if current_user.monthly_cost_used_usd + estimated_cost > current_user.monthly_cost_limit_usd:
-        if current_user.monthly_cost_limit_usd > 0:  # Only check if limit is set
+    # ATOMIC: Check and increment user limits in a single transaction with row lock
+    # This prevents race conditions from concurrent requests
+    from sqlalchemy import update
+
+    # Refresh user with row-level lock (SELECT FOR UPDATE)
+    user_stmt = select(User).where(User.id == current_user.id).with_for_update()
+    user_result = await db.execute(user_stmt)
+    locked_user = user_result.scalar_one()
+
+    # Check limits with locked row
+    if locked_user.monthly_generations_used >= locked_user.monthly_generation_limit:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Monthly generation limit reached ({locked_user.monthly_generation_limit})"
+        )
+
+    if locked_user.monthly_cost_used_usd + estimated_cost > locked_user.monthly_cost_limit_usd:
+        if locked_user.monthly_cost_limit_usd > 0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Monthly cost limit would be exceeded (${current_user.monthly_cost_limit_usd:.2f})"
+                detail=f"Monthly cost limit would be exceeded (${locked_user.monthly_cost_limit_usd:.2f})"
             )
+
+    # Increment usage atomically
+    locked_user.monthly_generations_used += 1
+    locked_user.monthly_cost_used_usd += estimated_cost
 
     # Create job
     new_job = GenerationJob(
@@ -156,6 +168,7 @@ async def create_job(
     )
 
     db.add(new_job)
+    # Commit both user update and job creation in same transaction
     await db.commit()
     await db.refresh(new_job)
 

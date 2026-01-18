@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Optional
 import enum
 
-from sqlalchemy import String, Text, ForeignKey, JSON, Enum as SQLEnum, Float, Integer
+from sqlalchemy import String, Text, ForeignKey, JSON, Enum as SQLEnum, Float, Integer, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api.models.base import Base
@@ -41,6 +41,18 @@ class GenerationJob(Base):
     """
 
     __tablename__ = "generation_jobs"
+
+    # Composite indexes for common queries
+    __table_args__ = (
+        # Query: Get user's jobs by status (most common)
+        Index('ix_jobs_user_status', 'user_id', 'status'),
+        # Query: Get project's jobs
+        Index('ix_jobs_project_status', 'project_id', 'status'),
+        # Query: Get user's jobs ordered by creation time
+        Index('ix_jobs_user_created', 'user_id', 'created_at'),
+        # Query: Get running jobs for monitoring
+        Index('ix_jobs_status_created', 'status', 'created_at'),
+    )
 
     # Override id to use UUID
     id: Mapped[str] = mapped_column(

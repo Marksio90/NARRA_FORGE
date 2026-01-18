@@ -6,6 +6,7 @@ Provides endpoints for monitoring service health and readiness.
 
 from datetime import datetime, timezone
 from typing import Dict, Any
+import redis.asyncio as aioredis
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import text
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.config import settings
 from api.models.base import get_db
+from api.celery_app import celery_app
 
 
 router = APIRouter(prefix="/health", tags=["Health"])
@@ -37,12 +39,12 @@ async def health_check() -> Dict[str, Any]:
 @router.get("/ready", status_code=status.HTTP_200_OK)
 async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """
-    Readiness check - verifies all dependencies are available.
+    Deep readiness check - verifies all dependencies are available.
 
     Checks:
     - Database connectivity
-    - Redis connectivity (TODO)
-    - External services (TODO)
+    - Redis connectivity
+    - Celery worker availability
 
     Args:
         db: Database session
@@ -52,8 +54,8 @@ async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """
     checks = {
         "database": "unknown",
-        "redis": "not_checked",
-        "celery": "not_checked"
+        "redis": "unknown",
+        "celery": "unknown"
     }
 
     # Check database
@@ -64,21 +66,48 @@ async def readiness_check(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
         else:
             checks["database"] = "error"
     except Exception as e:
-        checks["database"] = f"error: {str(e)}"
+        checks["database"] = f"error: {str(e)[:100]}"
 
-    # TODO: Check Redis
-    # TODO: Check Celery
+    # Check Redis
+    try:
+        redis_client = aioredis.from_url(
+            settings.redis_url,
+            encoding="utf-8",
+            decode_responses=True,
+            socket_connect_timeout=2
+        )
+        await redis_client.ping()
+        checks["redis"] = "ok"
+        await redis_client.close()
+    except Exception as e:
+        checks["redis"] = f"error: {str(e)[:100]}"
+
+    # Check Celery workers
+    try:
+        # Inspect active workers
+        inspect = celery_app.control.inspect(timeout=2.0)
+        active_workers = inspect.active()
+        if active_workers and len(active_workers) > 0:
+            checks["celery"] = f"ok ({len(active_workers)} workers)"
+        else:
+            checks["celery"] = "error: no active workers"
+    except Exception as e:
+        checks["celery"] = f"error: {str(e)[:100]}"
 
     # Determine overall status
     all_ok = all(
-        status in ["ok", "not_checked"]
-        for status in checks.values()
+        check_status.startswith("ok")
+        for check_status in checks.values()
     )
+
+    status_code = status.HTTP_200_OK if all_ok else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return {
         "status": "ready" if all_ok else "not_ready",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "checks": checks
+        "checks": checks,
+        "service": settings.app_name,
+        "version": settings.app_version
     }
 
 

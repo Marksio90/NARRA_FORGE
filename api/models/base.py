@@ -79,11 +79,18 @@ class Base(DeclarativeBase):
 
 
 # Async engine (for FastAPI)
+# Determine if we should echo SQL based on environment
+_db_echo = os.getenv("DB_ECHO", "false").lower() == "true"
+_debug = os.getenv("DEBUG", "false").lower() == "true"
+
 async_engine = create_async_engine(
     DATABASE_URL,
-    echo=True,  # SQL logging (set to False in production)
-    pool_pre_ping=True,
-    poolclass=NullPool,  # Disable pooling for async
+    echo=_db_echo or _debug,  # SQL logging only in debug mode
+    pool_pre_ping=True,  # Verify connections before using
+    pool_size=20,  # Number of connections to maintain
+    max_overflow=10,  # Additional connections when pool is exhausted
+    pool_timeout=30,  # Wait time for connection from pool
+    pool_recycle=3600,  # Recycle connections after 1 hour
 )
 
 # Async session factory
@@ -96,8 +103,12 @@ AsyncSessionLocal = async_sessionmaker(
 # Sync engine (for Alembic migrations)
 sync_engine = create_engine(
     SYNC_DATABASE_URL,
-    echo=True,
+    echo=_db_echo or _debug,  # SQL logging only in debug mode
     pool_pre_ping=True,
+    pool_size=10,  # Smaller pool for migrations
+    max_overflow=5,
+    pool_timeout=30,
+    pool_recycle=3600,
 )
 
 

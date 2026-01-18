@@ -1,0 +1,46 @@
+# Development dependencies for NARRA FORGE V2
+#
+# Install: pip install -r requirements-dev.txt
+#
+# These are additional tools for development, type checking, and code quality.
+
+# Type stubs for mypy
+types-python-jose==3.3.4.20240106
+types-passlib==1.7.7.20240106
+types-redis==4.6.0.20240106
+types-requests==2.31.0.20240125
+
+# Pre-commit hooks
+pre-commit==3.6.0
+
+# Code quality
+pylint==3.0.3
+flake8==7.0.0
+isort==5.13.2
+bandit==1.7.6  # Security linting
+
+# Testing enhancements
+pytest-mock==3.12.0
+pytest-xdist==3.5.0  # Parallel test execution
+pytest-timeout==2.2.0
+faker==22.5.0  # Fake data generation for tests
+factory-boy==3.3.0  # Test fixtures
+
+# API testing
+httpx==0.26.0  # Async HTTP client for testing
+requests==2.31.0  # Sync HTTP client
+
+# Database testing
+pytest-postgresql==5.0.0
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.4
+mkdocstrings[python]==0.24.0
+
+# Performance profiling
+py-spy==0.3.14  # Sampling profiler
+memory-profiler==0.61.0
+
+# Contract testing
+pactman==2.33.0  # Consumer-driven contract testing

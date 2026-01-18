@@ -74,6 +74,8 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/1
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DEBUG=false
       - CORS_ORIGINS=${CORS_ORIGINS}
       - SENTRY_DSN=${SENTRY_DSN}
@@ -159,8 +161,8 @@ services:
   frontend:
     image: narra_forge_frontend:latest
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: runner
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}

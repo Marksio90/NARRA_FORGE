@@ -1,15 +1,16 @@
 # Frontend Dockerfile for NARRA_FORGE V2
 # Automatic TypeScript type generation from OpenAPI spec
+# Build context: project root (not frontend/)
 
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
+WORKDIR /app/frontend
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY frontend/package.json frontend/package-lock.json* ./
 
 # Install dependencies
 RUN if [ -f package-lock.json ]; then npm ci; else npm install && npm install --package-lock-only; fi
@@ -17,20 +18,26 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install && npm install --
 
 # Rebuild the source code only when needed
 FROM base AS builder
-WORKDIR /app
+WORKDIR /app/frontend
 
 # Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/frontend/node_modules ./node_modules
+
+# Copy api-spec.json from root for type generation
+COPY api-spec.json ../api-spec.json
 
 # Copy application code
-COPY . .
+COPY frontend/ ./
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Generate TypeScript types from OpenAPI spec
+RUN echo "Generating TypeScript types from OpenAPI spec..." && \
+    npm run generate:types:local || echo "Warning: Type generation failed, using existing types"
+
 # Build Next.js application
 # The prebuild hook automatically runs type-check
-# Types are auto-generated from committed api-spec.json by pre-commit hook
 RUN npm run build
 
 
@@ -46,15 +53,15 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy built application
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/frontend/public ./public
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
 
 USER nextjs
 

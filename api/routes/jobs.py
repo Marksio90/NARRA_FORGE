@@ -121,7 +121,7 @@ async def create_job(
         )
 
     # Estimate cost (rough estimate based on target length)
-    target_length = request.production_brief.get("target_length", 5000)
+    target_length = request.production_brief.target_length  # Pydantic model attribute, not dict
     estimated_cost = (target_length / 1000) * 0.05  # $0.05 per 1000 words estimate
 
     # ATOMIC: Check and increment user limits in a single transaction with row lock

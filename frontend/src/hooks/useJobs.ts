@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/services/api";
 import type { Job, JobListResponse, CreateJobRequest } from "@/types/api";
+import { JobStatus } from "@/types/api";
 
 interface UseJobsOptions {
   page?: number;
@@ -93,7 +94,7 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
       await api.cancelJob(id);
       // Update job status in local state
       setJobs(prev =>
-        prev.map(j => j.id === id ? { ...j, status: "CANCELLED" } : j)
+        prev.map(j => j.id === id ? { ...j, status: JobStatus.CANCELLED } : j)
       );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Failed to cancel job";

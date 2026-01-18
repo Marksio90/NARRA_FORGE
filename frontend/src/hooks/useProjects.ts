@@ -52,7 +52,7 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
     setError(null);
 
     try {
-      const response = await api.listProjects(targetPage, pageSize);
+      const response = await api.listProjects({ page: targetPage, pageSize });
       setProjects(response.projects);
       setTotal(response.total);
       setTotalPages(response.total_pages);

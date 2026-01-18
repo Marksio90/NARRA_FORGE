@@ -2,7 +2,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Builder - Install dependencies
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir gunicorn
 
 
 # Stage 2: Base - Minimal runtime image
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -71,7 +71,7 @@ CMD ["sh", "-c", "alembic upgrade head && uvicorn api.main:app --host 0.0.0.0 --
 
 
 # Stage 3: Production - Optimized for production
-FROM base as production
+FROM base AS production
 
 # Run with Gunicorn for production
 CMD ["sh", "-c", "alembic upgrade head && gunicorn api.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --access-logfile - --error-logfile - --timeout 120 --keep-alive 5"]

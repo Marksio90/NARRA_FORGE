@@ -115,7 +115,7 @@ export default function DashboardPage() {
           Start generating your next narrative with our AI-powered story wizard
         </p>
         <Link href="/dashboard/generate">
-          <Button size="lg" variant="secondary">
+          <Button size="lg" variant="outline">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>

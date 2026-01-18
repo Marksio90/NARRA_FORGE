@@ -102,6 +102,28 @@ class ApiClient {
     );
   }
 
+  async listProjects(params: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{
+    projects: Project[];
+    total: number;
+    total_pages: number;
+    page: number;
+  }> {
+    const { page = 1, pageSize = 20 } = params;
+    const response = await this.request<PaginatedResponse<Project>>(
+      `/projects?page=${page}&page_size=${pageSize}`
+    );
+
+    return {
+      projects: response.items,
+      total: response.total,
+      total_pages: response.total_pages,
+      page: response.page,
+    };
+  }
+
   async getProject(id: string): Promise<Project> {
     return this.request<Project>(`/projects/${id}`);
   }
@@ -139,6 +161,38 @@ class ApiClient {
     );
   }
 
+  async listJobs(params: {
+    page?: number;
+    pageSize?: number;
+    projectId?: string;
+    status?: string;
+  }): Promise<{
+    jobs: GenerationJob[];
+    total: number;
+    total_pages: number;
+    page: number;
+  }> {
+    const { page = 1, pageSize = 20, projectId, status } = params;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (projectId) queryParams.append("project_id", projectId);
+    if (status) queryParams.append("status", status);
+
+    const response = await this.request<PaginatedResponse<GenerationJob>>(
+      `/jobs?${queryParams.toString()}`
+    );
+
+    return {
+      jobs: response.items,
+      total: response.total,
+      total_pages: response.total_pages,
+      page: response.page,
+    };
+  }
+
   async getJob(id: string): Promise<GenerationJob> {
     return this.request<GenerationJob>(`/jobs/${id}`);
   }
@@ -156,6 +210,12 @@ class ApiClient {
     });
   }
 
+  async resumeJob(id: string): Promise<GenerationJob> {
+    return this.request<GenerationJob>(`/jobs/${id}/resume`, {
+      method: "POST",
+    });
+  }
+
   // Narrative endpoints
   async getNarratives(
     page: number = 1,
@@ -164,6 +224,36 @@ class ApiClient {
     return this.request<PaginatedResponse<Narrative>>(
       `/narratives?page=${page}&page_size=${pageSize}`
     );
+  }
+
+  async listNarratives(params: {
+    page?: number;
+    pageSize?: number;
+    projectId?: string;
+  }): Promise<{
+    narratives: Narrative[];
+    total: number;
+    total_pages: number;
+    page: number;
+  }> {
+    const { page = 1, pageSize = 20, projectId } = params;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+
+    if (projectId) queryParams.append("project_id", projectId);
+
+    const response = await this.request<PaginatedResponse<Narrative>>(
+      `/narratives?${queryParams.toString()}`
+    );
+
+    return {
+      narratives: response.items,
+      total: response.total,
+      total_pages: response.total_pages,
+      page: response.page,
+    };
   }
 
   async getNarrative(id: string): Promise<Narrative> {

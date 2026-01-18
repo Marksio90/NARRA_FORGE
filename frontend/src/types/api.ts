@@ -77,11 +77,11 @@ export interface GenerationJob {
 export type Job = GenerationJob;
 
 export enum JobStatus {
-  PENDING = "PENDING",
-  RUNNING = "RUNNING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  CANCELLED = "CANCELLED",
+  QUEUED = "queued",
+  RUNNING = "running",
+  COMPLETED = "completed",
+  FAILED = "failed",
+  CANCELLED = "cancelled",
 }
 
 export interface ProductionBrief {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useJobs } from "@/hooks/useJobs";
+import { JobStatus } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -145,7 +146,7 @@ export default function JobsPage() {
                     </p>
                   </div>
 
-                  {(job.status === "QUEUED" || job.status === "RUNNING") && (
+                  {(job.status === JobStatus.QUEUED || job.status === JobStatus.RUNNING) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -161,7 +162,7 @@ export default function JobsPage() {
                 </div>
 
                 {/* Progress Bar */}
-                {(job.status === "RUNNING" || job.status === "QUEUED") && (
+                {(job.status === JobStatus.RUNNING || job.status === JobStatus.QUEUED) && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-gray-600 dark:text-gray-400">
@@ -209,7 +210,7 @@ export default function JobsPage() {
                 </div>
 
                 {/* Error Message */}
-                {job.status === "FAILED" && job.error_message && (
+                {job.status === JobStatus.FAILED && job.error_message && (
                   <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                     <p className="text-sm text-red-600 dark:text-red-400">{job.error_message}</p>
                   </div>

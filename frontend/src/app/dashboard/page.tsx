@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProjects } from "@/hooks/useProjects";
 import { useJobs } from "@/hooks/useJobs";
 import { useNarratives } from "@/hooks/useNarratives";
+import { JobStatus } from "@/types/api";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +15,7 @@ export default function DashboardPage() {
   const { narratives, total: totalNarratives, loading: narrativesLoading } = useNarratives({ pageSize: 5 });
 
   // Calculate stats
-  const runningJobs = jobs.filter(j => j.status === "RUNNING" || j.status === "QUEUED").length;
+  const runningJobs = jobs.filter(j => j.status === JobStatus.RUNNING || j.status === JobStatus.QUEUED).length;
   const remainingGenerations = (user?.monthly_generation_limit || 0) - (user?.monthly_generations_used || 0);
 
   return (
@@ -213,11 +214,11 @@ export default function DashboardPage() {
                       </div>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          job.status === "COMPLETED"
+                          job.status === JobStatus.COMPLETED
                             ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                            : job.status === "RUNNING"
+                            : job.status === JobStatus.RUNNING
                             ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                            : job.status === "FAILED"
+                            : job.status === JobStatus.FAILED
                             ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
                             : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                         }`}

@@ -73,6 +73,9 @@ export interface GenerationJob {
   updated_at: string;
 }
 
+// Alias for backward compatibility
+export type Job = GenerationJob;
+
 export enum JobStatus {
   PENDING = "PENDING",
   RUNNING = "RUNNING",
@@ -152,6 +155,11 @@ export interface PaginatedResponse<T> {
   page_size: number;
   total_pages: number;
 }
+
+// Specific response types
+export type JobListResponse = PaginatedResponse<GenerationJob>;
+export type ProjectListResponse = PaginatedResponse<Project>;
+export type NarrativeListResponse = PaginatedResponse<Narrative>;
 
 export interface ApiError {
   detail: string;

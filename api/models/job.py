@@ -5,21 +5,12 @@ GenerationJob model for async narrative generation tasks.
 import uuid
 from datetime import datetime
 from typing import Optional
-import enum
 
 from sqlalchemy import String, Text, ForeignKey, JSON, Enum as SQLEnum, Float, Integer, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api.models.base import Base
-
-
-class JobStatus(str, enum.Enum):
-    """Job status values."""
-    QUEUED = "queued"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+from api.schemas.enums import JobStatus  # Import from single source of truth
 
 
 class GenerationJob(Base):

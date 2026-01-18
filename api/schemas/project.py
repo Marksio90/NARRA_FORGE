@@ -3,7 +3,7 @@ Pydantic schemas for Project endpoints - STRONGLY TYPED.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from api.schemas.enums import ProductionType, Genre
@@ -47,7 +47,7 @@ class ProjectResponse(BaseModel):
 
 class ProjectListResponse(BaseModel):
     """List of projects with pagination."""
-    projects: list[ProjectResponse]
+    projects: List[ProjectResponse]
     total: int
     page: int
     page_size: int

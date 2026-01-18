@@ -7,8 +7,9 @@ This replaces Dict[str, Any] with type-safe schemas that:
 3. Auto-generate TypeScript types (SINGLE SOURCE OF TRUTH)
 """
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
+from pydantic_core import ValidationInfo
 
 from api.schemas.enums import ProductionType, Genre
 
@@ -102,7 +103,7 @@ class ProductionBriefSchema(BaseModel):
 
     @field_validator('target_length')
     @classmethod
-    def validate_target_length(cls, v: int, info) -> int:
+    def validate_target_length(cls, v: int, info: ValidationInfo) -> int:
         """Validate target length is reasonable for production type."""
         production_type = info.data.get('production_type')
 
@@ -143,6 +144,49 @@ class ProductionBriefSchema(BaseModel):
     }
 
 
+# ============================================================================
+# Helper schemas (defined first to avoid forward references)
+# ============================================================================
+
+class CharacterSchema(BaseModel):
+    """Character metadata schema."""
+    name: str = Field(..., min_length=1, max_length=200)
+    role: str = Field(..., description="Character role (protagonist, antagonist, supporting)")
+    description: str = Field(..., description="Character description")
+    traits: Optional[List[str]] = None
+    backstory: Optional[str] = None
+
+
+class NarrativeMetadataSchema(BaseModel):
+    """Strongly-typed metadata for narratives."""
+    characters: List[CharacterSchema] = Field(default_factory=list)
+    structure: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Narrative structure (acts, chapters, scenes)"
+    )
+    segments: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Individual narrative segments"
+    )
+    themes: Optional[List[str]] = None
+    setting_details: Optional[Dict[str, Any]] = None
+
+
+class QualityMetricsSchema(BaseModel):
+    """Quality metrics for narrative assessment."""
+    coherence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    logic_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    character_consistency_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    pacing_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    dialogue_quality_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    overall_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    notes: Optional[List[str]] = None
+
+
+# ============================================================================
+# Main output schema (uses helper schemas defined above)
+# ============================================================================
+
 class NarrativeOutputSchema(BaseModel):
     """
     Strongly-typed schema for narrative generation output.
@@ -178,44 +222,9 @@ class NarrativeOutputSchema(BaseModel):
         description="Quality assessment metrics"
     )
 
-    generation_metadata: dict = Field(
+    generation_metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Metadata about generation process (model, tokens, etc.)"
     )
 
     model_config = {"from_attributes": True}
-
-
-class CharacterSchema(BaseModel):
-    """Character metadata schema."""
-    name: str = Field(..., min_length=1, max_length=200)
-    role: str = Field(..., description="Character role (protagonist, antagonist, supporting)")
-    description: str = Field(..., description="Character description")
-    traits: Optional[List[str]] = None
-    backstory: Optional[str] = None
-
-
-class NarrativeMetadataSchema(BaseModel):
-    """Strongly-typed metadata for narratives."""
-    characters: List[CharacterSchema] = Field(default_factory=list)
-    structure: dict = Field(
-        default_factory=dict,
-        description="Narrative structure (acts, chapters, scenes)"
-    )
-    segments: List[dict] = Field(
-        default_factory=list,
-        description="Individual narrative segments"
-    )
-    themes: Optional[List[str]] = None
-    setting_details: Optional[dict] = None
-
-
-class QualityMetricsSchema(BaseModel):
-    """Quality metrics for narrative assessment."""
-    coherence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    logic_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    character_consistency_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    pacing_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    dialogue_quality_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    overall_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    notes: Optional[List[str]] = None

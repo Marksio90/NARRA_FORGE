@@ -54,12 +54,12 @@ export function useNarratives(options: UseNarrativesOptions = {}): UseNarratives
     setError(null);
 
     try {
+      // Note: genre and productionType filtering not yet supported by API
+      // They are kept in options for future backend implementation
       const response = await api.listNarratives({
         page: targetPage,
         pageSize,
         projectId,
-        genre,
-        productionType,
       });
       setNarratives(response.narratives);
       setTotal(response.total);

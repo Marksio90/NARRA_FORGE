@@ -40,7 +40,8 @@ COPY scripts/generate_openapi_docker.py ./scripts/
 # These are only used during spec generation and not in runtime
 ENV JWT_SECRET_KEY=build-time-dummy-secret-for-openapi-generation-only \
     DATABASE_URL=postgresql://dummy:dummy@localhost/dummy \
-    REDIS_URL=redis://localhost:6379/0
+    REDIS_URL=redis://localhost:6379/0 \
+    OPENAI_API_KEY=sk-dummy-key-for-build-time-openapi-generation-only
 
 # Generate OpenAPI spec automatically
 RUN python scripts/generate_openapi_docker.py

@@ -1,5 +1,5 @@
 # Backend Dockerfile for NARRA_FORGE V2 API
-# Multi-stage build for optimized production image
+# Multi-stage build with automatic type safety and OpenAPI spec generation
 
 # Stage 1: Builder - Install dependencies
 FROM python:3.11-slim AS builder
@@ -29,7 +29,24 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir gunicorn
 
 
-# Stage 2: Base - Minimal runtime image
+# Stage 2: OpenAPI Spec Generator - Generate spec for frontend TypeScript generation
+FROM builder AS spec-generator
+
+WORKDIR /app
+COPY api/ ./api/
+
+# Generate OpenAPI spec automatically
+RUN python -c "import sys; sys.path.insert(0, '/app'); \
+    from api.main import app; \
+    import json; \
+    spec = app.openapi(); \
+    spec['info']['description'] = 'NARRA FORGE V2 - Auto-generated OpenAPI spec for TypeScript type generation'; \
+    with open('/app/api-spec.json', 'w') as f: \
+        json.dump(spec, f, indent=2); \
+    print('✅ OpenAPI spec generated successfully')"
+
+
+# Stage 3: Base - Minimal runtime image
 FROM python:3.11-slim AS base
 
 # Set environment variables
@@ -52,6 +69,9 @@ WORKDIR /app
 # Copy application code
 COPY . .
 
+# Copy generated OpenAPI spec from spec-generator stage
+COPY --from=spec-generator /app/api-spec.json ./api-spec.json
+
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
@@ -70,7 +90,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 CMD ["sh", "-c", "alembic upgrade head && uvicorn api.main:app --host 0.0.0.0 --port 8000"]
 
 
-# Stage 3: Production - Optimized for production
+# Stage 4: Production - Optimized for production
 FROM base AS production
 
 # Run with Gunicorn for production

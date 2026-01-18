@@ -72,6 +72,15 @@ async def register(
         monthly_cost_used_usd=0.0
     )
 
+    # Validate authentication method
+    try:
+        new_user.validate_authentication()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)

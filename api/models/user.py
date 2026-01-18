@@ -47,6 +47,19 @@ class User(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    def validate_authentication(self) -> None:
+        """
+        Validate that user has proper authentication method.
+
+        Raises:
+            ValueError: If user has neither password nor OAuth provider
+        """
+        if not self.hashed_password and not self.oauth_provider:
+            raise ValueError("User must have either password or OAuth provider")
+
+        if self.oauth_provider and not self.oauth_id:
+            raise ValueError(f"User with {self.oauth_provider} OAuth must have oauth_id")
+
     # OAuth
     oauth_provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # "google", "github", etc.
     oauth_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)

@@ -34,16 +34,10 @@ FROM builder AS spec-generator
 
 WORKDIR /app
 COPY api/ ./api/
+COPY scripts/generate_openapi_docker.py ./scripts/
 
 # Generate OpenAPI spec automatically
-RUN python -c "import sys; sys.path.insert(0, '/app'); \
-    from api.main import app; \
-    import json; \
-    spec = app.openapi(); \
-    spec['info']['description'] = 'NARRA FORGE V2 - Auto-generated OpenAPI spec for TypeScript type generation'; \
-    with open('/app/api-spec.json', 'w') as f: \
-        json.dump(spec, f, indent=2); \
-    print('✅ OpenAPI spec generated successfully')"
+RUN python scripts/generate_openapi_docker.py
 
 
 # Stage 3: Base - Minimal runtime image

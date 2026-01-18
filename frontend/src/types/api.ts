@@ -6,14 +6,16 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
+  avatar_url?: string;
   is_active: boolean;
   is_verified: boolean;
-  role: string;
-  created_at: string;
-  monthly_generations_used: number;
+  subscription_tier: string; // FREE, PRO, ENTERPRISE
   monthly_generation_limit: number;
-  monthly_cost_used_usd: number;
+  monthly_generations_used: number;
   monthly_cost_limit_usd: number;
+  monthly_cost_used_usd: number;
+  created_at: string;
+  last_login_at?: string;
 }
 
 export interface AuthResponse {

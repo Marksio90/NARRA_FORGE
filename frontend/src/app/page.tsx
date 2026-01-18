@@ -198,7 +198,7 @@ export default function LandingPage() {
             Join thousands of creators using AI to bring their stories to life
           </p>
           <Link href="/register">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
+            <Button size="lg" variant="outline" className="text-lg px-8 py-6">
               Get Started for Free
             </Button>
           </Link>

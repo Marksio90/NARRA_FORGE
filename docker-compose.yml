@@ -63,6 +63,7 @@ services:
 
   # Backend API
   backend:
+    image: narra_forge_backend:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -98,6 +99,7 @@ services:
 
   # Celery Worker
   celery_worker:
+    image: narra_forge_celery_worker:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -132,6 +134,7 @@ services:
 
   # Celery Beat (scheduler)
   celery_beat:
+    image: narra_forge_celery_beat:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -154,6 +157,7 @@ services:
 
   # Frontend
   frontend:
+    image: narra_forge_frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile

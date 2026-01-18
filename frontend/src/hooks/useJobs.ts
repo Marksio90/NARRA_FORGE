@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/services/api";
-import type { Job, JobListResponse } from "@/types/api";
+import type { Job, JobListResponse, CreateJobRequest } from "@/types/api";
 
 interface UseJobsOptions {
   page?: number;
@@ -21,10 +21,7 @@ interface UseJobsReturn {
   loading: boolean;
   error: string | null;
   fetchJobs: (page?: number) => Promise<void>;
-  createJob: (data: {
-    project_id: string;
-    production_brief: Record<string, any>;
-  }) => Promise<Job>;
+  createJob: (data: CreateJobRequest) => Promise<Job>;
   cancelJob: (id: string) => Promise<void>;
   resumeJob: (id: string) => Promise<Job>;
   refetch: () => Promise<void>;
@@ -77,10 +74,7 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
     }
   }, [currentPage, pageSize, projectId, status]);
 
-  const createJob = useCallback(async (data: {
-    project_id: string;
-    production_brief: Record<string, any>;
-  }) => {
+  const createJob = useCallback(async (data: CreateJobRequest) => {
     setError(null);
     try {
       const newJob = await api.createJob(data);

@@ -74,7 +74,7 @@ services:
       - dev
     networks:
       - narra-network
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uv run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
     build:
@@ -100,7 +100,7 @@ services:
       - dev
     networks:
       - narra-network
-    command: celery -A services.tasks worker --loglevel=info
+    command: uv run celery -A services.tasks worker --loglevel=info
 
   ui:
     build:

@@ -191,7 +191,7 @@ export default function JobDetailPage() {
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600 mb-1">Koszt</div>
           <div className="text-xl font-semibold text-gray-900">
-            ${job.current_cost.toFixed(3)} / ${job.budget_limit.toFixed(2)}
+            ${(job.current_cost ?? 0).toFixed(3)} / ${job.budget_limit.toFixed(2)}
           </div>
         </div>
       </div>

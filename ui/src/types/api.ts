@@ -56,7 +56,7 @@ export interface JobResponse {
   user_inspiration: string;
   target_word_count: number;
   budget_limit: number;
-  current_cost: number;
+  current_cost: number | null;
   progress: number;
   created_at: string;
   updated_at: string;

@@ -82,6 +82,10 @@ async def create_job(
         completed_at=job.completed_at,
         total_cost=None,
         artifacts_count=0,
+        budget_limit=request.budget_limit or 5.0,
+        target_word_count=request.constraints.get("target_word_count", 2000),
+        progress=0.0,
+        error_message=None,
     )
 
 

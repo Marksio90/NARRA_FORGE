@@ -5,6 +5,7 @@ from services.agents.interpreter import Interpreter
 from services.agents.plot_creator import PlotCreator
 from services.agents.prose_generator import ProseGenerator
 from services.agents.qa_agent import QAAgent
+from services.agents.style_polish import StylePolishAgent
 from services.agents.world_architect import WorldArchitect
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "PlotCreator",
     "ProseGenerator",
     "QAAgent",
+    "StylePolishAgent",
 ]

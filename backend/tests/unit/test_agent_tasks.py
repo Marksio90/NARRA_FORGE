@@ -136,5 +136,3 @@ def test_style_polish_task() -> None:
     assert result["prose_id"] == "prose-1"
     assert "polished" in result
     assert "task_id" in result
-
-

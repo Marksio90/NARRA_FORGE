@@ -88,9 +88,7 @@ def test_track_cost_task() -> None:
 
 def test_cleanup_job_task() -> None:
     """Test job cleanup task."""
-    result = cleanup_job_task.apply(
-        kwargs={"job_id": "job-999", "remove_artifacts": True}
-    ).get()
+    result = cleanup_job_task.apply(kwargs={"job_id": "job-999", "remove_artifacts": True}).get()
 
     assert result["job_id"] == "job-999"
     assert result["cleaned_up"] is True
@@ -101,9 +99,7 @@ def test_cleanup_job_task() -> None:
 
 def test_cleanup_job_task_keep_artifacts() -> None:
     """Test job cleanup task keeping artifacts."""
-    result = cleanup_job_task.apply(
-        kwargs={"job_id": "job-888", "remove_artifacts": False}
-    ).get()
+    result = cleanup_job_task.apply(kwargs={"job_id": "job-888", "remove_artifacts": False}).get()
 
     assert result["job_id"] == "job-888"
     assert result["cleaned_up"] is True

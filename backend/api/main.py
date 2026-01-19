@@ -12,7 +12,7 @@ app = FastAPI(
 )
 
 
-@app.get("/health")  # type: ignore[misc]
+@app.get("/health")
 async def health_check() -> JSONResponse:
     """Health check endpoint."""
     return JSONResponse(
@@ -26,7 +26,7 @@ async def health_check() -> JSONResponse:
     )
 
 
-@app.get("/")  # type: ignore[misc]
+@app.get("/")
 async def root() -> JSONResponse:
     """Root endpoint."""
     return JSONResponse(

@@ -134,23 +134,53 @@ def test_generate_prose_task(mock_openai_response: dict[str, Any]) -> None:
     assert "task_id" in result
 
 
-def test_qa_check_task() -> None:
+def test_qa_check_task(mock_openai_response: dict[str, Any]) -> None:
     """Test QA agent task."""
-    result = qa_check_task.apply(
-        kwargs={
-            "job_id": "job-222",
-            "artifact_id": "artifact-1",
-            "check_type": "coherence",
-        }
-    ).get()
+    from unittest.mock import AsyncMock, patch
+    from uuid import uuid4
 
-    assert result["job_id"] == "job-222"
+    job_id = str(uuid4())
+    artifact_id = str(uuid4())
+
+    # Mock the OpenAI client
+    qa_response = {
+        "content": json.dumps(
+            {
+                "logic_score": 0.90,
+                "psychology_score": 0.85,
+                "timeline_score": 0.92,
+                "critical_errors": [],
+                "warnings": ["Minor timeline ambiguity"],
+                "explanation": "Prose is coherent.",
+            }
+        ),
+        "cost": 0.015,
+        "created_at": datetime.utcnow(),
+    }
+
+    with patch("services.agents.qa_agent.OpenAIClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.chat_completion = AsyncMock(return_value=qa_response)
+
+        result = qa_check_task.apply(
+            kwargs={
+                "job_id": job_id,
+                "artifact_id": artifact_id,
+                "check_type": "coherence",
+            }
+        ).get()
+
+    assert result["job_id"] == job_id
     assert result["agent"] == "qa"
     assert result["stage"] == PipelineStage.QA.value
-    assert result["artifact_id"] == "artifact-1"
+    assert result["artifact_id"] == artifact_id
     assert result["check_type"] == "coherence"
-    assert "passed" in result
-    assert "issues" in result
+    assert result["passed"] is True
+    assert result["logic_score"] == 0.90
+    assert result["psychology_score"] == 0.85
+    assert result["timeline_score"] == 0.92
+    assert len(result["critical_errors"]) == 0
+    assert len(result["warnings"]) == 1
     assert "task_id" in result
 
 

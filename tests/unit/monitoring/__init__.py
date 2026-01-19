@@ -1,3 +1,0 @@
-"""
-Testy dla modułów monitoring
-"""

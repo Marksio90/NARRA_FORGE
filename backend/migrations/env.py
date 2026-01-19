@@ -16,6 +16,7 @@ from models.schema import (  # noqa: F401
     Artifact,
     Character,
     CostSnapshot,
+    Embedding,
     Job,
     QAReport,
     Timeline,

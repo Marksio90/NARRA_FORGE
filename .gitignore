@@ -1,0 +1,100 @@
+# NarraForge .gitignore
+
+# ==================== Environment ====================
+.env
+.env.local
+.env.*.local
+
+# ==================== Python ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==================== Virtual Environments ====================
+venv/
+ENV/
+env/
+.venv/
+.virtualenv/
+
+# ==================== Testing ====================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.cover
+.hypothesis/
+
+# ==================== IDEs ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ==================== Jupyter ====================
+.ipynb_checkpoints/
+*.ipynb
+
+# ==================== Alembic ====================
+# Keep migrations directory but ignore dev database
+*.db
+*.sqlite3
+
+# ==================== Node.js ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+
+# ==================== Next.js ====================
+.next/
+out/
+next-env.d.ts
+.vercel
+
+# ==================== Docker ====================
+*.log
+docker-compose.override.yml
+
+# ==================== Application ====================
+artifacts/
+logs/
+*.md.backup
+output/
+
+# ==================== Generated Content ====================
+*.epub
+*.pdf
+*.docx
+generated_books/
+
+# ==================== Temporary ====================
+tmp/
+temp/
+*.tmp
+.cache/

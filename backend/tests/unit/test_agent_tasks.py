@@ -1,5 +1,11 @@
 """Unit tests for agent tasks."""
 
+import json
+from datetime import datetime
+from typing import Any
+
+import pytest
+
 from services.agent_tasks import (
     create_characters_task,
     create_plot_task,
@@ -10,6 +16,23 @@ from services.agent_tasks import (
     style_polish_task,
 )
 from services.model_policy import PipelineStage
+
+
+@pytest.fixture
+def mock_openai_response() -> dict[str, Any]:
+    """Mock OpenAI API response."""
+    return {
+        "content": json.dumps(
+            {
+                "prose": "The hero embarked on a journey through the dark forest. " * 10,
+                "word_count": 110,
+                "style_notes": "Epic adventure tone",
+                "continuity_check": "Hero entering forest",
+            }
+        ),
+        "cost": 0.025,
+        "created_at": datetime.utcnow(),
+    }
 
 
 def test_interpret_request_task() -> None:
@@ -80,23 +103,34 @@ def test_create_plot_task() -> None:
     assert "task_id" in result
 
 
-def test_generate_prose_task() -> None:
+def test_generate_prose_task(mock_openai_response: dict[str, Any]) -> None:
     """Test prose generation agent task."""
-    context = {"plot": "hero's journey", "setting": "dark forest"}
-    result = generate_prose_task.apply(
-        kwargs={
-            "job_id": "job-111",
-            "segment_id": "segment-1",
-            "context": context,
-        }
-    ).get()
+    from unittest.mock import AsyncMock, patch
+    from uuid import uuid4
 
-    assert result["job_id"] == "job-111"
+    job_id = str(uuid4())
+    context = {"plot": "hero's journey", "setting": "dark forest"}
+
+    # Mock the OpenAI client
+    with patch("services.agents.prose_generator.OpenAIClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.chat_completion = AsyncMock(return_value=mock_openai_response)
+
+        result = generate_prose_task.apply(
+            kwargs={
+                "job_id": job_id,
+                "segment_id": "segment-1",
+                "context": context,
+            }
+        ).get()
+
+    assert result["job_id"] == job_id
     assert result["agent"] == "generator_segmentow"
     assert result["stage"] == PipelineStage.PROSE.value
     assert result["segment_id"] == "segment-1"
     assert "prose" in result
     assert "word_count" in result
+    assert result["model_used"] == "gpt-4o"
     assert "task_id" in result
 
 

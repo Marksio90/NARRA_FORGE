@@ -108,6 +108,14 @@ disallow_untyped_decorators = false
 module = "services.tasks"
 disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+module = "services.job_tasks"
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = "services.agent_tasks"
+disallow_untyped_decorators = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

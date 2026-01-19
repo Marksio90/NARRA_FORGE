@@ -8,8 +8,7 @@ This replaces Dict[str, Any] with type-safe schemas that:
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
-from pydantic_core import ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 from api.schemas.enums import ProductionType, Genre
 

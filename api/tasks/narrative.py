@@ -22,8 +22,7 @@ from api.models.project import Project
 
 # Import NarraForge core components
 from narra_forge.core.types import ProductionBrief, ProductionType, Genre
-from narra_forge.core.orchestrator import Orchestrator
-from narra_forge.memory.storage import MemoryStore
+from narra_forge.core.orchestrator import BatchOrchestrator
 
 
 class NarrativeGenerationTask(Task):
@@ -126,18 +125,23 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                 target_length=brief_data.get("target_length", 5000)
             )
             
-            # Initialize memory store (if world_id provided)
-            memory_store = None
+            # Create orchestrator with config
+            from narra_forge.core.config import NarraForgeConfig
+
+            config = NarraForgeConfig()
+
+            # Initialize memory system (if world_id provided)
+            memory_system = None
             if brief_data.get("world_id"):
                 # TODO: Load world from memory system
                 pass
-            
+
             # Create orchestrator
-            orchestrator = Orchestrator(
-                brief=production_brief,
-                memory_store=memory_store
+            orchestrator = BatchOrchestrator(
+                config=config,
+                memory=memory_system
             )
-            
+
             # Progress callback
             async def update_progress(stage: str, progress: float):
                 """Update job progress in database."""
@@ -146,7 +150,7 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                 if stage not in job.completed_stages:
                     job.completed_stages.append(stage)
                 await db.commit()
-                
+
                 # Update Celery task state
                 task.update_state(
                     state="PROGRESS",
@@ -156,23 +160,22 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                         "job_id": job_id
                     }
                 )
-            
-            # Run pipeline (synchronous - NarraForge is not async yet)
+
+            # Run pipeline - BatchOrchestrator.produce_narrative is async
             await update_progress("Starting generation", 5.0)
 
-            # Execute in thread pool to not block event loop
-            from concurrent.futures import ThreadPoolExecutor
+            # Run the async narrative production
+            narrative_output = await orchestrator.produce_narrative(
+                brief=production_brief,
+                show_progress=False  # Don't show console progress in Celery task
+            )
 
-            loop = asyncio.get_event_loop()
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                narrative_output = await loop.run_in_executor(
-                    executor,
-                    orchestrator.run
-                )
-            
             await update_progress("Finalizing", 95.0)
             
             # Create Narrative record
+            # Extract coherence score from quality metrics
+            coherence_score = narrative_output.quality_metrics.get("coherence_score", 0.0) if narrative_output.quality_metrics else 0.0
+
             narrative = Narrative(
                 id=str(uuid.uuid4()),
                 user_id=job.user_id,
@@ -182,24 +185,21 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                 production_type=production_brief.production_type.value,
                 genre=production_brief.genre.value,
                 narrative_text=narrative_output.narrative_text,
-                word_count=len(narrative_output.narrative_text.split()),
+                word_count=narrative_output.word_count,
                 narrative_metadata={
                     "characters": [c.dict() for c in narrative_output.characters] if narrative_output.characters else [],
                     "structure": narrative_output.structure.dict() if narrative_output.structure else {},
                     "segments": [s.dict() for s in narrative_output.segments] if narrative_output.segments else []
                 },
-                quality_metrics={
-                    "coherence": narrative_output.coherence_score,
-                    # Add other quality metrics if available
-                },
-                overall_quality_score=narrative_output.coherence_score,
-                generation_cost_usd=orchestrator.total_cost,
-                tokens_used=orchestrator.total_tokens,
+                quality_metrics=narrative_output.quality_metrics or {},
+                overall_quality_score=coherence_score,
+                generation_cost_usd=narrative_output.total_cost_usd,
+                tokens_used=narrative_output.total_tokens,
                 version=1
             )
-            
+
             db.add(narrative)
-            
+
             # Update job
             job.status = JobStatus.COMPLETED
             job.output = {
@@ -207,31 +207,31 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                 "word_count": narrative.word_count,
                 "quality_score": narrative.overall_quality_score
             }
-            job.actual_cost_usd = orchestrator.total_cost
-            job.tokens_used = orchestrator.total_tokens
+            job.actual_cost_usd = narrative_output.total_cost_usd
+            job.tokens_used = narrative_output.total_tokens
             job.completed_at = datetime.now(timezone.utc)
             job.duration_seconds = int((job.completed_at - job.started_at).total_seconds())
             job.progress_percentage = 100.0
             job.current_stage = "Completed"
-            
+
             # Update project stats
             project_stmt = select(Project).where(Project.id == job.project_id)
             project_result = await db.execute(project_stmt)
             project = project_result.scalar_one_or_none()
-            
+
             if project:
                 project.narrative_count += 1
                 project.total_word_count += narrative.word_count
-                project.total_cost_usd += orchestrator.total_cost
-            
+                project.total_cost_usd += narrative_output.total_cost_usd
+
             # Update user usage
             user_stmt = select(User).where(User.id == job.user_id)
             user_result = await db.execute(user_stmt)
             user = user_result.scalar_one_or_none()
-            
+
             if user:
                 user.monthly_generations_used += 1
-                user.monthly_cost_used_usd += orchestrator.total_cost
+                user.monthly_cost_used_usd += narrative_output.total_cost_usd
             
             await db.commit()
             await update_progress("Complete", 100.0)

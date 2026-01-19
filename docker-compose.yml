@@ -90,7 +90,7 @@ services:
       - narra_network
     restart: always
     deploy:
-      replicas: 2
+      replicas: 1  # Changed from 2 to 1 for development
       resources:
         limits:
           cpus: '1'
@@ -125,7 +125,7 @@ services:
       - narra_network
     restart: always
     deploy:
-      replicas: 2
+      replicas: 1  # Changed from 2 to 1 for development
       resources:
         limits:
           cpus: '2'
@@ -173,7 +173,7 @@ services:
       - narra_network
     restart: always
     deploy:
-      replicas: 2
+      replicas: 1  # Changed from 2 to 1 for development
       resources:
         limits:
           cpus: '0.5'

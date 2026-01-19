@@ -324,6 +324,9 @@ def style_polish_task(
     job_id: str,
     prose_id: str,
     target_style: str,
+    original_prose: str,
+    language: str = "pl",
+    commercial_level: str = "standard",
 ) -> dict[str, Any]:
     """
     Agent: Redaktor - Polish prose style.
@@ -331,10 +334,13 @@ def style_polish_task(
     Args:
         job_id: UUID of the job
         prose_id: UUID of prose to polish
-        target_style: Target writing style
+        target_style: Target writing style (fantasy, sci-fi, thriller, etc.)
+        original_prose: The original prose text to polish
+        language: Target language (default: "pl")
+        commercial_level: Commercial polish level (light/standard/intensive)
 
     Returns:
-        Dictionary with polished prose
+        Dictionary with polished prose results
     """
     logger.info(
         "Agent: Redaktor starting",
@@ -342,17 +348,59 @@ def style_polish_task(
             "job_id": job_id,
             "prose_id": prose_id,
             "target_style": target_style,
+            "language": language,
+            "commercial_level": commercial_level,
             "stage": PipelineStage.STYLE.value,
             "task_id": self.request.id,
         },
     )
 
-    # Placeholder - will be implemented in KROK 11
+    # Import here to avoid circular dependencies
+    from uuid import UUID
+
+    from models.schemas.agent import StyleRequest
+    from services.agents.style_polish import StylePolishAgent
+
+    # Create request
+    request = StyleRequest(
+        job_id=UUID(job_id) if isinstance(job_id, str) else job_id,
+        prose_id=UUID(prose_id) if isinstance(prose_id, str) else prose_id,
+        target_style=target_style,
+        language=language,
+        commercial_level=commercial_level,
+    )
+
+    # Polish prose
+    agent = StylePolishAgent()
+    import asyncio
+
+    response = asyncio.run(agent.polish_prose(request, original_prose))
+
+    logger.info(
+        "Agent: Redaktor completed",
+        extra={
+            "job_id": job_id,
+            "prose_id": prose_id,
+            "polished": response.polished,
+            "changes_count": response.changes_count,
+            "style_score": response.style_score,
+            "polished_prose_id": (
+                str(response.polished_prose_id) if response.polished_prose_id else None
+            ),
+            "task_id": self.request.id,
+        },
+    )
+
     return {
-        "job_id": job_id,
-        "agent": "redaktor",
-        "stage": PipelineStage.STYLE.value,
-        "prose_id": prose_id,
-        "polished": True,
+        "job_id": str(response.job_id),
+        "agent": response.agent,
+        "stage": response.stage.value,
+        "prose_id": str(response.prose_id),
+        "polished": response.polished,
+        "polished_prose_id": (
+            str(response.polished_prose_id) if response.polished_prose_id else None
+        ),
+        "changes_count": response.changes_count,
+        "style_score": response.style_score,
         "task_id": self.request.id,
     }

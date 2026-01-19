@@ -184,19 +184,51 @@ def test_qa_check_task(mock_openai_response: dict[str, Any]) -> None:
     assert "task_id" in result
 
 
-def test_style_polish_task() -> None:
+def test_style_polish_task(mock_openai_response: dict[str, Any]) -> None:
     """Test style polish agent task."""
-    result = style_polish_task.apply(
-        kwargs={
-            "job_id": "job-333",
-            "prose_id": "prose-1",
-            "target_style": "literary",
-        }
-    ).get()
+    from unittest.mock import AsyncMock, patch
+    from uuid import uuid4
 
-    assert result["job_id"] == "job-333"
+    job_id = str(uuid4())
+    prose_id = str(uuid4())
+    original_prose = "Kael szedł przez las. Czuł strach."
+
+    # Mock the OpenAI client
+    style_response = {
+        "content": json.dumps(
+            {
+                "polished_prose": "Kael przedzierał się przez gąszcz, dreszcz lęku przebiegał mu po plecach.",
+                "changes_count": 5,
+                "style_score": 0.88,
+                "changes_summary": "Wzmocniono obrazowanie, usunięto powtórzenia",
+                "commercial_notes": "Tekst gotowy do publikacji.",
+            }
+        ),
+        "cost": 0.035,
+        "created_at": datetime.utcnow(),
+    }
+
+    with patch("services.agents.style_polish.OpenAIClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.chat_completion = AsyncMock(return_value=style_response)
+
+        result = style_polish_task.apply(
+            kwargs={
+                "job_id": job_id,
+                "prose_id": prose_id,
+                "target_style": "fantasy",
+                "original_prose": original_prose,
+                "language": "pl",
+                "commercial_level": "standard",
+            }
+        ).get()
+
+    assert result["job_id"] == job_id
     assert result["agent"] == "redaktor"
     assert result["stage"] == PipelineStage.STYLE.value
-    assert result["prose_id"] == "prose-1"
-    assert "polished" in result
+    assert result["prose_id"] == prose_id
+    assert result["polished"] is True
+    assert result["polished_prose_id"] is not None
+    assert result["changes_count"] == 5
+    assert result["style_score"] == 0.88
     assert "task_id" in result

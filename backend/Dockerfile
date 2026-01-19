@@ -15,7 +15,6 @@ WORKDIR /app
 
 # Copy project files
 COPY pyproject.toml .
-COPY .python-version .
 
 # Install dependencies
 RUN uv sync --all-extras --no-dev

@@ -6,8 +6,9 @@ Manages FastAPI-specific configuration separate from core NarraForge config.
 
 import os
 from functools import lru_cache
-from typing import List
+from typing import List, Union
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,6 +42,25 @@ class APISettings(BaseSettings):
     cors_allow_credentials: bool = True
     cors_allow_methods: List[str] = ["*"]
     cors_allow_headers: List[str] = ["*"]
+
+    @field_validator('cors_origins', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """
+        Parse CORS origins from string or list.
+
+        Handles:
+        - Empty string -> default list
+        - Comma-separated string -> list
+        - List -> pass through
+        """
+        if isinstance(v, str):
+            # Empty string or whitespace only -> use default
+            if not v or not v.strip():
+                return ["http://localhost:3000", "http://localhost:8080"]
+            # Comma-separated -> split
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # Database
     database_url: str = ""

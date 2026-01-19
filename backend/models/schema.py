@@ -142,3 +142,24 @@ class CostSnapshot(Base):  # type: ignore[misc]
 
     # Relationships
     job = relationship("Job", back_populates="cost_snapshots")
+
+
+class Embedding(Base):  # type: ignore[misc]
+    """Embedding model — semantic search with pgvector."""
+
+    __tablename__ = "embeddings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    artifact_id = Column(UUID(as_uuid=True), ForeignKey("artifacts.id"), nullable=False)
+    vector = Column("vector", String, nullable=False)  # pgvector VECTOR type (placeholder)
+    content_type = Column(
+        String(50), nullable=False
+    )  # segment_summary, event, motif, character_state
+    content_summary = Column(Text, nullable=False)  # Summary text (NOT full text)
+    meta = Column(
+        "metadata", JSON, nullable=False, default=dict
+    )  # 'metadata' is reserved in SQLAlchemy
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    artifact = relationship("Artifact")

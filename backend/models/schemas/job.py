@@ -40,17 +40,21 @@ class CreateJobRequest(BaseRequest, GenreValidator, JobTypeValidator):
 class JobResponse(BaseResponse):
     """Response schema for job information."""
 
-    id: UUID
-    type: str = Field(..., description="Job type")
+    id: UUID = Field(..., serialization_alias="job_id")
+    type: str = Field(..., serialization_alias="job_type", description="Job type")
     genre: str = Field(..., description="Genre")
     status: str = Field(..., description="Job status (queued, running, completed, failed)")
-    inspiration: str | None = None
+    inspiration: str | None = Field(None, serialization_alias="user_inspiration")
     constraints: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None = None
-    total_cost: float | None = Field(None, description="Total cost in USD")
+    total_cost: float | None = Field(None, serialization_alias="current_cost", description="Total cost in USD")
     artifacts_count: int = Field(default=0, ge=0)
+    budget_limit: float = Field(default=5.0, ge=0.0, description="Budget limit in USD")
+    target_word_count: int = Field(default=2000, ge=0, description="Target word count")
+    progress: float = Field(default=0.0, ge=0.0, le=100.0, description="Progress percentage")
+    error_message: str | None = Field(None, description="Error message if failed")
 
     ALLOWED_STATUSES: ClassVar[list[str]] = [
         "queued",

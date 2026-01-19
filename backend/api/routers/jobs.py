@@ -127,8 +127,12 @@ async def list_jobs(
             created_at=job.created_at,
             updated_at=job.updated_at,
             completed_at=job.completed_at,
-            total_cost=None,  # TODO: Calculate from cost_snapshots
-            artifacts_count=len(job.artifacts),
+            total_cost=None,
+            artifacts_count=0,  # TODO: Query artifacts count separately
+            budget_limit=job.constraints.get("budget_limit", 5.0),
+            target_word_count=job.constraints.get("target_word_count", 2000),
+            progress=0.0,
+            error_message=None,
         )
         for job in jobs
     ]
@@ -171,8 +175,12 @@ async def get_job(
         created_at=job.created_at,
         updated_at=job.updated_at,
         completed_at=job.completed_at,
-        total_cost=None,  # TODO: Calculate from cost_snapshots
-        artifacts_count=len(job.artifacts),
+        total_cost=None,
+        artifacts_count=0,  # TODO: Query artifacts count separately
+        budget_limit=job.constraints.get("budget_limit", 5.0),
+        target_word_count=job.constraints.get("target_word_count", 2000),
+        progress=0.0,
+        error_message=None,
     )
 
 

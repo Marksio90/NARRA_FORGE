@@ -82,10 +82,13 @@ nano .env
 
 ```bash
 # Start wszystkich serwisów (PostgreSQL, Redis, API, Worker, UI)
-./docker-dev.sh start
+docker compose --profile dev up -d
+
+# Sprawdź logi
+docker compose logs -f
 
 # Sprawdź status
-./docker-dev.sh health
+docker compose ps
 ```
 
 ### 3. Dostęp do Serwisów

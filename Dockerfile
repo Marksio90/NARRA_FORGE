@@ -34,6 +34,7 @@ FROM builder AS spec-generator
 
 WORKDIR /app
 COPY api/ ./api/
+COPY narra_forge/ ./narra_forge/
 COPY scripts/generate_openapi_docker.py ./scripts/
 
 # Set dummy environment variables for build-time OpenAPI generation

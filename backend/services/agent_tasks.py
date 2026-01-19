@@ -241,6 +241,7 @@ def qa_check_task(
     job_id: str,
     artifact_id: str,
     check_type: str,
+    context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Agent: QA - Perform quality assurance check.
@@ -248,7 +249,8 @@ def qa_check_task(
     Args:
         job_id: UUID of the job
         artifact_id: UUID of artifact to check
-        check_type: Type of check (coherence, style, consistency)
+        check_type: Type of check (coherence, style, consistency, timeline)
+        context: Optional context (world, characters, plot, prose)
 
     Returns:
         Dictionary with QA results
@@ -264,15 +266,54 @@ def qa_check_task(
         },
     )
 
-    # Placeholder - will be implemented in KROK 10
+    # Import here to avoid circular dependencies
+    from uuid import UUID
+
+    from models.schemas.agent import QARequest
+    from services.agents.qa_agent import QAAgent
+
+    # Create request
+    request = QARequest(
+        job_id=UUID(job_id) if isinstance(job_id, str) else job_id,
+        artifact_id=UUID(artifact_id) if isinstance(artifact_id, str) else artifact_id,
+        check_type=check_type,
+        context=context,
+    )
+
+    # Perform QA check
+    agent = QAAgent()
+    import asyncio
+
+    response = asyncio.run(agent.check_quality(request))
+
+    logger.info(
+        "Agent: QA completed",
+        extra={
+            "job_id": job_id,
+            "artifact_id": artifact_id,
+            "check_type": check_type,
+            "passed": response.passed,
+            "logic_score": response.logic_score,
+            "psychology_score": response.psychology_score,
+            "timeline_score": response.timeline_score,
+            "critical_errors_count": len(response.critical_errors),
+            "warnings_count": len(response.warnings),
+            "task_id": self.request.id,
+        },
+    )
+
     return {
-        "job_id": job_id,
-        "agent": "qa",
-        "stage": PipelineStage.QA.value,
-        "artifact_id": artifact_id,
-        "check_type": check_type,
-        "passed": True,
-        "issues": [],
+        "job_id": str(response.job_id),
+        "agent": response.agent,
+        "stage": response.stage.value,
+        "artifact_id": str(response.artifact_id),
+        "check_type": response.check_type,
+        "passed": response.passed,
+        "logic_score": response.logic_score,
+        "psychology_score": response.psychology_score,
+        "timeline_score": response.timeline_score,
+        "critical_errors": response.critical_errors,
+        "warnings": response.warnings,
         "task_id": self.request.id,
     }
 

@@ -28,7 +28,7 @@ celery_app.conf.update(
 )
 
 
-@celery_app.task(name="tasks.health_check")  # type: ignore[misc]
+@celery_app.task(name="tasks.health_check")
 def health_check() -> dict[str, str]:
     """Health check task for Celery worker."""
     logger.info("Celery health check task executed")

@@ -9,7 +9,7 @@ from pythonjsonlogger import jsonlogger
 from core.config import settings
 
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):  # type: ignore[misc]
+class CustomJsonFormatter(jsonlogger.JsonFormatter):  # type: ignore[misc,name-defined]
     """Custom JSON formatter with additional fields."""
 
     def add_fields(

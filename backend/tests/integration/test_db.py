@@ -6,7 +6,7 @@ from sqlalchemy import text
 from models.database import engine
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_database_connection() -> None:
     """Test database connection."""
     async with engine.begin() as conn:
@@ -14,7 +14,7 @@ async def test_database_connection() -> None:
         assert result.scalar() == 1
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_tables_exist() -> None:
     """Test that all tables exist."""
     async with engine.begin() as conn:
@@ -42,7 +42,7 @@ async def test_tables_exist() -> None:
         assert result.scalar() is True
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio
 async def test_alembic_version() -> None:
     """Test that Alembic version table exists."""
     async with engine.begin() as conn:

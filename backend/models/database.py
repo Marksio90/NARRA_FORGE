@@ -17,8 +17,8 @@ engine = create_async_engine(
 )
 
 # Create async session factory
-async_session_maker = sessionmaker(
-    engine,
+async_session_maker = sessionmaker(  # type: ignore[call-overload]
+    bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
 )

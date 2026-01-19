@@ -6,6 +6,7 @@ Integrates NarraForge core pipeline with async Celery workers.
 
 import asyncio
 import uuid
+from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import Dict, Any
 
@@ -116,13 +117,35 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
         try:
             # Parse production brief from JSON
             brief_data = job.production_brief
+
+            # Create inspiration text from brief data
+            inspiration_parts = [brief_data.get("subject", "")]
+            if brief_data.get("style_instructions"):
+                inspiration_parts.append(f"Style: {brief_data['style_instructions']}")
+            if brief_data.get("setting_period"):
+                inspiration_parts.append(f"Setting: {brief_data['setting_period']}")
+            if brief_data.get("pov"):
+                inspiration_parts.append(f"POV: {brief_data['pov']}")
+
+            inspiration = " | ".join(filter(None, inspiration_parts))
+
+            # Build additional_params from schema fields
+            additional_params = {
+                "target_length": brief_data.get("target_length", 5000),
+                "character_count": brief_data.get("character_count", 3),
+                "subject": brief_data.get("subject"),
+                "style_instructions": brief_data.get("style_instructions"),
+                "setting_period": brief_data.get("setting_period"),
+                "pov": brief_data.get("pov"),
+            }
+
+            # Create ProductionBrief with correct API
             production_brief = ProductionBrief(
                 production_type=ProductionType(brief_data["production_type"]),
                 genre=Genre(brief_data["genre"]),
-                subject=brief_data["subject"],
-                style_instructions=brief_data.get("style_instructions"),
-                character_count=brief_data.get("character_count"),
-                target_length=brief_data.get("target_length", 5000)
+                inspiration=inspiration,
+                world_id=brief_data.get("world_id"),
+                additional_params=additional_params
             )
             
             # Create orchestrator with config
@@ -181,15 +204,15 @@ async def _generate_narrative_async(task: Task, job_id: str) -> Dict[str, Any]:
                 user_id=job.user_id,
                 project_id=job.project_id,
                 job_id=job.id,
-                title=brief_data.get("title", production_brief.subject),
+                title=brief_data.get("title", brief_data.get("subject", "Untitled")),
                 production_type=production_brief.production_type.value,
                 genre=production_brief.genre.value,
                 narrative_text=narrative_output.narrative_text,
                 word_count=narrative_output.word_count,
                 narrative_metadata={
-                    "characters": [c.dict() for c in narrative_output.characters] if narrative_output.characters else [],
-                    "structure": narrative_output.structure.dict() if narrative_output.structure else {},
-                    "segments": [s.dict() for s in narrative_output.segments] if narrative_output.segments else []
+                    "characters": [asdict(c) for c in narrative_output.characters] if narrative_output.characters else [],
+                    "structure": asdict(narrative_output.structure) if narrative_output.structure else {},
+                    "segments": [asdict(s) for s in narrative_output.segments] if narrative_output.segments else []
                 },
                 quality_metrics=narrative_output.quality_metrics or {},
                 overall_quality_score=coherence_score,

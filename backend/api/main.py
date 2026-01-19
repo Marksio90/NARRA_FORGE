@@ -8,10 +8,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import jobs
 from core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Import routers after logging setup
+from api.routers.jobs import router as jobs_router  # noqa: E402
 
 
 @asynccontextmanager
@@ -54,7 +56,7 @@ app.add_middleware(
 )
 
 # Include API routers
-app.include_router(jobs.router, prefix="/api/v1")
+app.include_router(jobs_router, prefix="/api/v1", tags=["jobs"])
 
 
 @app.get("/health")

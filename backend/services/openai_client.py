@@ -102,7 +102,7 @@ class OpenAIClient:
             try:
                 response = await self.client.chat.completions.create(
                     model=model,
-                    messages=messages,  # type: ignore[arg-type]
+                    messages=messages,  # type: ignore[arg-type]  # OpenAI SDK type is too strict
                     temperature=temperature,
                     max_tokens=max_tokens,
                     timeout=timeout,

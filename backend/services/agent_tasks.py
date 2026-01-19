@@ -164,7 +164,9 @@ def generate_prose_task(
     self: Any,
     job_id: str,
     segment_id: str,
-    context: dict[str, Any],  # noqa: ARG001
+    context: dict[str, Any],
+    target_word_count: int = 500,
+    style_guide: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Agent: GeneratorSegmentow - Generate prose for a segment.
@@ -173,6 +175,8 @@ def generate_prose_task(
         job_id: UUID of the job
         segment_id: Segment identifier
         context: Context for prose generation
+        target_word_count: Target word count for prose
+        style_guide: Optional style guide parameters
 
     Returns:
         Dictionary with generated prose
@@ -187,14 +191,46 @@ def generate_prose_task(
         },
     )
 
-    # Placeholder - will be implemented in KROK 9
+    # Import here to avoid circular dependencies
+    from uuid import UUID
+
+    from models.schemas.agent import ProseRequest
+    from services.agents.prose_generator import ProseGenerator
+
+    # Create request
+    request = ProseRequest(
+        job_id=UUID(job_id) if isinstance(job_id, str) else job_id,
+        segment_id=segment_id,
+        context=context,
+        target_word_count=target_word_count,
+        style_guide=style_guide,
+    )
+
+    # Generate prose
+    agent = ProseGenerator()
+    import asyncio
+
+    response = asyncio.run(agent.generate_prose(request))
+
+    logger.info(
+        "Agent: GeneratorSegmentow completed",
+        extra={
+            "job_id": job_id,
+            "segment_id": segment_id,
+            "word_count": response.word_count,
+            "model": response.model_used,
+            "task_id": self.request.id,
+        },
+    )
+
     return {
-        "job_id": job_id,
-        "agent": "generator_segmentow",
-        "stage": PipelineStage.PROSE.value,
-        "segment_id": segment_id,
-        "prose": "Generated prose content...",
-        "word_count": 500,
+        "job_id": str(response.job_id),
+        "agent": response.agent,
+        "stage": response.stage.value,
+        "segment_id": response.segment_id,
+        "prose": response.prose,
+        "word_count": response.word_count,
+        "model_used": response.model_used,
         "task_id": self.request.id,
     }
 

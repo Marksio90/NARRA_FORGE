@@ -55,6 +55,7 @@ services:
       - ENVIRONMENT=development
     volumes:
       - ./backend:/app
+      - api_venv:/app/.venv
       - ./artifacts:/artifacts
       - ./logs:/logs
     ports:
@@ -89,6 +90,7 @@ services:
       - ENVIRONMENT=development
     volumes:
       - ./backend:/app
+      - worker_venv:/app/.venv
       - ./artifacts:/artifacts
       - ./logs:/logs
     depends_on:
@@ -130,6 +132,10 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  api_venv:
+    driver: local
+  worker_venv:
     driver: local
 
 networks:

@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm install --frozen-lockfile 2>/dev/null || npm install
+RUN npm ci 2>/dev/null || npm install 2>/dev/null || npm install --legacy-peer-deps
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder

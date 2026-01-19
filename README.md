@@ -55,62 +55,42 @@ Wieloagentowy system AI do automatycznej tworzenia treści literackich z kontrol
     └──────────────────┘
 ```
 
-## 🚀 Quick Start (Docker)
+## 🚀 Quick Start
 
-### Wymagania
+**Zobacz: [QUICKSTART.md](QUICKSTART.md)** - Kompletny przewodnik uruchomienia
 
-- Docker 20.10+
-- Docker Compose 2.0+
-- OpenAI API key
-
-### 1. Konfiguracja
+### Szybkie Uruchomienie
 
 ```bash
-# Clone repository
+# 1. Konfiguracja
 git clone https://github.com/Marksio90/NARRA_FORGE.git
 cd NARRA_FORGE
-
-# Create environment file
 cp .env.example .env
+# Edytuj .env i dodaj: OPENAI_API_KEY=sk-your-key
 
-# Edit .env and add your OpenAI API key
-nano .env
-# Set: OPENAI_API_KEY=sk-your-actual-key-here
-```
-
-### 2. Uruchomienie
-
-```bash
-# Start wszystkich serwisów (PostgreSQL, Redis, API, Worker, UI)
+# 2. Start
 docker compose --profile dev up -d
 
-# Sprawdź logi
-docker compose logs -f
-
-# Sprawdź status
-docker compose ps
+# 3. Dostęp
+# UI:  http://localhost:3000
+# API: http://localhost:8000/docs
 ```
 
-### 3. Dostęp do Serwisów
+### Podstawowe Komendy
 
-- **UI (Frontend)**: http://localhost:3000
-- **API (Backend)**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
+```bash
+# Start
+docker compose --profile dev up -d
 
-### 4. Tworzenie Pierwszego Zlecenia
+# Logi
+docker compose logs -f
 
-1. Otwórz http://localhost:3000
-2. Kliknij "Utwórz Nowe Zlecenie"
-3. Wypełnij formularz:
-   - Typ: Short Story
-   - Gatunek: Fantasy
-   - Inspiracja: "Opowiadanie o czarodzieju..."
-   - Liczba słów: 2000
-   - Budżet: $5.00
-4. Kliknij "Utwórz Zlecenie"
-5. Obserwuj progress w czasie rzeczywistym!
+# Stop
+docker compose down
+
+# Status
+docker compose ps
+```
 
 ## 📦 Komponenty
 

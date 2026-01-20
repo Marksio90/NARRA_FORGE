@@ -194,37 +194,37 @@ const ProjectView: React.FC = () => {
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Docelowa Liczba Słów</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.target_word_count.toLocaleString()}
+                {(simulation.ai_decisions.target_word_count || 0).toLocaleString()}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Liczba Rozdziałów</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.chapter_count}
+                {simulation.ai_decisions.chapter_count || 0}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Główni Bohaterowie</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.main_character_count}
+                {simulation.ai_decisions.main_character_count || 0}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Wątki Poboczne</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.subplot_count}
+                {simulation.ai_decisions.subplot_count || 0}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Poziom Detali Świata</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.world_detail_level}
+                {simulation.ai_decisions.world_detail_level || 'N/A'}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Złożoność Stylu</div>
               <div className="text-2xl font-bold text-white">
-                {simulation.ai_decisions.style_complexity}
+                {simulation.ai_decisions.style_complexity || 'N/A'}
               </div>
             </div>
           </div>
@@ -241,13 +241,13 @@ const ProjectView: React.FC = () => {
             <div>
               <div className="text-gray-200 text-sm mb-1">Całkowity Szacowany Koszt</div>
               <div className="text-4xl font-bold text-white">
-                ${simulation.estimated_total_cost.toFixed(2)}
+                ${(simulation.estimated_total_cost || 0).toFixed(2)}
               </div>
             </div>
             <div>
               <div className="text-gray-200 text-sm mb-1">Szacowany Czas Generacji</div>
               <div className="text-4xl font-bold text-white">
-                {simulation.estimated_duration_minutes} min
+                {simulation.estimated_duration_minutes || 0} min
               </div>
             </div>
           </div>
@@ -283,19 +283,19 @@ const ProjectView: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <span className="text-indigo-400 font-bold">Krok {step.step}</span>
-                    <span className="text-white font-semibold">{step.name}</span>
+                    <span className="text-indigo-400 font-bold">Krok {step.step || 0}</span>
+                    <span className="text-white font-semibold">{step.name || 'Unknown'}</span>
                     <span className="px-2 py-1 bg-gray-600 text-gray-300 rounded text-xs">
-                      Tier {step.model_tier}
+                      Tier {step.model_tier || 0}
                     </span>
                   </div>
                   <div className="text-green-400 font-semibold">
-                    ${step.estimated_cost.toFixed(4)}
+                    ${(step.estimated_cost || 0).toFixed(4)}
                   </div>
                 </div>
-                <p className="text-gray-400 text-sm mb-2">{step.description}</p>
+                <p className="text-gray-400 text-sm mb-2">{step.description || ''}</p>
                 <div className="text-gray-500 text-xs">
-                  Szacowane tokeny: {step.estimated_tokens.toLocaleString()}
+                  Szacowane tokeny: {(step.estimated_tokens || 0).toLocaleString()}
                 </div>
               </div>
             ))}

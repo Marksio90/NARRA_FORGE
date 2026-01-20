@@ -12,7 +12,6 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 

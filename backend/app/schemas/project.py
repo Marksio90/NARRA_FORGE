@@ -92,7 +92,9 @@ class ProjectResponse(BaseModel):
     updated_at: datetime
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
-    
+    simulation_data: Optional[Dict[str, Any]] = None
+    estimated_duration_minutes: Optional[int] = None
+
     class Config:
         from_attributes = True
 

@@ -11,7 +11,7 @@ FROM base AS deps
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --frozen-lockfile 2>/dev/null || npm install
 
 # ==================== Development Stage ====================
 FROM base AS development

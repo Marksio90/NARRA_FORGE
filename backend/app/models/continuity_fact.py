@@ -3,6 +3,7 @@ ContinuityFact model - tracks all facts for continuity checking
 """
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ARRAY
 from datetime import datetime
 from pgvector.sqlalchemy import Vector

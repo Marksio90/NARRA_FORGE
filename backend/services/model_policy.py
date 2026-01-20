@@ -8,7 +8,7 @@ Moduł zawiera logikę inteligentnego skalowania modeli:
 """
 
 from enum import Enum
-from typing import Literal
+from typing import Literal, Optional
 
 from core.logging import get_logger
 

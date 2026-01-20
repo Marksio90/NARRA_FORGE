@@ -2,9 +2,8 @@
 name = "narraforge"
 version = "1.0.0"
 description = "Multi-agent AI platform for autonomous book generation"
-readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "NarraForge Team" }
 ]

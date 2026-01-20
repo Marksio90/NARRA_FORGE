@@ -2,7 +2,8 @@
 API Router dla zadań generowania książek - NarraForge.
 
 Endpointy:
-- POST /jobs - Tworzenie nowego zadania
+- POST /jobs/estimate - Szacowanie kosztów generowania
+- POST /jobs - Tworzenie nowego zadania (autonomiczne AI)
 - GET /jobs - Lista wszystkich zadań
 - GET /jobs/{job_id} - Szczegóły zadania
 - GET /jobs/{job_id}/result - Pełny wynik (świat, postacie, fabuła, proza)
@@ -30,47 +31,50 @@ router = APIRouter()
 # === Pydantic Models (Request/Response) ===
 
 
-class CreateJobRequest(BaseModel):
-    """Request do tworzenia nowego zadania."""
+class EstimateRequest(BaseModel):
+    """Request do szacowania kosztów generowania."""
 
     gatunek: str = Field(
         ...,
-        description="Gatunek literacki (fantasy, sci-fi, thriller, romans, horror, itd.)",
+        description="Gatunek literacki (fantasy, sci-fi, thriller, romans, horror, western, noir)",
         min_length=2,
-        max_length=100,
-    )
-    inspiracja: str = Field(
-        ...,
-        description="Inspiracja dla świata i historii",
-        min_length=10,
-        max_length=2000,
-    )
-    liczba_glownych_postaci: int = Field(
-        default=3,
-        description="Liczba głównych postaci (2-5)",
-        ge=2,
-        le=5,
+        max_length=50,
     )
     docelowa_dlugosc: str = Field(
         default="srednia",
-        description="Długość książki: 'krótka' (8-12 scen), 'srednia' (15-20 scen), 'długa' (25+ scen)",
+        description="Długość książki: 'krótka', 'srednia', 'długa'",
         pattern="^(krótka|srednia|długa)$",
     )
-    styl_narracji: str = Field(
-        default="literacki",
-        description="Styl narracji: 'literacki', 'poetycki', 'dynamiczny', 'noir'",
-        pattern="^(literacki|poetycki|dynamiczny|noir)$",
+
+
+class EstimateResponse(BaseModel):
+    """Response ze szacowaniem kosztów."""
+
+    gatunek: str
+    docelowa_dlugosc: str
+    szacowany_koszt_min: float
+    szacowany_koszt_max: float
+    szacowany_czas_min: int  # minuty
+    szacowany_czas_max: int
+    liczba_scen: int
+    szacowana_liczba_slow: int
+    auto_styl_narracji: str
+    auto_liczba_postaci: int
+
+
+class CreateJobRequest(BaseModel):
+    """Request do tworzenia nowego zadania - AUTONOMICZNE AI."""
+
+    gatunek: str = Field(
+        ...,
+        description="Gatunek literacki (fantasy, sci-fi, thriller, romans, horror, western, noir)",
+        min_length=2,
+        max_length=50,
     )
-    dodatkowe_wskazowki: Optional[str] = Field(
-        default=None,
-        description="Opcjonalne dodatkowe wskazówki dla agentów",
-        max_length=1000,
-    )
-    budget_limit: float = Field(
-        default=10.0,
-        description="Limit budżetu w USD",
-        ge=1.0,
-        le=100.0,
+    docelowa_dlugosc: str = Field(
+        default="srednia",
+        description="Długość książki: 'krótka' (8-12 scen), 'srednia' (15-20 scen), 'długa' (25-30 scen)",
+        pattern="^(krótka|srednia|długa)$",
     )
 
 
@@ -105,7 +109,165 @@ class JobResultResponse(BaseModel):
     statystyki: dict[str, Any]
 
 
+# === Helper Functions ===
+
+
+def auto_map_genre_to_style(gatunek: str) -> str:
+    """
+    Automatycznie mapuje gatunek na optymalny styl narracji.
+
+    Args:
+        gatunek: Gatunek literacki
+
+    Returns:
+        str: Styl narracji
+    """
+    gatunek_lower = gatunek.lower()
+
+    style_mapping = {
+        "fantasy": "poetycki",
+        "sci-fi": "dynamiczny",
+        "science fiction": "dynamiczny",
+        "thriller": "dynamiczny",
+        "horror": "noir",
+        "noir": "noir",
+        "romans": "literacki",
+        "romance": "literacki",
+        "western": "dynamiczny",
+        "mystery": "noir",
+    }
+
+    # Znajdź najlepsze dopasowanie
+    for key, value in style_mapping.items():
+        if key in gatunek_lower:
+            return value
+
+    # Domyślnie literacki
+    return "literacki"
+
+
+def auto_determine_character_count(gatunek: str, dlugosc: str) -> int:
+    """
+    Automatycznie określa optymalną liczbę głównych postaci.
+
+    Args:
+        gatunek: Gatunek literacki
+        dlugosc: Długość książki
+
+    Returns:
+        int: Liczba głównych postaci (2-5)
+    """
+    # Bazowa liczba według długości
+    base_counts = {
+        "krótka": 2,
+        "srednia": 3,
+        "długa": 4,
+    }
+
+    count = base_counts.get(dlugosc, 3)
+
+    # Dostosuj według gatunku
+    gatunek_lower = gatunek.lower()
+    if "fantasy" in gatunek_lower or "sci-fi" in gatunek_lower:
+        count += 1  # Fantasy/Sci-fi często ma więcej postaci
+    elif "thriller" in gatunek_lower or "noir" in gatunek_lower:
+        count = max(2, count - 1)  # Thriller/Noir skupia się na mniejszej liczbie
+
+    return min(5, max(2, count))
+
+
+def calculate_estimate(gatunek: str, dlugosc: str) -> EstimateResponse:
+    """
+    Oblicza szacowane koszty i parametry generowania.
+
+    Args:
+        gatunek: Gatunek literacki
+        dlugosc: Długość książki
+
+    Returns:
+        EstimateResponse: Szacowanie kosztów i parametrów
+    """
+    # Mapowanie długości → liczba scen
+    scene_counts = {
+        "krótka": 10,
+        "srednia": 16,
+        "długa": 25,
+    }
+
+    liczba_scen = scene_counts.get(dlugosc, 16)
+
+    # Szacowana liczba słów (średnio 1000-1500 słów/scena)
+    szacowana_liczba_slow = liczba_scen * 1200
+
+    # Szacowane koszty (na podstawie empirycznych danych)
+    # Założenia: ~$0.30-0.50 per scena (world + characters + plot + prose)
+    cost_per_scene_min = 0.30
+    cost_per_scene_max = 0.50
+
+    szacowany_koszt_min = liczba_scen * cost_per_scene_min
+    szacowany_koszt_max = liczba_scen * cost_per_scene_max
+
+    # Szacowany czas (2-3 minuty per scena)
+    szacowany_czas_min = liczba_scen * 2
+    szacowany_czas_max = liczba_scen * 3
+
+    return EstimateResponse(
+        gatunek=gatunek,
+        docelowa_dlugosc=dlugosc,
+        szacowany_koszt_min=round(szacowany_koszt_min, 2),
+        szacowany_koszt_max=round(szacowany_koszt_max, 2),
+        szacowany_czas_min=szacowany_czas_min,
+        szacowany_czas_max=szacowany_czas_max,
+        liczba_scen=liczba_scen,
+        szacowana_liczba_slow=szacowana_liczba_slow,
+        auto_styl_narracji=auto_map_genre_to_style(gatunek),
+        auto_liczba_postaci=auto_determine_character_count(gatunek, dlugosc),
+    )
+
+
 # === API Endpoints ===
+
+
+@router.post("/jobs/estimate", response_model=EstimateResponse)
+async def estimate_job_cost(request: EstimateRequest) -> EstimateResponse:
+    """
+    Szacuje koszty i parametry generowania książki.
+
+    Endpoint ten pozwala użytkownikowi zobaczyć przewidywane koszty,
+    czas generowania i parametry PRZED rozpoczęciem faktycznego generowania.
+
+    Args:
+        request: Parametry do szacowania (gatunek + długość)
+
+    Returns:
+        EstimateResponse: Szczegółowe szacowanie
+
+    Example:
+        POST /api/jobs/estimate
+        {
+          "gatunek": "fantasy",
+          "docelowa_dlugosc": "srednia"
+        }
+
+        Response:
+        {
+          "szacowany_koszt_min": 4.80,
+          "szacowany_koszt_max": 8.00,
+          "szacowany_czas_min": 32,
+          "szacowany_czas_max": 48,
+          "liczba_scen": 16,
+          "szacowana_liczba_slow": 19200,
+          "auto_styl_narracji": "poetycki",
+          "auto_liczba_postaci": 4
+        }
+    """
+    logger.info(
+        "Szacowanie kosztów",
+        gatunek=request.gatunek,
+        dlugosc=request.docelowa_dlugosc,
+    )
+
+    return calculate_estimate(request.gatunek, request.docelowa_dlugosc)
 
 
 @router.post("/jobs", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
@@ -114,12 +276,18 @@ async def create_job(
     db: AsyncSession = Depends(get_async_session),
 ) -> JobResponse:
     """
-    Tworzy nowe zadanie generowania książki.
+    Tworzy nowe zadanie generowania książki - AUTONOMICZNE AI.
 
-    Zadanie jest dodawane do kolejki Celery i przetwarzane asynchronicznie.
+    System automatycznie:
+    - Generuje unikalny świat i fabułę
+    - Decyduje o liczbie postaci (2-5)
+    - Wybiera optymalny styl narracji dla gatunku
+    - Szacuje budżet z 20% marginesem bezpieczeństwa
+
+    Użytkownik podaje TYLKO gatunek i długość - reszta jest autonomiczna!
 
     Args:
-        request: Parametry zadania
+        request: Tylko gatunek + długość
         db: Sesja bazy danych
 
     Returns:
@@ -127,26 +295,48 @@ async def create_job(
 
     Raises:
         HTTPException: Gdy tworzenie się nie powiedzie
+
+    Example:
+        POST /api/jobs
+        {
+          "gatunek": "fantasy",
+          "docelowa_dlugosc": "srednia"
+        }
     """
     logger.info(
-        "Tworzenie nowego zadania",
+        "Tworzenie nowego zadania - AUTONOMICZNE AI",
         gatunek=request.gatunek,
         dlugosc=request.docelowa_dlugosc,
     )
 
     try:
+        # Auto-oblicz parametry
+        estimate = calculate_estimate(request.gatunek, request.docelowa_dlugosc)
+
+        # Auto-mapuj styl i liczbę postaci
+        auto_styl = auto_map_genre_to_style(request.gatunek)
+        auto_liczba_postaci = auto_determine_character_count(request.gatunek, request.docelowa_dlugosc)
+
+        # Budżet = maksymalny szacowany koszt + 20% marginesu
+        auto_budget = round(estimate.szacowany_koszt_max * 1.2, 2)
+
+        # AI sam generuje inspirację - użytkownik nie podaje nic!
+        auto_inspiracja = f"Autonomicznie wygeneruj unikalną i kreatywną książkę w gatunku {request.gatunek}. Stwórz oryginalny świat, fascynujące postacie i wciągającą fabułę bez bazowania na znanych dziełach."
+
         # Utwórz Job w bazie
         job = Job(
             genre=request.gatunek,
-            inspiration=request.inspiracja,
+            inspiration=auto_inspiracja,  # Auto-generowana
             status="queued",
-            budget_limit=request.budget_limit,
+            budget_limit=auto_budget,  # Auto-obliczony
             cost_current=0.0,
             job_metadata={
-                "liczba_glownych_postaci": request.liczba_glownych_postaci,
+                "liczba_glownych_postaci": auto_liczba_postaci,  # Auto 2-5
                 "docelowa_dlugosc": request.docelowa_dlugosc,
-                "styl_narracji": request.styl_narracji,
-                "dodatkowe_wskazowki": request.dodatkowe_wskazowki,
+                "styl_narracji": auto_styl,  # Auto-mapowany
+                "auto_generated": True,  # Flag: zadanie w pełni autonomiczne
+                "estimated_scenes": estimate.liczba_scen,
+                "estimated_words": estimate.szacowana_liczba_slow,
             },
         )
 
@@ -154,18 +344,24 @@ async def create_job(
         await db.commit()
         await db.refresh(job)
 
-        logger.info("Zadanie utworzone w bazie", job_id=str(job.id))
+        logger.info(
+            "Zadanie utworzone w bazie - AUTONOMICZNE AI",
+            job_id=str(job.id),
+            auto_styl=auto_styl,
+            auto_liczba_postaci=auto_liczba_postaci,
+            auto_budget=auto_budget,
+        )
 
-        # Wyślij do Celery
+        # Wyślij do Celery z auto-wygenerowanymi parametrami
         generate_book_task.apply_async(
             kwargs={
                 "job_id": str(job.id),
                 "gatunek": request.gatunek,
-                "inspiracja": request.inspiracja,
-                "liczba_glownych_postaci": request.liczba_glownych_postaci,
+                "inspiracja": auto_inspiracja,  # Auto-generowana
+                "liczba_glownych_postaci": auto_liczba_postaci,  # Auto 2-5
                 "docelowa_dlugosc": request.docelowa_dlugosc,
-                "styl_narracji": request.styl_narracji,
-                "dodatkowe_wskazowki": request.dodatkowe_wskazowki,
+                "styl_narracji": auto_styl,  # Auto-mapowany
+                "dodatkowe_wskazowki": None,  # Brak - AI sam decyduje
             },
             task_id=str(job.id),  # Task ID = Job ID dla łatwego śledzenia
         )
@@ -175,13 +371,13 @@ async def create_job(
         return JobResponse(
             id=str(job.id),
             gatunek=job.genre,
-            inspiracja=job.inspiration,
+            inspiracja=auto_inspiracja,  # Zwracamy auto-generowaną
             status=job.status,
             cost_current=job.cost_current,
-            budget_limit=job.budget_limit,
-            liczba_glownych_postaci=request.liczba_glownych_postaci,
+            budget_limit=auto_budget,  # Auto-obliczony
+            liczba_glownych_postaci=auto_liczba_postaci,
             docelowa_dlugosc=request.docelowa_dlugosc,
-            styl_narracji=request.styl_narracji,
+            styl_narracji=auto_styl,
             created_at=job.created_at.isoformat(),
             updated_at=job.updated_at.isoformat(),
             result=job.result,

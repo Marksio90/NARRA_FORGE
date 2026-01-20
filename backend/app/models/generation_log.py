@@ -3,6 +3,7 @@ GenerationLog model - tracks all AI generation calls for cost and monitoring
 """
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Text, DateTime, Enum
+from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
 

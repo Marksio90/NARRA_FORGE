@@ -105,13 +105,14 @@ Zwróć wygenerowaną prozę w formacie JSON:
 }
 
 PRZYKŁAD DOBREJ PROZY (styl do naśladowania):
-"""Nóż odbił się od kości. Krew - ciepła, lepka - spłynęła mi po dłoni.
+
+'Nóż odbił się od kości. Krew - ciepła, lepka - spłynęła mi po dłoni.
 
 Cofnęłam się. Serce waliło jak młot.
 
 "To nie miało..." Głos mi się załamał. "Nie miało tak być."
 
-Jego oczy - już puste - wpatrywały się w sufit. Gdzieś daleko krzyczała wrona."""
+Jego oczy - już puste - wpatrywały się w sufit. Gdzieś daleko krzyczała wrona.'
 
 PISZ z pasją i precyzją!"""
 

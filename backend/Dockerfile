@@ -33,8 +33,36 @@ RUN pip install uv
 # Copy dependency files
 COPY --chown=narraforge:narraforge pyproject.toml ./
 
-# Install dependencies with uv
-RUN uv pip install --system -e .
+# Install dependencies only (not the package itself in editable mode)
+# The source code will be mounted via volumes in docker-compose
+RUN uv pip install --system \
+    "fastapi>=0.115.0" \
+    "uvicorn[standard]>=0.34.0" \
+    "python-multipart>=0.0.20" \
+    "websockets>=14.1" \
+    "sqlalchemy>=2.0.36" \
+    "alembic>=1.14.0" \
+    "asyncpg>=0.30.0" \
+    "pgvector>=0.3.6" \
+    "redis>=5.2.0" \
+    "celery>=5.4.0" \
+    "langgraph>=0.2.70" \
+    "langchain>=0.3.20" \
+    "langchain-core>=0.3.30" \
+    "langchain-openai>=0.3.10" \
+    "langchain-community>=0.3.20" \
+    "openai>=1.59.0" \
+    "tiktoken>=0.8.0" \
+    "pydantic>=2.10.0" \
+    "pydantic-settings>=2.7.0" \
+    "email-validator>=2.2.0" \
+    "python-dotenv>=1.0.1" \
+    "httpx>=0.28.1" \
+    "tenacity>=9.0.0" \
+    "python-docx>=1.1.2" \
+    "markdown>=3.7" \
+    "python-dateutil>=2.9.0" \
+    "structlog>=24.4.0"
 
 # Switch to app user
 USER narraforge
@@ -51,14 +79,11 @@ FROM base as production
 # Install uv
 RUN pip install uv
 
-# Copy dependency files
-COPY --chown=narraforge:narraforge pyproject.toml ./
-
-# Install production dependencies only
-RUN uv pip install --system .
-
-# Copy application code
+# Copy application code first
 COPY --chown=narraforge:narraforge . .
+
+# Install dependencies and package
+RUN uv pip install --system .
 
 # Switch to app user
 USER narraforge

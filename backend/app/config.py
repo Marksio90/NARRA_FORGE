@@ -4,6 +4,7 @@ Loads environment variables and provides configuration classes
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 from typing import List, Optional
 from functools import lru_cache
 
@@ -17,27 +18,27 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api"
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
-    SECRET_KEY: str
-    
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
+
     # Database
-    DATABASE_URL: str
     POSTGRES_USER: str = "narraforge"
-    POSTGRES_PASSWORD: str
+    POSTGRES_PASSWORD: str = "narraforge_password"
     POSTGRES_DB: str = "narraforge"
     POSTGRES_HOST: str = "narraforge-postgres"
     POSTGRES_PORT: int = 5432
-    
+    DATABASE_URL: Optional[str] = None
+
     # Redis
-    REDIS_URL: str
     REDIS_HOST: str = "narraforge-redis"
     REDIS_PORT: int = 6379
-    
+    REDIS_URL: Optional[str] = None
+
     # Celery
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
-    
+    CELERY_BROKER_URL: Optional[str] = None
+    CELERY_RESULT_BACKEND: Optional[str] = None
+
     # OpenAI
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = "sk-placeholder-add-your-key"
     GPT_4O_MINI: str = "gpt-4o-mini"
     GPT_4O: str = "gpt-4o"
     GPT_4: str = "gpt-4"
@@ -79,7 +80,30 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     EMBEDDING_DIMENSION: int = 1536
     RAG_TOP_K: int = 5
-    
+
+    @model_validator(mode='after')
+    def build_urls(self):
+        """Build URLs from components if not provided"""
+        # Build DATABASE_URL if not provided
+        if not self.DATABASE_URL:
+            self.DATABASE_URL = (
+                f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            )
+
+        # Build REDIS_URL if not provided
+        if not self.REDIS_URL:
+            self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+        # Build Celery URLs if not provided
+        if not self.CELERY_BROKER_URL:
+            self.CELERY_BROKER_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/1"
+
+        if not self.CELERY_RESULT_BACKEND:
+            self.CELERY_RESULT_BACKEND = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/2"
+
+        return self
+
     class Config:
         env_file = ".env"
         case_sensitive = True

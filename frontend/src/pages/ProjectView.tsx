@@ -58,6 +58,9 @@ const ProjectView: React.FC = () => {
   const fetchProject = async () => {
     try {
       const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
+      console.log('🔍 DEBUG: Received project:', response.data);
+      console.log('🔍 DEBUG: Project status:', response.data.status);
+      console.log('🔍 DEBUG: Simulation state:', simulation);
       setProject(response.data);
       setLoading(false);
     } catch (error) {
@@ -109,7 +112,7 @@ const ProjectView: React.FC = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${project?.title}.${format}`);
+      link.setAttribute('download', `${project?.name}.${format}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -145,7 +148,7 @@ const ProjectView: React.FC = () => {
         >
           ← Powrót do Dashboard
         </button>
-        <h2 className="text-3xl font-bold text-white mb-2">{project.title}</h2>
+        <h2 className="text-3xl font-bold text-white mb-2">{project.name}</h2>
         <div className="flex items-center gap-4">
           <span className="px-3 py-1 bg-indigo-600 text-white rounded-full text-sm">
             {project.genre}

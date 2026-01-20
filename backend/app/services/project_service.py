@@ -63,11 +63,160 @@ def get_project(db: Session, project_id: int) -> Optional[Project]:
     return db.query(Project).filter(Project.id == project_id).first()
 
 
+def _analyze_title(title: str, genre: str) -> dict:
+    """
+    Analyze book title to extract intelligent insights for AI decisions
+
+    Extracts:
+    - Character names and roles
+    - Themes and relationships
+    - Setting hints (cultural, geographic, temporal)
+    - Emotional tone
+    - Story focus
+
+    Examples:
+    - "Córka Rozalia" -> Main character: Rozalia, Theme: family, Setting: Polish
+    - "The Last Starship" -> Setting: space, Theme: survival, Tone: epic
+    - "Murder in Manhattan" -> Setting: NYC, Theme: crime, Main plot: investigation
+    """
+    insights = {
+        "character_names": [],
+        "themes": [],
+        "setting_hints": [],
+        "tone": "neutral",
+        "focus": "balanced",  # character-driven, plot-driven, or balanced
+        "title_suggestions": {}
+    }
+
+    title_lower = title.lower()
+    words = title.split()
+
+    # Detect character-focused titles (names, relationships)
+    relationship_keywords = {
+        "córka": {"role": "daughter", "gender": "female", "theme": "family"},
+        "syn": {"role": "son", "gender": "male", "theme": "family"},
+        "matka": {"role": "mother", "gender": "female", "theme": "family"},
+        "ojciec": {"role": "father", "gender": "male", "theme": "family"},
+        "daughter": {"role": "daughter", "gender": "female", "theme": "family"},
+        "son": {"role": "son", "gender": "male", "theme": "family"},
+        "mother": {"role": "mother", "gender": "female", "theme": "family"},
+        "father": {"role": "father", "gender": "male", "theme": "family"},
+        "sister": {"role": "sister", "gender": "female", "theme": "family"},
+        "brother": {"role": "brother", "gender": "male", "theme": "family"},
+        "wife": {"role": "wife", "gender": "female", "theme": "marriage"},
+        "husband": {"role": "husband", "gender": "male", "theme": "marriage"},
+        "widow": {"role": "widow", "gender": "female", "theme": "loss"},
+        "orphan": {"role": "orphan", "gender": "neutral", "theme": "loss"},
+    }
+
+    # Detect setting keywords
+    setting_keywords = {
+        "manhattan": "NYC, modern",
+        "new york": "NYC, modern",
+        "london": "British, urban",
+        "paris": "French, romantic",
+        "tokyo": "Japanese, modern",
+        "starship": "space, sci-fi",
+        "galaxy": "space, sci-fi",
+        "kingdom": "fantasy, medieval",
+        "castle": "fantasy, medieval",
+        "manor": "historical, gothic",
+        "village": "rural, traditional",
+        "city": "urban, modern",
+    }
+
+    # Detect theme keywords
+    theme_keywords = {
+        "murder": "crime/mystery",
+        "love": "romance/relationships",
+        "war": "conflict/struggle",
+        "quest": "adventure/journey",
+        "revenge": "vengeance/justice",
+        "secret": "mystery/revelation",
+        "last": "survival/finality",
+        "lost": "search/discovery",
+        "dark": "mystery/danger",
+        "light": "hope/revelation",
+        "shadow": "mystery/danger",
+        "blood": "violence/family",
+        "heart": "romance/emotion",
+    }
+
+    # Extract character names (capitalized words, excluding first word if common article)
+    for i, word in enumerate(words):
+        word_clean = word.strip('.,!?;:"\'')
+
+        # Check for relationship keywords
+        for key, info in relationship_keywords.items():
+            if key in word_clean.lower():
+                insights["themes"].append(info["theme"])
+                # Next capitalized word might be a name
+                if i + 1 < len(words):
+                    next_word = words[i + 1].strip('.,!?;:"\'')
+                    if next_word and next_word[0].isupper() and len(next_word) > 2:
+                        insights["character_names"].append({
+                            "name": next_word,
+                            "role": info["role"],
+                            "gender": info["gender"]
+                        })
+                        insights["focus"] = "character-driven"
+
+        # Check for setting keywords
+        for key, setting_info in setting_keywords.items():
+            if key in word_clean.lower():
+                insights["setting_hints"].append(setting_info)
+
+        # Check for theme keywords
+        for key, theme_info in theme_keywords.items():
+            if key in word_clean.lower():
+                if theme_info not in insights["themes"]:
+                    insights["themes"].append(theme_info)
+
+    # Detect Polish names and set Polish/Eastern European setting
+    polish_name_endings = ["a", "ia", "ka", "na", "ska"]
+    for word in words:
+        word_clean = word.strip('.,!?;:"\'')
+        if word_clean and word_clean[0].isupper() and len(word_clean) > 3:
+            if any(word_clean.lower().endswith(ending) for ending in polish_name_endings):
+                # Likely Polish name
+                if not any(cn["name"] == word_clean for cn in insights["character_names"]):
+                    insights["character_names"].append({
+                        "name": word_clean,
+                        "role": "main",
+                        "gender": "female" if word_clean.endswith("a") else "neutral"
+                    })
+                if "Polish/Eastern European" not in insights["setting_hints"]:
+                    insights["setting_hints"].append("Polish/Eastern European")
+
+    # Generate title-based suggestions for AI decisions
+    if insights["character_names"]:
+        insights["title_suggestions"]["main_character_name"] = insights["character_names"][0]["name"]
+        insights["title_suggestions"]["main_character_gender"] = insights["character_names"][0]["gender"]
+
+        # If title has relationships, suggest family-focused plot
+        if "family" in insights["themes"]:
+            insights["title_suggestions"]["add_subplots"] = ["family_relationships", "generational_conflict"]
+            insights["title_suggestions"]["character_count_modifier"] = 1  # Add one more main character for family member
+
+    if insights["setting_hints"]:
+        insights["title_suggestions"]["world_setting"] = insights["setting_hints"][0]
+
+    # Adjust tone based on genre and keywords
+    if genre in ["horror", "thriller"]:
+        if any(word in title_lower for word in ["dark", "shadow", "blood", "murder", "death"]):
+            insights["tone"] = "dark"
+    elif genre in ["romance", "comedy"]:
+        if any(word in title_lower for word in ["love", "heart", "wedding", "summer"]):
+            insights["tone"] = "light"
+
+    return insights
+
+
 async def simulate_generation(db: Session, project: Project) -> ProjectSimulation:
     """
     INTELLIGENT SIMULATION - AI decides ALL parameters
 
-    Based on genre, AI determines:
+    Based on genre AND title, AI determines:
     - Target word count (e.g., 85,000 - 120,000 words)
     - Number of chapters (e.g., 25-35)
     - Main character count (e.g., 4-7)
@@ -75,23 +224,28 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     - Subplot count (e.g., 2-4)
     - World detail level (high/medium for genre)
     - Structure type (Hero's Journey, 7-Point, etc.)
+    - Character names and themes from title
 
     Then calculates cost for each of 15 steps based on:
     - Complexity of step
     - Model tier required
     - Estimated token usage
     """
-    logger.info(f"Running intelligent simulation for project {project.id}")
+    logger.info(f"Running intelligent simulation for project {project.id}: '{project.name}'")
 
     # Update status to SIMULATING
     project.status = ProjectStatus.SIMULATING
     db.commit()
-    
+
     # Get genre-specific config
     genre_cfg = genre_config.get_genre_config(project.genre.value)
-    
+
+    # TITLE ANALYSIS - Extract meaningful information from title
+    title_insights = _analyze_title(project.name, project.genre.value)
+    logger.info(f"Title analysis for '{project.name}': {title_insights}")
+
     # AI DECISIONS (in production, this would call GPT-4o-mini for intelligent decisions)
-    # For now, using intelligent defaults based on genre
+    # For now, using intelligent defaults based on genre + title analysis
     
     # Determine word count based on genre defaults
     word_count_ranges = {
@@ -125,12 +279,27 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         main_char_count = 4
         supporting_count = 8
         minor_count = 15
-    
+
+    # Apply title-based character count adjustments
+    if "character_count_modifier" in title_insights["title_suggestions"]:
+        modifier = title_insights["title_suggestions"]["character_count_modifier"]
+        main_char_count += modifier
+        logger.info(f"Title analysis suggests adding {modifier} main character(s). New count: {main_char_count}")
+
     # Subplot count
     subplot_count = 3 if project.genre.value in ["fantasy", "thriller"] else 2
-    
+
+    # Adjust subplot count if title suggests family themes
+    if "family" in title_insights["themes"]:
+        subplot_count += 1  # Add a family-related subplot
+        logger.info(f"Title suggests family themes, increasing subplot count to {subplot_count}")
+
     # World detail
     world_detail = "high" if project.genre.value in ["fantasy", "sci-fi"] else "medium"
+
+    # Enhance world detail if title provides setting hints
+    if title_insights["setting_hints"]:
+        logger.info(f"Title provides setting hints: {title_insights['setting_hints']}")
     
     # Determine style complexity based on genre
     style_complexity_map = {
@@ -146,7 +315,7 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     }
     style_complexity = style_complexity_map.get(project.genre.value, "medium")
 
-    # AI-determined parameters
+    # AI-determined parameters (enhanced with title analysis)
     ai_decisions = {
         "target_word_count": target_word_count,
         "planned_volumes": 1,
@@ -159,7 +328,19 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         "style_complexity": style_complexity,
         "structure_type": genre_cfg["structure"],
         "style_guidelines": genre_cfg["style"],
+        # Title-based enhancements
+        "title_analysis": {
+            "character_names": title_insights["character_names"],
+            "themes": title_insights["themes"],
+            "setting_hints": title_insights["setting_hints"],
+            "tone": title_insights["tone"],
+            "focus": title_insights["focus"],
+        }
     }
+
+    # Add specific title suggestions if available
+    if title_insights["title_suggestions"]:
+        ai_decisions["title_suggestions"] = title_insights["title_suggestions"]
     
     # Save parameters to project
     project.parameters = ai_decisions

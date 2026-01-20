@@ -11,6 +11,20 @@ interface SimulationStep {
   model_tier: number;
 }
 
+interface CharacterName {
+  name: string;
+  role: string;
+  gender: string;
+}
+
+interface TitleAnalysis {
+  character_names: CharacterName[];
+  themes: string[];
+  setting_hints: string[];
+  tone: string;
+  focus: string;
+}
+
 interface AIDecisions {
   target_word_count: number;
   chapter_count: number;
@@ -18,6 +32,13 @@ interface AIDecisions {
   subplot_count: number;
   world_detail_level: string;
   style_complexity: string;
+  title_analysis?: TitleAnalysis;
+  title_suggestions?: {
+    main_character_name?: string;
+    main_character_gender?: string;
+    add_subplots?: string[];
+    world_setting?: string;
+  };
 }
 
 interface Simulation {
@@ -181,6 +202,90 @@ const ProjectView: React.FC = () => {
           >
             {isSimulating ? 'Symulowanie...' : 'Uruchom Symulację AI'}
           </button>
+        </div>
+      )}
+
+      {/* Title Analysis Section */}
+      {simulation && simulation.ai_decisions.title_analysis && (
+        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-lg p-8 mb-8 border border-purple-500">
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span>🎯</span> Analiza Tytułu: "{project.name}"
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Character Names */}
+            {simulation.ai_decisions.title_analysis.character_names &&
+             simulation.ai_decisions.title_analysis.character_names.length > 0 && (
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-purple-300 font-semibold mb-2">Postacie z Tytułu</div>
+                {simulation.ai_decisions.title_analysis.character_names.map((char, idx) => (
+                  <div key={idx} className="text-white mb-1">
+                    <span className="font-bold">{char.name}</span>
+                    <span className="text-gray-400 text-sm ml-2">
+                      ({char.role}, {char.gender})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Themes */}
+            {simulation.ai_decisions.title_analysis.themes &&
+             simulation.ai_decisions.title_analysis.themes.length > 0 && (
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-purple-300 font-semibold mb-2">Wykryte Tematy</div>
+                <div className="flex flex-wrap gap-2">
+                  {simulation.ai_decisions.title_analysis.themes.map((theme, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm">
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Setting Hints */}
+            {simulation.ai_decisions.title_analysis.setting_hints &&
+             simulation.ai_decisions.title_analysis.setting_hints.length > 0 && (
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-purple-300 font-semibold mb-2">Sugestie Miejsca Akcji</div>
+                <div className="flex flex-wrap gap-2">
+                  {simulation.ai_decisions.title_analysis.setting_hints.map((hint, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-indigo-600 text-white rounded-full text-sm">
+                      {hint}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tone and Focus */}
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="text-purple-300 font-semibold mb-2">Ton i Fokus</div>
+              <div className="text-white">
+                <div>Ton: <span className="text-purple-400">{simulation.ai_decisions.title_analysis.tone}</span></div>
+                <div>Fokus: <span className="text-purple-400">{simulation.ai_decisions.title_analysis.focus}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Title Suggestions */}
+          {simulation.ai_decisions.title_suggestions && (
+            <div className="mt-4 pt-4 border-t border-purple-700">
+              <div className="text-purple-300 font-semibold mb-2">Sugestie AI na Podstawie Tytułu</div>
+              <div className="text-white text-sm space-y-1">
+                {simulation.ai_decisions.title_suggestions.main_character_name && (
+                  <div>• Główna postać: <span className="font-bold text-purple-300">{simulation.ai_decisions.title_suggestions.main_character_name}</span></div>
+                )}
+                {simulation.ai_decisions.title_suggestions.world_setting && (
+                  <div>• Świat akcji: <span className="font-bold text-purple-300">{simulation.ai_decisions.title_suggestions.world_setting}</span></div>
+                )}
+                {simulation.ai_decisions.title_suggestions.add_subplots &&
+                 simulation.ai_decisions.title_suggestions.add_subplots.length > 0 && (
+                  <div>• Dodatkowe wątki: <span className="font-bold text-purple-300">{simulation.ai_decisions.title_suggestions.add_subplots.join(', ')}</span></div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

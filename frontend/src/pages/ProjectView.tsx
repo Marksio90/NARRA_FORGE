@@ -232,7 +232,7 @@ const ProjectView: React.FC = () => {
       )}
 
       {/* Cost Summary */}
-      {project.simulation && (
+      {simulation && (
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-4">
             Szacowany Koszt i Czas
@@ -264,7 +264,7 @@ const ProjectView: React.FC = () => {
       )}
 
       {/* Pipeline Steps */}
-      {project.simulation && (
+      {simulation && (
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-6">
             15 Kroków Pipeline - Szczegółowa Symulacja
@@ -314,7 +314,7 @@ const ProjectView: React.FC = () => {
             />
           </div>
           <div className="text-gray-400 text-sm">
-            Krok {project.current_step} z 15 • Aktualny koszt: ${project.total_cost?.toFixed(2) || '0.00'}
+            Krok {project.current_step} z 15 • Aktualny koszt: ${project.actual_cost?.toFixed(2) || '0.00'}
           </div>
         </div>
       )}

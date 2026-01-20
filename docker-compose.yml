@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with pgvector extension
+  narraforge-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: narraforge-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-narraforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-narraforge_password}
+      POSTGRES_DB: ${POSTGRES_DB:-narraforge}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-narraforge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - narraforge-network
+
+  # Redis for caching and pub/sub
+  narraforge-redis:
+    image: redis:7-alpine
+    container_name: narraforge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - narraforge-network
+
+  # FastAPI Backend
+  narraforge-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: narraforge-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-narraforge}:${POSTGRES_PASSWORD:-narraforge_password}@narraforge-postgres:5432/${POSTGRES_DB:-narraforge}
+      - REDIS_URL=redis://narraforge-redis:6379/0
+      - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DEBUG=${DEBUG:-True}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      - ./backend:/app
+      - ./output:/app/output
+    depends_on:
+      narraforge-postgres:
+        condition: service_healthy
+      narraforge-redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - narraforge-network
+
+  # Celery Worker for background tasks
+  narraforge-celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: narraforge-celery
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-narraforge}:${POSTGRES_PASSWORD:-narraforge_password}@narraforge-postgres:5432/${POSTGRES_DB:-narraforge}
+      - REDIS_URL=redis://narraforge-redis:6379/0
+      - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - ./backend:/app
+      - ./output:/app/output
+    depends_on:
+      narraforge-postgres:
+        condition: service_healthy
+      narraforge-redis:
+        condition: service_healthy
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4
+    networks:
+      - narraforge-network
+
+  # Flower for Celery monitoring
+  narraforge-flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: narraforge-flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
+    depends_on:
+      - narraforge-redis
+      - narraforge-celery
+    command: celery -A app.celery_app flower --port=5555
+    networks:
+      - narraforge-network
+
+  # React Frontend
+  narraforge-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: narraforge-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - narraforge-backend
+    stdin_open: true
+    tty: true
+    networks:
+      - narraforge-network
+
+networks:
+  narraforge-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

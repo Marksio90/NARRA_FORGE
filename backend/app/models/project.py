@@ -54,7 +54,18 @@ class Project(Base):
     # Cost tracking
     estimated_cost = Column(Float, default=0.0)
     actual_cost = Column(Float, default=0.0)
-    
+
+    # Simulation data (stored after /simulate endpoint is called)
+    simulation_data = Column(JSONB, nullable=True)
+    # Structure:
+    # {
+    #   "estimated_steps": [...],
+    #   "estimated_total_cost": 15.75,
+    #   "estimated_duration_minutes": 45,
+    #   "ai_decisions": {...}
+    # }
+    estimated_duration_minutes = Column(Integer, nullable=True)
+
     # Progress tracking
     current_step = Column(Integer, default=0)  # 0-15
     progress_percentage = Column(Float, default=0.0)

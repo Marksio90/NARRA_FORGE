@@ -354,17 +354,29 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     total_duration = sum(step["estimated_duration_minutes"] for step in estimated_steps)
     
     project.estimated_cost = total_cost
+    project.estimated_duration_minutes = total_duration
+
+    # Save simulation data to project for persistence
+    simulation_dict = {
+        "estimated_steps": estimated_steps,
+        "estimated_total_cost": total_cost,
+        "estimated_duration_minutes": total_duration,
+        "ai_decisions": ai_decisions
+    }
+    project.simulation_data = simulation_dict
+
     db.commit()
-    
+
     simulation = ProjectSimulation(
         estimated_steps=estimated_steps,
         estimated_total_cost=total_cost,
         estimated_duration_minutes=total_duration,
         ai_decisions=ai_decisions
     )
-    
+
     logger.info(f"Simulation complete for project {project.id}: ${total_cost:.2f}, {total_duration} min")
-    
+    logger.info(f"Simulation data saved to project.simulation_data")
+
     return simulation
 
 

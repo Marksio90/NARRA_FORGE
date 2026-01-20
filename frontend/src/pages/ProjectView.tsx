@@ -60,6 +60,8 @@ interface Project {
   current_step: number;
   progress_percentage: number;
   current_activity?: string;
+  simulation_data?: Simulation | null;
+  estimated_duration_minutes?: number;
 }
 
 const ProjectView: React.FC = () => {
@@ -81,8 +83,16 @@ const ProjectView: React.FC = () => {
       const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
       console.log('🔍 DEBUG: Received project:', response.data);
       console.log('🔍 DEBUG: Project status:', response.data.status);
-      console.log('🔍 DEBUG: Simulation state:', simulation);
+      console.log('🔍 DEBUG: Simulation data from DB:', response.data.simulation_data);
+
       setProject(response.data);
+
+      // If project has simulation_data persisted, load it into state
+      if (response.data.simulation_data && !simulation) {
+        console.log('📊 Loading persisted simulation data');
+        setSimulation(response.data.simulation_data);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching project:', error);

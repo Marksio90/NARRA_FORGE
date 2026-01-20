@@ -34,6 +34,7 @@ interface ProgressUpdate {
   etap: string
   procent: number
   task_id: string
+  szczegoly?: string
 }
 
 interface JobResult {
@@ -240,17 +241,26 @@ export default function JobDetailsPage() {
             {progress ? (
               <>
                 <div className="mb-2 flex justify-between text-sm">
-                  <span className="text-gray-600">{progress.etap}</span>
+                  <span className="text-gray-600 font-medium">{progress.etap}</span>
                   <span className="font-semibold text-blue-600">
                     {progress.procent.toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
                   <div
                     className="bg-blue-600 h-4 rounded-full transition-all duration-500"
                     style={{ width: `${progress.procent}%` }}
                   ></div>
                 </div>
+
+                {/* Szczegółowe informacje o tym co AI tworzy */}
+                {progress.szczegoly && (
+                  <div className="mt-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                    <div className="text-sm text-gray-800 whitespace-pre-line font-mono">
+                      {progress.szczegoly}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-4 text-gray-600">

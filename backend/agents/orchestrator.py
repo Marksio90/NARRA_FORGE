@@ -65,7 +65,7 @@ class StanPipeline(TypedDict, total=False):
     sukces: bool
 
     # Callback do śledzenia postępu
-    progress_callback: Optional[Callable[[str, float], None]]
+    progress_callback: Optional[Callable[[str, float, Optional[str]], None]]
 
 
 class Orchestrator:
@@ -87,14 +87,14 @@ class Orchestrator:
     def __init__(
         self,
         db: AsyncSession,
-        progress_callback: Optional[Callable[[str, float], None]] = None,
+        progress_callback: Optional[Callable[[str, float, Optional[str]], None]] = None,
     ):
         """
         Inicjalizacja Orchestratora.
 
         Args:
             db: Sesja bazy danych
-            progress_callback: Opcjonalna funkcja callback(etap, procent)
+            progress_callback: Opcjonalna funkcja callback(etap, procent, szczegoly)
         """
         self.db = db
         self.progress_callback = progress_callback
@@ -160,7 +160,7 @@ class Orchestrator:
             dict: Aktualizacje stanu
         """
         self.logger.info("NODE: Budowanie świata", job_id=stan["job_id"])
-        self._powiadom_postep("Budowanie świata", 10.0)
+        self._powiadom_postep("Budowanie świata", 10.0, "🌍 AI analizuje gatunek i tworzy unikalny świat...")
 
         try:
             wynik = await self.world_architect.stworz_swiat(
@@ -170,7 +170,19 @@ class Orchestrator:
                 dodatkowe_wskazowki=stan.get("dodatkowe_wskazowki"),
             )
 
-            self._powiadom_postep("Świat zbudowany", 20.0)
+            # Ekstrakcja kluczowych detali ze świata
+            swiat = wynik["swiat"]
+            nazwa_swiata = swiat.get("nazwa", "Nieznany Świat")
+            setting = swiat.get("setting", "")
+            magia = swiat.get("system_magii", "")
+
+            szczegoly = f"✅ Stworzono świat: {nazwa_swiata}\n"
+            if setting:
+                szczegoly += f"→ Setting: {setting[:100]}...\n"
+            if magia:
+                szczegoly += f"→ System magii/technologii: {magia[:100]}..."
+
+            self._powiadom_postep("Świat zbudowany", 20.0, szczegoly)
 
             return {
                 "swiat_data": wynik["swiat"],
@@ -197,19 +209,36 @@ class Orchestrator:
             dict: Aktualizacje stanu
         """
         self.logger.info("NODE: Tworzenie postaci", job_id=stan["job_id"])
-        self._powiadom_postep("Tworzenie postaci", 25.0)
+        liczba = stan.get("liczba_glownych_postaci", 3)
+        self._powiadom_postep(
+            "Tworzenie postaci",
+            25.0,
+            f"👥 AI projektuje {liczba} głównych bohaterów..."
+        )
 
         try:
             wynik = await self.character_smith.stworz_postacie(
                 swiat_data=stan["swiat_data"],
                 gatunek=stan["gatunek"],
-                liczba_glownych=stan.get("liczba_glownych_postaci", 3),
+                liczba_glownych=liczba,
                 job_id=uuid.UUID(stan["job_id"]),
                 world_id=uuid.UUID(stan["world_id"]) if stan.get("world_id") else None,
                 dodatkowe_wskazowki=stan.get("dodatkowe_wskazowki"),
             )
 
-            self._powiadom_postep("Postacie stworzone", 35.0)
+            # Ekstrakcja kluczowych detali o postaciach
+            postacie = wynik["postacie"]
+            szczegoly = f"✅ Stworzono {len(postacie)} postaci:\n"
+
+            for i, postac in enumerate(postacie[:5], 1):  # Max 5 postaci
+                imie = postac.get("imie", "Nieznana")
+                rola = postac.get("rola", "")
+                szczegoly += f"→ {imie}"
+                if rola:
+                    szczegoly += f" ({rola[:40]}{'...' if len(rola) > 40 else ''})"
+                szczegoly += "\n"
+
+            self._powiadom_postep("Postacie stworzone", 35.0, szczegoly.strip())
 
             return {
                 "postacie_data": wynik["postacie"],
@@ -236,7 +265,11 @@ class Orchestrator:
             dict: Aktualizacje stanu
         """
         self.logger.info("NODE: Projektowanie fabuły", job_id=stan["job_id"])
-        self._powiadom_postep("Projektowanie fabuły", 40.0)
+        self._powiadom_postep(
+            "Projektowanie fabuły",
+            40.0,
+            "📖 AI układa fabułę, akty i zwroty akcji..."
+        )
 
         try:
             wynik = await self.plot_master.zaprojektuj_fabule(
@@ -248,9 +281,20 @@ class Orchestrator:
                 dodatkowe_wskazowki=stan.get("dodatkowe_wskazowki"),
             )
 
-            liczba_scen = len(wynik["fabula"].get("sceny", []))
+            # Ekstrakcja kluczowych detali o fabule
+            fabula = wynik["fabula"]
+            liczba_scen = len(fabula.get("sceny", []))
+            temat = fabula.get("centralny_temat", "")
+            konflikt = fabula.get("glowny_konflikt", "")
 
-            self._powiadom_postep("Fabuła zaprojektowana", 50.0)
+            szczegoly = f"✅ Fabuła zaprojektowana:\n"
+            szczegoly += f"→ Liczba scen: {liczba_scen}\n"
+            if temat:
+                szczegoly += f"→ Temat: {temat[:80]}...\n"
+            if konflikt:
+                szczegoly += f"→ Konflikt: {konflikt[:80]}..."
+
+            self._powiadom_postep("Fabuła zaprojektowana", 50.0, szczegoly)
 
             return {
                 "fabula_data": wynik["fabula"],
@@ -296,7 +340,20 @@ class Orchestrator:
         procent_scen = 45.0
         procent = procent_bazowy + (procent_scen * (scena_index + 1) / liczba_scen)
 
-        self._powiadom_postep(f"Piszę scenę {scena_index + 1}/{liczba_scen}", procent)
+        # Ekstrakcja detali o scenie przed generowaniem
+        scena_data = sceny[scena_index]
+        tytul_sceny = scena_data.get("tytul", f"Scena {scena_index + 1}")
+        styl = stan.get("styl_narracji", "literacki")
+
+        szczegoly_przed = f"✍️ Piszę scenę {scena_index + 1}/{liczba_scen}\n"
+        szczegoly_przed += f"→ '{tytul_sceny}'\n"
+        szczegoly_przed += f"→ Styl: {styl}"
+
+        self._powiadom_postep(
+            f"Piszę scenę {scena_index + 1}/{liczba_scen}",
+            procent,
+            szczegoly_przed
+        )
 
         try:
             # Pobierz poprzednią prozę dla kontynuacji
@@ -305,12 +362,10 @@ class Orchestrator:
                 poprzednia_proza = stan["proza_chunks"][-1].get("proza")
 
             # Generuj scenę
-            scena_data = sceny[scena_index]
-
             wynik = await self.prose_weaver.wygeneruj_scene(
                 scena_data=scena_data,
                 postacie_data=stan["postacie_data"],
-                styl=stan.get("styl_narracji", "literacki"),
+                styl=styl,
                 job_id=uuid.UUID(stan["job_id"]),
                 numer_rozdzialu=scena_data.get("akt"),
                 poprzednia_scena=poprzednia_proza,
@@ -326,6 +381,21 @@ class Orchestrator:
                     "chunk_id": wynik["chunk_id"],
                 }
             ]
+
+            # Szczegóły po ukończeniu sceny
+            liczba_slow = wynik["liczba_slow"]
+            laczna_liczba_slow = sum(ch["liczba_slow"] for ch in nowe_chunks)
+
+            szczegoly_po = f"✅ Scena {scena_index + 1}/{liczba_scen} ukończona\n"
+            szczegoly_po += f"→ Wygenerowano: {liczba_slow} słów\n"
+            szczegoly_po += f"→ Łącznie: {laczna_liczba_slow} słów"
+
+            # Progress update po ukończeniu sceny
+            self._powiadom_postep(
+                f"Scena {scena_index + 1}/{liczba_scen} gotowa",
+                procent,
+                szczegoly_po
+            )
 
             return {
                 "proza_chunks": nowe_chunks,
@@ -356,7 +426,7 @@ class Orchestrator:
             dict: Aktualizacje stanu
         """
         self.logger.info("NODE: Finalizacja", job_id=stan["job_id"])
-        self._powiadom_postep("Finalizacja", 98.0)
+        self._powiadom_postep("Finalizacja", 98.0, "🎯 Zapisywanie wyników...")
 
         try:
             # Aktualizuj status joba na completed
@@ -371,14 +441,15 @@ class Orchestrator:
                     }
                 else:
                     job.status = "completed"
+                    liczba_slow_razem = sum(
+                        chunk["liczba_slow"] for chunk in stan.get("proza_chunks", [])
+                    )
                     job.result = {
                         "world_id": stan.get("world_id"),
                         "character_ids": stan.get("character_ids"),
                         "plot_id": stan.get("plot_id"),
                         "liczba_scen": stan.get("liczba_scen"),
-                        "liczba_slow_razem": sum(
-                            chunk["liczba_slow"] for chunk in stan.get("proza_chunks", [])
-                        ),
+                        "liczba_slow_razem": liczba_slow_razem,
                     }
 
                 await self.db.flush()
@@ -390,7 +461,19 @@ class Orchestrator:
                     status=job.status,
                 )
 
-            self._powiadom_postep("Ukończono", 100.0)
+                # Szczegóły finalizacji
+                if job.status == "completed":
+                    liczba_scen = stan.get("liczba_scen", 0)
+                    liczba_slow = sum(
+                        chunk["liczba_slow"] for chunk in stan.get("proza_chunks", [])
+                    )
+                    szczegoly = f"🎉 Książka ukończona!\n"
+                    szczegoly += f"→ {liczba_scen} scen\n"
+                    szczegoly += f"→ {liczba_slow} słów"
+
+                    self._powiadom_postep("Ukończono", 100.0, szczegoly)
+                else:
+                    self._powiadom_postep("Błąd", 100.0, "❌ Generowanie nie powiodło się")
 
             return {
                 "aktualny_etap": "zakonczono",
@@ -429,17 +512,20 @@ class Orchestrator:
         else:
             return "zakonczono"
 
-    def _powiadom_postep(self, etap: str, procent: float) -> None:
+    def _powiadom_postep(
+        self, etap: str, procent: float, szczegoly: Optional[str] = None
+    ) -> None:
         """
         Wywołuje callback postępu jeśli jest zdefiniowany.
 
         Args:
             etap: Nazwa aktualnego etapu
             procent: Procent ukończenia (0-100)
+            szczegoly: Opcjonalne szczegółowe informacje o tym co AI tworzy
         """
         if self.progress_callback:
             try:
-                self.progress_callback(etap, procent)
+                self.progress_callback(etap, procent, szczegoly)
             except Exception as e:
                 self.logger.warning("Błąd callback postępu", error=str(e))
 
@@ -539,14 +625,14 @@ class Orchestrator:
 
 async def utworz_orchestrator(
     db: AsyncSession,
-    progress_callback: Optional[Callable[[str, float], None]] = None,
+    progress_callback: Optional[Callable[[str, float, Optional[str]], None]] = None,
 ) -> Orchestrator:
     """
     Tworzy instancję Orchestratora.
 
     Args:
         db: Sesja bazy danych
-        progress_callback: Opcjonalna funkcja callback(etap, procent)
+        progress_callback: Opcjonalna funkcja callback(etap, procent, szczegoly)
 
     Returns:
         Orchestrator: Instancja orchestratora

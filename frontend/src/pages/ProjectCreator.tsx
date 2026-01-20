@@ -12,7 +12,7 @@ interface Genre {
 
 const genres: Genre[] = [
   {
-    value: 'sci_fi',
+    value: 'sci-fi',
     label: 'Sci-Fi',
     description: 'Eksploracja przyszłości, technologii i kosmosu',
     icon: '🚀',
@@ -84,7 +84,7 @@ const ProjectCreator: React.FC = () => {
     setIsCreating(true);
     try {
       const response = await axios.post('http://localhost:8000/api/projects', {
-        title: projectTitle,
+        name: projectTitle,
         genre: selectedGenre
       });
 

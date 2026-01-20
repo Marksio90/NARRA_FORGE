@@ -29,25 +29,30 @@ interface Simulation {
 
 interface Project {
   id: number;
-  title: string;
+  name: string;
   genre: string;
   status: string;
   created_at: string;
-  simulation?: Simulation;
-  current_step?: number;
-  total_cost?: number;
+  parameters: AIDecisions;
+  estimated_cost: number;
+  actual_cost: number;
+  current_step: number;
+  progress_percentage: number;
+  current_activity?: string;
 }
 
 const ProjectView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
+  const [simulation, setSimulation] = useState<Simulation | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     fetchProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchProject = async () => {
@@ -65,7 +70,9 @@ const ProjectView: React.FC = () => {
     setIsSimulating(true);
     try {
       const response = await axios.post(`http://localhost:8000/api/projects/${id}/simulate`);
-      setProject(prev => prev ? { ...prev, simulation: response.data } : null);
+      setSimulation(response.data);
+      // Refresh project to get updated status
+      await fetchProject();
     } catch (error) {
       console.error('Error simulating:', error);
       alert('Wystąpił błąd podczas symulacji');
@@ -76,7 +83,7 @@ const ProjectView: React.FC = () => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      await axios.post(`http://localhost:8000/api/projects/${id}/generate`);
+      await axios.post(`http://localhost:8000/api/projects/${id}/start`);
       // Start polling for updates
       const interval = setInterval(async () => {
         const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
@@ -155,7 +162,7 @@ const ProjectView: React.FC = () => {
       </div>
 
       {/* Simulation Section */}
-      {!project.simulation && project.status === 'created' && (
+      {!simulation && project.status === 'initializing' && (
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-4">
             Symulacja Inteligentna
@@ -175,7 +182,7 @@ const ProjectView: React.FC = () => {
       )}
 
       {/* AI Decisions */}
-      {project.simulation && (
+      {simulation && (
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-6">
             Decyzje AI dla Gatunku: {project.genre}
@@ -184,37 +191,37 @@ const ProjectView: React.FC = () => {
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Docelowa Liczba Słów</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.target_word_count.toLocaleString()}
+                {simulation.ai_decisions.target_word_count.toLocaleString()}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Liczba Rozdziałów</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.chapter_count}
+                {simulation.ai_decisions.chapter_count}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Główni Bohaterowie</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.main_character_count}
+                {simulation.ai_decisions.main_character_count}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Wątki Poboczne</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.subplot_count}
+                {simulation.ai_decisions.subplot_count}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Poziom Detali Świata</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.world_detail_level}
+                {simulation.ai_decisions.world_detail_level}
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-400 text-sm mb-1">Złożoność Stylu</div>
               <div className="text-2xl font-bold text-white">
-                {project.simulation.ai_decisions.style_complexity}
+                {simulation.ai_decisions.style_complexity}
               </div>
             </div>
           </div>
@@ -231,17 +238,17 @@ const ProjectView: React.FC = () => {
             <div>
               <div className="text-gray-200 text-sm mb-1">Całkowity Szacowany Koszt</div>
               <div className="text-4xl font-bold text-white">
-                ${project.simulation.estimated_total_cost.toFixed(2)}
+                ${simulation.estimated_total_cost.toFixed(2)}
               </div>
             </div>
             <div>
               <div className="text-gray-200 text-sm mb-1">Szacowany Czas Generacji</div>
               <div className="text-4xl font-bold text-white">
-                {project.simulation.estimated_duration_minutes} min
+                {simulation.estimated_duration_minutes} min
               </div>
             </div>
           </div>
-          {project.status === 'simulated' && (
+          {project.status === 'simulating' && (
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -260,7 +267,7 @@ const ProjectView: React.FC = () => {
             15 Kroków Pipeline - Szczegółowa Symulacja
           </h3>
           <div className="space-y-4">
-            {project.simulation.estimated_steps.map((step) => (
+            {simulation.estimated_steps.map((step) => (
               <div
                 key={step.step}
                 className={`bg-gray-700 rounded-lg p-4 ${

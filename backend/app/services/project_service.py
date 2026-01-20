@@ -42,13 +42,9 @@ def create_project(db: Session, project_data: ProjectCreate) -> Project:
     db.add(project)
     db.commit()
     db.refresh(project)
-    
+
     logger.info(f"Created project {project.id}: {project.name} ({project.genre})")
-    
-    # Automatically transition to simulating
-    project.status = ProjectStatus.SIMULATING
-    db.commit()
-    
+
     return project
 
 
@@ -70,7 +66,7 @@ def get_project(db: Session, project_id: int) -> Optional[Project]:
 async def simulate_generation(db: Session, project: Project) -> ProjectSimulation:
     """
     INTELLIGENT SIMULATION - AI decides ALL parameters
-    
+
     Based on genre, AI determines:
     - Target word count (e.g., 85,000 - 120,000 words)
     - Number of chapters (e.g., 25-35)
@@ -79,13 +75,17 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     - Subplot count (e.g., 2-4)
     - World detail level (high/medium for genre)
     - Structure type (Hero's Journey, 7-Point, etc.)
-    
+
     Then calculates cost for each of 15 steps based on:
     - Complexity of step
     - Model tier required
     - Estimated token usage
     """
     logger.info(f"Running intelligent simulation for project {project.id}")
+
+    # Update status to SIMULATING
+    project.status = ProjectStatus.SIMULATING
+    db.commit()
     
     # Get genre-specific config
     genre_cfg = genre_config.get_genre_config(project.genre.value)

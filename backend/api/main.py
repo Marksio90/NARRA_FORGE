@@ -114,6 +114,8 @@ async def root():
     }
 
 
-# TODO: Include routers when implemented
-# from api.routers import jobs
-# app.include_router(jobs.router, prefix="/api", tags=["Jobs"])
+# Register API routers
+from api.routers import jobs, ws
+
+app.include_router(jobs.router, prefix="/api", tags=["Jobs"])
+app.include_router(ws.router, prefix="/api", tags=["WebSocket"])

@@ -32,6 +32,8 @@ class Job(Base):
     genre: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     inspiration: Mapped[str] = mapped_column(Text, nullable=False)
     constraints: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)  # Parametry + wyniki
+    result: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Wynik końcowy
     budget_limit: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
 
     # Status tracking

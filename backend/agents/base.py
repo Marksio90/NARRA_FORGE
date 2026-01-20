@@ -169,7 +169,7 @@ anego przez agenta
                 llm = llm.bind(max_tokens=max_tokeny)
 
             # Invoke LLM
-            from langchain.schema import HumanMessage, SystemMessage
+            from langchain_core.messages import HumanMessage, SystemMessage
 
             lc_messages = []
             for msg in wiadomosci:

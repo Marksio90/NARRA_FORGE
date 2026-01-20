@@ -113,9 +113,18 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     chapter_count = target_word_count // avg_words_per_chapter
     
     # Character counts by genre
-    main_char_count = 5 if project.genre.value in ["fantasy", "sci-fi"] else 4
-    supporting_count = 12 if project.genre.value in ["fantasy", "sci-fi"] else 8
-    minor_count = 20 if project.genre.value in ["fantasy", "sci-fi"] else 15
+    if project.genre.value in ["fantasy", "sci-fi"]:
+        main_char_count = 5
+        supporting_count = 12
+        minor_count = 20
+    elif project.genre.value == "comedy":
+        main_char_count = 3  # Comedy typically has fewer main characters for simpler dynamics
+        supporting_count = 6
+        minor_count = 10
+    else:
+        main_char_count = 4
+        supporting_count = 8
+        minor_count = 15
     
     # Subplot count
     subplot_count = 3 if project.genre.value in ["fantasy", "thriller"] else 2
@@ -123,16 +132,31 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     # World detail
     world_detail = "high" if project.genre.value in ["fantasy", "sci-fi"] else "medium"
     
+    # Determine style complexity based on genre
+    style_complexity_map = {
+        "literary": "high",
+        "fantasy": "high",
+        "sci-fi": "high",
+        "thriller": "medium",
+        "mystery": "medium",
+        "horror": "medium",
+        "drama": "medium",
+        "romance": "medium",
+        "comedy": "low",
+    }
+    style_complexity = style_complexity_map.get(project.genre.value, "medium")
+
     # AI-determined parameters
     ai_decisions = {
         "target_word_count": target_word_count,
         "planned_volumes": 1,
         "chapter_count": chapter_count,
-        "main_characters": main_char_count,
-        "supporting_characters": supporting_count,
-        "minor_characters": minor_count,
+        "main_character_count": main_char_count,
+        "supporting_character_count": supporting_count,
+        "minor_character_count": minor_count,
         "subplot_count": subplot_count,
         "world_detail_level": world_detail,
+        "style_complexity": style_complexity,
         "structure_type": genre_cfg["structure"],
         "style_guidelines": genre_cfg["style"],
     }
@@ -197,14 +221,14 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "name": "Kreacja Postaci Głównych",
             "task_type": "character_creation",
             "estimated_tokens_in": 1500,
-            "estimated_tokens_out": 3000 * ai_decisions.get("main_characters", 5),
+            "estimated_tokens_out": 3000 * ai_decisions.get("main_character_count", 5),
         },
         {
             "step": 5,
             "name": "Kreacja Postaci Pobocznych",
             "task_type": "character_creation",
             "estimated_tokens_in": 1000,
-            "estimated_tokens_out": 1500 * ai_decisions.get("supporting_characters", 10),
+            "estimated_tokens_out": 1500 * ai_decisions.get("supporting_character_count", 10),
         },
         {
             "step": 6,
@@ -313,6 +337,7 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": step_data["step"],
             "name": step_data["name"],
             "estimated_cost": round(cost, 4),
+            "estimated_tokens": step_data["estimated_tokens_out"],
             "model_tier": f"tier{tier}",
             "model_name": model_name,
             "estimated_duration_minutes": duration,

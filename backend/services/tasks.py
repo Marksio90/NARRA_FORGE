@@ -71,7 +71,9 @@ class GenerateBookTask(Task):
             )
         return self._redis
 
-    def _progress_callback(self, job_id: str, etap: str, procent: float) -> None:
+    def _progress_callback(
+        self, job_id: str, etap: str, procent: float, szczegoly: Optional[str] = None
+    ) -> None:
         """
         Callback dla śledzenia postępu.
 
@@ -81,6 +83,7 @@ class GenerateBookTask(Task):
             job_id: ID zadania
             etap: Nazwa aktualnego etapu
             procent: Procent ukończenia (0-100)
+            szczegoly: Opcjonalne szczegółowe informacje o tym co AI tworzy
         """
         try:
             progress_data = {
@@ -90,17 +93,23 @@ class GenerateBookTask(Task):
                 "task_id": self.request.id,
             }
 
+            # Dodaj szczegóły jeśli są dostępne
+            if szczegoly:
+                progress_data["szczegoly"] = szczegoly
+
             # Publish do Redis channel dla WebSocket
+            # Użyj JSON zamiast str() dla lepszego parsowania
+            import json
             self.redis.publish(
                 f"job_progress:{job_id}",
-                str(progress_data),
+                json.dumps(progress_data),
             )
 
             # Zapisz ostatni stan do Redis (dla klientów łączących się później)
             self.redis.setex(
                 f"job_progress_latest:{job_id}",
                 3600,  # TTL 1 godzina
-                str(progress_data),
+                json.dumps(progress_data),
             )
 
             logger.debug(
@@ -108,6 +117,7 @@ class GenerateBookTask(Task):
                 job_id=job_id,
                 etap=etap,
                 procent=procent,
+                has_szczegoly=szczegoly is not None,
             )
 
         except Exception as e:
@@ -166,8 +176,10 @@ def generate_book_task(
         async for db in get_async_session():
             try:
                 # Utwórz progress callback z zamknięciem na job_id
-                def progress_callback(etap: str, procent: float):
-                    self._progress_callback(job_id, etap, procent)
+                def progress_callback(
+                    etap: str, procent: float, szczegoly: Optional[str] = None
+                ):
+                    self._progress_callback(job_id, etap, procent, szczegoly)
 
                 # Utwórz orchestrator
                 orchestrator = Orchestrator(

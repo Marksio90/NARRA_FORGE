@@ -85,8 +85,8 @@ class ProgressManager:
 
             if latest_progress:
                 try:
-                    # Parse string representation of dict
-                    progress_dict = eval(latest_progress)  # Bezpieczne tu, bo z Redis
+                    # Parse JSON string
+                    progress_dict = json.loads(latest_progress)
                     await websocket.send_json({
                         "typ": "progress",
                         "data": progress_dict,
@@ -110,7 +110,7 @@ class ProgressManager:
                         # Parse progress data
                         try:
                             progress_str = message["data"]
-                            progress_dict = eval(progress_str)  # Z Redis - bezpieczne
+                            progress_dict = json.loads(progress_str)
 
                             await websocket.send_json({
                                 "typ": "progress",
@@ -122,6 +122,7 @@ class ProgressManager:
                                 job_id=job_id,
                                 etap=progress_dict.get("etap"),
                                 procent=progress_dict.get("procent"),
+                                has_szczegoly=progress_dict.get("szczegoly") is not None,
                             )
 
                             # Jeśli ukończono (100%), zakończ subskrypcję
@@ -196,7 +197,8 @@ async def websocket_job_progress(
         "job_id": "uuid",
         "etap": "Budowanie świata",
         "procent": 25.5,
-        "task_id": "uuid"
+        "task_id": "uuid",
+        "szczegoly": "🌍 AI analizuje gatunek i tworzy unikalny świat..."
       }
     }
     ```

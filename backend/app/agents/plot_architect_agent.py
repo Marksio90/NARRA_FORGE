@@ -85,7 +85,8 @@ class PlotArchitectAgent:
         characters: List[Dict[str, Any]],
         chapter_count: int,
         subplot_count: int,
-        themes: List[str]
+        themes: List[str],
+        semantic_title_analysis: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Create complete plot structure
@@ -119,7 +120,8 @@ class PlotArchitectAgent:
             chapter_count=chapter_count,
             subplot_count=subplot_count,
             themes=themes,
-            structure_type=structure_type
+            structure_type=structure_type,
+            semantic_title_analysis=semantic_title_analysis or {}
         )
 
         logger.info(
@@ -153,7 +155,8 @@ class PlotArchitectAgent:
         chapter_count: int,
         subplot_count: int,
         themes: List[str],
-        structure_type: str
+        structure_type: str,
+        semantic_title_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Generate the plot structure using AI"""
 
@@ -170,7 +173,32 @@ class PlotArchitectAgent:
 
         structure_info = STORY_STRUCTURES[structure_type]
 
+        # Extract semantic title analysis
+        core_meaning = semantic_title_analysis.get("core_meaning", project_name)
+        central_conflict_hint = semantic_title_analysis.get("central_conflict", "")
+        themes_semantic = semantic_title_analysis.get("themes", [])
+        reader_promise = semantic_title_analysis.get("reader_promise", "")
+
         prompt = f"""Create a MASTERFUL PLOT STRUCTURE for "{project_name}" ({genre}).
+
+## 🎯 TITLE AS PLOT DNA (CRITICAL!)
+
+The title "{project_name}" is NOT decoration - it is the BLUEPRINT of this plot.
+
+**Title's Core Meaning**: {core_meaning}
+**Central Conflict Implied by Title**: {central_conflict_hint}
+**Themes from Title**: {', '.join(themes_semantic) if themes_semantic else 'To be explored'}
+**Reader's Promise**: {reader_promise}
+
+🔥 **MANDATORY REQUIREMENT**: The MAIN CONFLICT must directly resolve what the title asks/promises.
+
+- If the title is a question → the climax ANSWERS it
+- If the title is a promise → the resolution FULFILLS it
+- If the title is a metaphor → the plot LITERALIZES it
+- If the title suggests conflict → that IS your main conflict
+
+The entire plot arc must BUILD TO and RESOLVE the title's meaning.
+By the end, the reader must say: "NOW I understand why it's called '{project_name}'"
 
 ## STORY FOUNDATION
 
@@ -183,7 +211,7 @@ class PlotArchitectAgent:
 
 **World**: {world_bible.get('geography', {}).get('world_type', 'Unknown')}
 
-**Themes**: {', '.join(themes)}
+**Themes (from basic analysis)**: {', '.join(themes)}
 
 **Structure**: {structure_type}
 **Chapter Count**: {chapter_count}
@@ -321,13 +349,21 @@ Explain the CAUSE-AND-EFFECT chain:
 
 ## CRITICAL GUIDELINES
 
-1. **Genre-Specific Pacing**: {genre} has specific rhythm expectations
-2. **Want vs Need**: External plot resolves Want, internal arc resolves Need
-3. **Escalation**: Each act should raise stakes higher
-4. **Causality**: Every scene causes the next (no random events)
-5. **Character-Driven**: Plot serves character growth, not vice versa
-6. **Theme Integration**: Every subplot reinforces theme
-7. **Satisfying Resolution**: All threads tied up, questions answered
+🎯 **#1 PRIORITY - TITLE RESOLUTION**:
+   The plot MUST resolve what the title "{project_name}" promises/asks.
+   Include a "title_resolution" field explaining:
+   - How the main conflict IS the title's meaning
+   - How the climax ANSWERS what the title asks
+   - How the resolution FULFILLS the title's promise
+   - Why THIS plot perfectly serves THIS title
+
+2. **Genre-Specific Pacing**: {genre} has specific rhythm expectations
+3. **Want vs Need**: External plot resolves Want, internal arc resolves Need
+4. **Escalation**: Each act should raise stakes higher
+5. **Causality**: Every scene causes the next (no random events)
+6. **Character-Driven**: Plot serves character growth, not vice versa
+7. **Theme Integration**: Every subplot reinforces theme
+8. **Satisfying Resolution**: All threads tied up, questions answered
 
 ## OUTPUT FORMAT
 
@@ -335,6 +371,12 @@ Return valid JSON with this structure:
 
 {{
   "structure_type": "{structure_type}",
+  "title_resolution": {{
+    "main_conflict_connection": "How the central conflict IS '{project_name}'...",
+    "climax_answer": "How the climax resolves the title's question/promise...",
+    "thematic_coherence": "How every act builds toward the title's meaning...",
+    "reader_satisfaction": "How the ending delivers on the title's promise..."
+  }},
   "acts": {{
     "act_1": {{
       "name": "...",

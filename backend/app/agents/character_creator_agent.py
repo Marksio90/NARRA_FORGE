@@ -111,7 +111,16 @@ class CharacterCreatorAgent:
     ) -> Dict[str, Any]:
         """Create the protagonist"""
 
-        # Check if title suggests a name
+        # Extract semantic analysis
+        semantic_analysis = title_analysis.get("semantic_title_analysis", {})
+        char_implications = semantic_analysis.get("character_implications", {})
+        protagonist_archetype = char_implications.get("protagonist_archetype", "")
+        protagonist_journey = char_implications.get("protagonist_journey", "")
+        suggested_names_semantic = char_implications.get("suggested_names", [])
+        core_meaning = semantic_analysis.get("core_meaning", project_name)
+        reader_promise = semantic_analysis.get("reader_promise", "")
+
+        # Check if title suggests a name (basic analysis)
         suggested_name = None
         char_names = title_analysis.get("character_names", [])
         if char_names:
@@ -121,10 +130,30 @@ class CharacterCreatorAgent:
 
         prompt = f"""Create a COMPELLING PROTAGONIST for "{project_name}" ({genre}).
 
+## 🎯 TITLE AS CHARACTER DNA (CRITICAL!)
+
+The title "{project_name}" is not just the book's name - it is THIS CHARACTER'S DESTINY.
+
+**Title's Core Meaning**: {core_meaning}
+**Protagonist Archetype from Title**: {protagonist_archetype}
+**Protagonist Journey Implied**: {protagonist_journey}
+**Reader's Promise**: {reader_promise}
+
+🔥 **MANDATORY REQUIREMENT**: This protagonist must EMBODY the title "{project_name}".
+- Their name should resonate with the title (use: {suggested_names_semantic if suggested_names_semantic else suggested_name or 'create fitting name'})
+- Their arc must RESOLVE what the title promises
+- Their ghost/wound must relate to the title's themes
+- Their transformation must ANSWER the title's question
+- They ARE the personification of "{project_name}"
+
+If the title asks a question, the protagonist's journey answers it.
+If the title is a metaphor, the protagonist embodies it.
+If the title is a promise, the protagonist fulfills it.
+
 ## WORLD CONTEXT
 {self._summarize_world(world_bible)}
 
-## TITLE ANALYSIS
+## TITLE ANALYSIS (Basic)
 - Suggested name: {suggested_name or "Choose an evocative name"}
 - Themes: {', '.join(themes)}
 - Character hints: {char_names}
@@ -192,18 +221,32 @@ Choose or blend archetypes, but make the character UNIQUE and SPECIFIC.
 
 ## CRITICAL GUIDELINES
 
-1. **Depth Over Surface**: Go deep psychologically
-2. **Flawed But Likeable**: They must have weaknesses
-3. **Agency**: They drive the plot, not reactive
-4. **Growth Potential**: Room for transformation
-5. **Genre-Authentic**: Fits the {genre} world
-6. **Memorable**: Readers should care about them
+🎯 **#1 PRIORITY - TITLE EMBODIMENT**:
+   This character MUST embody the title "{project_name}".
+   Include a "title_connection" field explaining:
+   - How their name relates to the title
+   - How their arc resolves the title's promise
+   - How their journey answers what the title asks
+   - Why THEY are the perfect protagonist for THIS title
+
+2. **Depth Over Surface**: Go deep psychologically
+3. **Flawed But Likeable**: They must have weaknesses
+4. **Agency**: They drive the plot, not reactive
+5. **Growth Potential**: Room for transformation
+6. **Genre-Authentic**: Fits the {genre} world
+7. **Memorable**: Readers should care about them
 
 Output valid JSON with this structure:
 
 {{
   "name": "...",
   "role": "protagonist",
+  "title_connection": {{
+    "name_resonance": "How the name connects to '{project_name}'...",
+    "arc_resolution": "How their arc resolves what the title promises...",
+    "thematic_embodiment": "How they personify the title's meaning...",
+    "reader_promise_fulfillment": "How they deliver on the title's promise..."
+  }},
   "profile": {{
     "biography": {{...}},
     "psychology": {{...}},

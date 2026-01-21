@@ -144,7 +144,9 @@ class ProseWriterAgent:
         all_characters: List[Dict[str, Any]],
         previous_chapter_summary: Optional[str],
         target_word_count: int,
-        style_complexity: str
+        style_complexity: str,
+        book_title: str = None,
+        semantic_title_analysis: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Write a complete chapter
@@ -184,7 +186,9 @@ class ProseWriterAgent:
             previous_chapter_summary=previous_chapter_summary,
             target_word_count=target_word_count,
             style_complexity=style_complexity,
-            tier=tier
+            tier=tier,
+            book_title=book_title,
+            semantic_title_analysis=semantic_title_analysis or {}
         )
 
         word_count = len(chapter_content.split())
@@ -233,14 +237,43 @@ class ProseWriterAgent:
         previous_chapter_summary: Optional[str],
         target_word_count: int,
         style_complexity: str,
-        tier: ModelTier
+        tier: ModelTier,
+        book_title: str,
+        semantic_title_analysis: Dict[str, Any]
     ) -> str:
         """Generate the actual prose content"""
 
         genre_style = GENRE_PROSE_STYLES.get(genre, GENRE_PROSE_STYLES['drama'])
 
+        # Extract semantic title analysis
+        core_meaning = semantic_title_analysis.get("core_meaning", book_title)
+        themes_semantic = semantic_title_analysis.get("themes", [])
+        emotional_core = semantic_title_analysis.get("emotional_core", "")
+        metaphors = semantic_title_analysis.get("metaphors", [])
+
         # Build comprehensive prompt
-        prompt = f"""Write CHAPTER {chapter_number} for a {genre} novel.
+        prompt = f"""Write CHAPTER {chapter_number} for a {genre} novel titled "{book_title}".
+
+## 🎯 TITLE AS CREATIVE COMPASS (CRITICAL!)
+
+This book is called "{book_title}" - and EVERY WORD you write must honor that title.
+
+**Title's Core Meaning**: {core_meaning}
+**Emotional Core to Convey**: {emotional_core}
+**Themes from Title**: {', '.join(themes_semantic) if themes_semantic else 'Universal themes'}
+**Metaphors in Title**: {', '.join(metaphors) if metaphors else 'To be discovered'}
+
+🔥 **MANDATORY REQUIREMENTS FOR THIS CHAPTER**:
+1. **Vocabulary & Imagery**: Use words and images that ECHO the title's themes
+2. **Tone & Atmosphere**: Every sentence should contribute to the title's emotional core
+3. **Symbolism**: If the title contains metaphors, weave them into the prose
+4. **Thematic Resonance**: Characters' thoughts/actions should reflect title themes
+5. **Reader Immersion**: Make readers FEEL why this book has THIS title
+
+When writing this chapter, constantly ask yourself:
+"Does this sentence/paragraph/scene reinforce '{book_title}'?"
+
+If not, rewrite it until it does.
 
 ## CHAPTER REQUIREMENTS
 

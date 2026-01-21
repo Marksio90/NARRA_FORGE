@@ -398,7 +398,8 @@ class AgentOrchestrator:
             characters=characters_data,
             chapter_count=params.get('chapter_count', 25),
             subplot_count=params.get('subplot_count', 3),
-            themes=params.get('title_analysis', {}).get('themes', [])
+            themes=params.get('title_analysis', {}).get('themes', []),
+            semantic_title_analysis=params.get('semantic_title_analysis', {})
         )
 
         # Save to database
@@ -476,7 +477,9 @@ class AgentOrchestrator:
                 all_characters=characters_dict,
                 previous_chapter_summary=previous_summary,
                 target_word_count=words_per_chapter,
-                style_complexity=params.get('style_complexity', 'medium')
+                style_complexity=params.get('style_complexity', 'medium'),
+                book_title=self.project.name,  # 🔥 CRITICAL: Pass title to prose writer!
+                semantic_title_analysis=params.get('semantic_title_analysis', {})  # 🎯 Deep meaning
             )
 
             # Create summary for next chapter

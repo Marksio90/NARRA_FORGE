@@ -63,9 +63,94 @@ def get_project(db: Session, project_id: int) -> Optional[Project]:
     return db.query(Project).filter(Project.id == project_id).first()
 
 
+async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
+    """
+    ADVANCED: Use AI to deeply analyze title meaning, metaphors, symbolism
+
+    This provides MUCH richer insights than keyword matching:
+    - Semantic meaning and metaphors
+    - Emotional core and themes
+    - Symbolism and hidden meanings
+    - Character archetypes implied
+    - World/setting implications
+    - Conflict suggestions
+    """
+    from app.services.ai_service import get_ai_service, ModelTier
+
+    ai_service = get_ai_service()
+
+    prompt = f"""Analyze this book title DEEPLY for maximum creative impact: "{title}"
+
+Genre: {genre}
+
+Provide a RICH semantic analysis:
+
+1. **Core Meaning**: What is the title REALLY about? Go beyond literal.
+2. **Metaphors & Symbolism**: What does it represent metaphorically?
+3. **Emotional Core**: What emotion/feeling does it evoke?
+4. **Character Implications**: What kind of protagonist/story does this title promise?
+5. **World/Setting Clues**: What world is suggested by this title?
+6. **Conflict Hints**: What's the central tension/conflict implied?
+7. **Themes**: What deep themes should the story explore?
+8. **Promise to Reader**: What experience does this title promise?
+
+Return JSON:
+{{
+  "core_meaning": "...",
+  "metaphors": ["...", "..."],
+  "emotional_core": "...",
+  "character_implications": {{
+    "protagonist_archetype": "...",
+    "protagonist_journey": "...",
+    "suggested_names": ["...", "..."]
+  }},
+  "world_setting": {{
+    "type": "...",
+    "atmosphere": "...",
+    "key_elements": ["...", "..."]
+  }},
+  "central_conflict": "...",
+  "themes": ["...", "...", "..."],
+  "reader_promise": "..."
+}}
+
+Make this INSIGHTFUL. This will drive the entire story creation."""
+
+    try:
+        response = await ai_service.generate(
+            prompt=prompt,
+            tier=ModelTier.TIER_2,  # Use good model for analysis
+            temperature=0.7,
+            max_tokens=1500,
+            json_mode=True,
+            metadata={"task": "semantic_title_analysis"}
+        )
+
+        import json
+        semantic_analysis = json.loads(response.content)
+        logger.info(f"🎯 SEMANTIC TITLE ANALYSIS: {semantic_analysis}")
+        return semantic_analysis
+
+    except Exception as e:
+        logger.error(f"❌ Semantic title analysis failed: {e}")
+        return {
+            "core_meaning": title,
+            "metaphors": [],
+            "emotional_core": "neutral",
+            "character_implications": {},
+            "world_setting": {},
+            "central_conflict": "To be determined",
+            "themes": [],
+            "reader_promise": "An engaging story"
+        }
+
+
 def _analyze_title(title: str, genre: str) -> dict:
     """
     Analyze book title to extract intelligent insights for AI decisions
+
+    NOTE: This is the BASIC keyword-based analysis.
+    For SEMANTIC analysis, use _semantic_analyze_title_with_ai() instead.
 
     Extracts:
     - Character names and roles
@@ -240,9 +325,13 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     # Get genre-specific config
     genre_cfg = genre_config.get_genre_config(project.genre.value)
 
-    # TITLE ANALYSIS - Extract meaningful information from title
+    # TITLE ANALYSIS - Both keyword-based AND semantic AI-powered
     title_insights = _analyze_title(project.name, project.genre.value)
-    logger.info(f"Title analysis for '{project.name}': {title_insights}")
+    logger.info(f"Basic title analysis for '{project.name}': {title_insights}")
+
+    # SEMANTIC TITLE ANALYSIS - Deep AI-powered meaning extraction
+    semantic_insights = await _semantic_analyze_title_with_ai(project.name, project.genre.value)
+    logger.info(f"🎯 Semantic title analysis for '{project.name}': {semantic_insights}")
 
     # AI DECISIONS (in production, this would call GPT-4o-mini for intelligent decisions)
     # For now, using intelligent defaults based on genre + title analysis
@@ -315,7 +404,7 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     }
     style_complexity = style_complexity_map.get(project.genre.value, "medium")
 
-    # AI-determined parameters (enhanced with title analysis)
+    # AI-determined parameters (enhanced with BOTH basic AND semantic title analysis)
     ai_decisions = {
         "target_word_count": target_word_count,
         "planned_volumes": 1,
@@ -328,14 +417,18 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         "style_complexity": style_complexity,
         "structure_type": genre_cfg["structure"],
         "style_guidelines": genre_cfg["style"],
-        # Title-based enhancements
+        # Title-based enhancements (BASIC keyword analysis + SEMANTIC AI analysis)
         "title_analysis": {
             "character_names": title_insights["character_names"],
             "themes": title_insights["themes"],
             "setting_hints": title_insights["setting_hints"],
             "tone": title_insights["tone"],
             "focus": title_insights["focus"],
-        }
+            # NESTED: Semantic title analysis (AI-powered deep meaning)
+            "semantic_title_analysis": semantic_insights
+        },
+        # ALSO at top level for easy access
+        "semantic_title_analysis": semantic_insights
     }
 
     # Add specific title suggestions if available

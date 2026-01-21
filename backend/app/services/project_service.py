@@ -83,6 +83,13 @@ async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
 
 Genre: {genre}
 
+🇵🇱 **KRYTYCZNIE WAŻNE - JĘZYK ODPOWIEDZI**:
+WSZYSTKIE pola w JSON MUSZĄ być wypełnione PO POLSKU!
+- core_meaning → po polsku
+- themes → po polsku
+- protagonist_archetype → po polsku (np. "Mag Ognia", "Wojownik", "Wybrany")
+- ALL fields → POLISH language!
+
 🎯 **YOUR MISSION**: Extract EVERY piece of creative information from this title.
 
 🔍 **CRITICAL - GRAMMAR & CONTEXT AWARENESS**:
@@ -98,41 +105,41 @@ Genre: {genre}
 - If title format is "Name, Description" → Name is the protagonist
 - Provide AT LEAST one suggested name based on title analysis
 
-Provide COMPLETE analysis for ALL fields:
+Provide COMPLETE analysis for ALL fields (W JĘZYKU POLSKIM!):
 
-1. **Core Meaning**: What is this story about? (Full interpretation)
-2. **Metaphors & Symbolism**: What symbols/metaphors are present?
-3. **Emotional Core**: Primary emotion this title evokes
-4. **Character Implications** (CRITICAL - ALWAYS FILL THIS):
-   - protagonist_archetype: What type of hero? (e.g., "Fire Mage", "Warrior", "Chosen One")
-   - protagonist_journey: What journey does the title suggest?
+1. **Core Meaning**: What is this story about? (Full interpretation IN POLISH)
+2. **Metaphors & Symbolism**: What symbols/metaphors are present? (IN POLISH)
+3. **Emotional Core**: Primary emotion this title evokes (IN POLISH - np. "tęsknota", "determinacja", "tajemnica")
+4. **Character Implications** (CRITICAL - ALWAYS FILL THIS IN POLISH):
+   - protagonist_archetype: What type of hero? (PO POLSKU - np. "Mag Ognia", "Wojownik", "Wybrany")
+   - protagonist_journey: What journey does the title suggest? (PO POLSKU)
    - suggested_names: [ALWAYS provide at least 1-3 names from title OR genre-appropriate names]
-5. **World/Setting**: What world type, atmosphere, key elements?
-6. **Central Conflict**: What's the main struggle/tension?
-7. **Themes**: 3-5 deep themes to explore
-8. **Promise to Reader**: What experience does this promise?
+5. **World/Setting**: What world type, atmosphere, key elements? (PO POLSKU)
+6. **Central Conflict**: What's the main struggle/tension? (PO POLSKU)
+7. **Themes**: 3-5 deep themes to explore (PO POLSKU - np. "odkrywanie siebie", "potęga zapomnianej wiedzy")
+8. **Promise to Reader**: What experience does this promise? (PO POLSKU)
 
-Return JSON (FILL ALL FIELDS, no empty arrays):
+Return JSON (FILL ALL FIELDS IN POLISH, no empty arrays):
 {{
-  "core_meaning": "...",
-  "metaphors": ["...", "..."],
-  "emotional_core": "...",
+  "core_meaning": "Historia o...",
+  "metaphors": ["metafora 1", "metafora 2"],
+  "emotional_core": "tęsknota i determinacja",
   "character_implications": {{
-    "protagonist_archetype": "...",
-    "protagonist_journey": "...",
-    "suggested_names": ["...", "..."]
+    "protagonist_archetype": "Mag Ognia",
+    "protagonist_journey": "Podróż protagonisty ku...",
+    "suggested_names": ["Imię1", "Imię2"]
   }},
   "world_setting": {{
-    "type": "...",
-    "atmosphere": "...",
-    "key_elements": ["...", "..."]
+    "type": "fantasy",
+    "atmosphere": "tajemnicza",
+    "key_elements": ["element1", "element2"]
   }},
-  "central_conflict": "...",
-  "themes": ["...", "...", "..."],
-  "reader_promise": "..."
+  "central_conflict": "Główny konflikt...",
+  "themes": ["temat1", "temat2", "temat3"],
+  "reader_promise": "Obietnica dla czytelnika..."
 }}
 
-Make this INSIGHTFUL. This will drive the entire story creation."""
+Make this INSIGHTFUL and IN POLISH. This will drive the entire story creation."""
 
     try:
         response = await ai_service.generate(
@@ -153,25 +160,37 @@ Make this INSIGHTFUL. This will drive the entire story creation."""
         logger.error(f"❌ Semantic title analysis failed: {e}")
         # Intelligent fallback - try to extract at least basic info
         words = title.split()
-        first_capitalized = next((w.strip('.,;:!?') for w in words if w and w[0].isupper()), "Hero")
+        first_capitalized = next((w.strip('.,;:!?') for w in words if w and w[0].isupper()), "Bohater")
+
+        # Polish genre names
+        genre_pl = {
+            "fantasy": "fantasy",
+            "sci-fi": "science fiction",
+            "thriller": "thriller",
+            "horror": "horror",
+            "romance": "romans",
+            "drama": "dramat",
+            "comedy": "komedia",
+            "mystery": "kryminał"
+        }.get(genre, genre)
 
         return {
-            "core_meaning": f"A {genre} story about {first_capitalized}",
-            "metaphors": ["Journey", "Transformation"],
-            "emotional_core": "adventure" if genre == "fantasy" else "tension",
+            "core_meaning": f"Historia {genre_pl} o {first_capitalized}",
+            "metaphors": ["Podróż", "Transformacja"],
+            "emotional_core": "przygoda" if genre == "fantasy" else "napięcie",
             "character_implications": {
-                "protagonist_archetype": "The Hero" if genre == "fantasy" else "The Protagonist",
-                "protagonist_journey": f"{first_capitalized}'s quest for truth",
-                "suggested_names": [first_capitalized] if first_capitalized != "Hero" else ["Alex", "Morgan", "Jordan"]
+                "protagonist_archetype": "Bohater" if genre == "fantasy" else "Protagonista",
+                "protagonist_journey": f"Poszukiwanie prawdy przez {first_capitalized}",
+                "suggested_names": [first_capitalized] if first_capitalized != "Bohater" else ["Aleksander", "Mateusz", "Kacper"]
             },
             "world_setting": {
-                "type": f"{genre} world",
-                "atmosphere": "mysterious",
-                "key_elements": ["conflict", "discovery", "growth"]
+                "type": f"Świat {genre_pl}",
+                "atmosphere": "tajemnicza",
+                "key_elements": ["konflikt", "odkrycie", "rozwój"]
             },
-            "central_conflict": "Protagonist vs. the unknown",
-            "themes": ["identity", "courage", "destiny"],
-            "reader_promise": f"An engaging {genre} adventure"
+            "central_conflict": "Protagonista kontra nieznane",
+            "themes": ["tożsamość", "odwaga", "przeznaczenie"],
+            "reader_promise": f"Wciągająca przygoda {genre_pl}"
         }
 
 
@@ -281,8 +300,8 @@ def _analyze_title(title: str, genre: str) -> dict:
         "character_names": [],
         "themes": [],
         "setting_hints": [],
-        "tone": "neutral",
-        "focus": "balanced",  # character-driven, plot-driven, or balanced
+        "tone": "neutralny",
+        "focus": "zrównoważony",  # oparty na postaciach, oparty na fabule, zrównoważony
         "title_suggestions": {}
     }
 
@@ -291,53 +310,82 @@ def _analyze_title(title: str, genre: str) -> dict:
 
     # Detect character-focused titles (names, relationships)
     relationship_keywords = {
-        "córka": {"role": "daughter", "gender": "female", "theme": "family"},
-        "syn": {"role": "son", "gender": "male", "theme": "family"},
-        "matka": {"role": "mother", "gender": "female", "theme": "family"},
-        "ojciec": {"role": "father", "gender": "male", "theme": "family"},
-        "daughter": {"role": "daughter", "gender": "female", "theme": "family"},
-        "son": {"role": "son", "gender": "male", "theme": "family"},
-        "mother": {"role": "mother", "gender": "female", "theme": "family"},
-        "father": {"role": "father", "gender": "male", "theme": "family"},
-        "sister": {"role": "sister", "gender": "female", "theme": "family"},
-        "brother": {"role": "brother", "gender": "male", "theme": "family"},
-        "wife": {"role": "wife", "gender": "female", "theme": "marriage"},
-        "husband": {"role": "husband", "gender": "male", "theme": "marriage"},
-        "widow": {"role": "widow", "gender": "female", "theme": "loss"},
-        "orphan": {"role": "orphan", "gender": "neutral", "theme": "loss"},
+        "córka": {"role": "córka", "gender": "female", "theme": "rodzina"},
+        "syn": {"role": "syn", "gender": "male", "theme": "rodzina"},
+        "matka": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "ojciec": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "daughter": {"role": "córka", "gender": "female", "theme": "rodzina"},
+        "son": {"role": "syn", "gender": "male", "theme": "rodzina"},
+        "mother": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "father": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "sister": {"role": "siostra", "gender": "female", "theme": "rodzina"},
+        "siostra": {"role": "siostra", "gender": "female", "theme": "rodzina"},
+        "brother": {"role": "brat", "gender": "male", "theme": "rodzina"},
+        "brat": {"role": "brat", "gender": "male", "theme": "rodzina"},
+        "wife": {"role": "żona", "gender": "female", "theme": "małżeństwo"},
+        "żona": {"role": "żona", "gender": "female", "theme": "małżeństwo"},
+        "husband": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
+        "mąż": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
+        "widow": {"role": "wdowa", "gender": "female", "theme": "strata"},
+        "wdowa": {"role": "wdowa", "gender": "female", "theme": "strata"},
+        "orphan": {"role": "sierota", "gender": "neutral", "theme": "strata"},
+        "sierota": {"role": "sierota", "gender": "neutral", "theme": "strata"},
     }
 
-    # Detect setting keywords
+    # Detect setting keywords (English + Polish)
     setting_keywords = {
-        "manhattan": "NYC, modern",
-        "new york": "NYC, modern",
-        "london": "British, urban",
-        "paris": "French, romantic",
-        "tokyo": "Japanese, modern",
-        "starship": "space, sci-fi",
-        "galaxy": "space, sci-fi",
-        "kingdom": "fantasy, medieval",
-        "castle": "fantasy, medieval",
-        "manor": "historical, gothic",
-        "village": "rural, traditional",
-        "city": "urban, modern",
+        "manhattan": "NYC, współczesny",
+        "new york": "NYC, współczesny",
+        "london": "Brytyjski, miejski",
+        "paris": "Francuski, romantyczny",
+        "tokyo": "Japoński, współczesny",
+        "starship": "kosmos, sci-fi",
+        "galaxy": "kosmos, sci-fi",
+        "kingdom": "fantasy, średniowiecze",
+        "królestwo": "fantasy, średniowiecze",
+        "castle": "fantasy, średniowiecze",
+        "zamek": "fantasy, średniowiecze",
+        "manor": "historyczny, gotycki",
+        "village": "wiejski, tradycyjny",
+        "wieś": "wiejski, tradycyjny",
+        "city": "miejski, współczesny",
+        "miasto": "miejski, współczesny",
     }
 
-    # Detect theme keywords
+    # Detect theme keywords (English + Polish)
     theme_keywords = {
-        "murder": "crime/mystery",
-        "love": "romance/relationships",
-        "war": "conflict/struggle",
-        "quest": "adventure/journey",
-        "revenge": "vengeance/justice",
-        "secret": "mystery/revelation",
-        "last": "survival/finality",
-        "lost": "search/discovery",
-        "dark": "mystery/danger",
-        "light": "hope/revelation",
-        "shadow": "mystery/danger",
-        "blood": "violence/family",
-        "heart": "romance/emotion",
+        "murder": "kryminał/tajemnica",
+        "morderstwo": "kryminał/tajemnica",
+        "love": "romans/relacje",
+        "miłość": "romans/relacje",
+        "war": "konflikt/walka",
+        "wojna": "konflikt/walka",
+        "quest": "przygoda/podróż",
+        "wyprawa": "przygoda/podróż",
+        "revenge": "zemsta/sprawiedliwość",
+        "zemsta": "zemsta/sprawiedliwość",
+        "secret": "tajemnica/odkrycie",
+        "sekret": "tajemnica/odkrycie",
+        "tajemnica": "tajemnica/odkrycie",
+        "last": "przetrwanie/ostateczność",
+        "ostatni": "przetrwanie/ostateczność",
+        "lost": "poszukiwanie/odkrycie",
+        "zagubiony": "poszukiwanie/odkrycie",
+        "zapomniany": "odkrywanie siebie/zapomniana wiedza",
+        "dark": "tajemnica/niebezpieczeństwo",
+        "ciemny": "tajemnica/niebezpieczeństwo",
+        "light": "nadzieja/odkrycie",
+        "światło": "nadzieja/odkrycie",
+        "shadow": "tajemnica/niebezpieczeństwo",
+        "cień": "tajemnica/niebezpieczeństwo",
+        "blood": "przemoc/rodzina",
+        "krew": "przemoc/rodzina",
+        "heart": "romans/emocje",
+        "serce": "romans/emocje",
+        "ognia": "magia żywiołów/opanowanie mocy",
+        "ogień": "magia żywiołów/opanowanie mocy",
+        "mag": "magia/wiedza tajemna",
+        "czarodziej": "magia/wiedza tajemna",
     }
 
     # Extract character names (capitalized words, excluding first word if common article)
@@ -357,7 +405,7 @@ def _analyze_title(title: str, genre: str) -> dict:
                             "role": info["role"],
                             "gender": info["gender"]
                         })
-                        insights["focus"] = "character-driven"
+                        insights["focus"] = "oparty na postaciach"
 
         # Check for setting keywords
         for key, setting_info in setting_keywords.items():
@@ -406,8 +454,8 @@ def _analyze_title(title: str, genre: str) -> dict:
                         "role": "main",
                         "gender": "female" if word_clean.endswith("a") else "neutral"
                     })
-                if "Polish/Eastern European" not in insights["setting_hints"]:
-                    insights["setting_hints"].append("Polish/Eastern European")
+                if "Polska/Europa Wschodnia" not in insights["setting_hints"]:
+                    insights["setting_hints"].append("Polska/Europa Wschodnia")
 
     # Generate title-based suggestions for AI decisions
     if insights["character_names"]:
@@ -424,11 +472,11 @@ def _analyze_title(title: str, genre: str) -> dict:
 
     # Adjust tone based on genre and keywords
     if genre in ["horror", "thriller"]:
-        if any(word in title_lower for word in ["dark", "shadow", "blood", "murder", "death"]):
-            insights["tone"] = "dark"
+        if any(word in title_lower for word in ["dark", "shadow", "blood", "murder", "death", "ciemny", "cień", "krew", "morderstwo", "śmierć"]):
+            insights["tone"] = "ciemny"
     elif genre in ["romance", "comedy"]:
-        if any(word in title_lower for word in ["love", "heart", "wedding", "summer"]):
-            insights["tone"] = "light"
+        if any(word in title_lower for word in ["love", "heart", "wedding", "summer", "miłość", "serce", "ślub", "lato"]):
+            insights["tone"] = "jasny"
 
     return insights
 
@@ -576,7 +624,7 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
             "themes": themes,
             "setting_hints": [world_setting_sem.get("type", "")] if world_setting_sem.get("type") else title_insights["setting_hints"],
             "tone": semantic_insights.get("emotional_core", title_insights["tone"]),
-            "focus": "character-driven" if suggested_names else title_insights["focus"],
+            "focus": "oparty na postaciach" if suggested_names else title_insights["focus"],
             # NESTED: Full semantic analysis for agents
             "semantic_title_analysis": semantic_insights
         },

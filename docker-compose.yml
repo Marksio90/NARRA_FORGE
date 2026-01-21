@@ -89,6 +89,8 @@ services:
         condition: service_healthy
       narraforge-redis:
         condition: service_healthy
+    # Override entrypoint - celery doesn't need migrations
+    entrypoint: []
     command: celery -A app.celery_app worker --loglevel=info --concurrency=4
     networks:
       - narraforge-network
@@ -107,6 +109,8 @@ services:
     depends_on:
       - narraforge-redis
       - narraforge-celery
+    # Override entrypoint - flower doesn't need migrations
+    entrypoint: []
     command: celery -A app.celery_app flower --port=5555
     networks:
       - narraforge-network

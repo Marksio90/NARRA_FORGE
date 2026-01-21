@@ -8,6 +8,7 @@ import openai
 import anthropic
 import logging
 import time
+import asyncio
 import json
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
@@ -214,7 +215,7 @@ class AIService:
                     # Exponential backoff: 2^attempt seconds
                     wait_time = 2 ** attempt
                     logger.info(f"Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
+                    await asyncio.sleep(wait_time)  # ✅ FIXED: Non-blocking async sleep
 
         # All retries failed
         logger.error(f"AI generation failed after {retry_count} attempts: {last_error}")

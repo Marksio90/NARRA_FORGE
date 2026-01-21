@@ -228,7 +228,13 @@ Create a character readers will NEVER FORGET."""
             metadata={"agent": self.name, "task": "protagonist_creation"}
         )
 
-        character = json.loads(response.content)
+        try:
+            character = json.loads(response.content)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Failed to parse protagonist JSON: {e}")
+            logger.warning(f"Response content: {response.content[:500]}")
+            character = self._create_fallback_character("protagonist", "Hero")
+
         logger.info(f"✅ Created protagonist: {character['name']}")
         return character
 
@@ -285,7 +291,13 @@ Output JSON with same structure as protagonist."""
             metadata={"agent": self.name, "task": "antagonist_creation"}
         )
 
-        character = json.loads(response.content)
+        try:
+            character = json.loads(response.content)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Failed to parse antagonist JSON: {e}")
+            logger.warning(f"Response content: {response.content[:500]}")
+            character = self._create_fallback_character("antagonist", "Adversary")
+
         character['role'] = 'antagonist'
         logger.info(f"✅ Created antagonist: {character['name']}")
         return character
@@ -334,7 +346,13 @@ Output JSON matching character structure."""
             metadata={"agent": self.name, "task": f"supporting_{role}_creation"}
         )
 
-        character = json.loads(response.content)
+        try:
+            character = json.loads(response.content)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Failed to parse supporting character JSON: {e}")
+            logger.warning(f"Response content: {response.content[:500]}")
+            character = self._create_fallback_character("supporting", f"Companion_{index}")
+
         character['role'] = 'supporting'
         logger.info(f"✅ Created supporting character: {character['name']} ({role})")
         return character
@@ -376,3 +394,59 @@ Technology/Magic: {systems.get('technology_level', 'Unknown')}
 Key Locations: {', '.join([loc.get('name', '') for loc in geography.get('locations', [])][:3])}
 """
         return summary
+
+    def _create_fallback_character(self, role: str, name: str) -> Dict[str, Any]:
+        """Create a basic fallback character when JSON parsing fails"""
+        logger.warning(f"⚠️ Creating fallback character for role: {role}")
+        return {
+            "name": name,
+            "role": role,
+            "profile": {
+                "biography": {
+                    "age": 30,
+                    "background": "A mysterious character with an unknown past.",
+                    "occupation": "Unknown",
+                    "current_situation": "Appears at a critical moment in the story."
+                },
+                "psychology": {
+                    "traits": ["Mysterious", "Determined", "Complex"],
+                    "mbti": "INTJ",
+                    "enneagram": "5w4",
+                    "fatal_flaw": "Trust issues",
+                    "greatest_strength": "Adaptability",
+                    "fears": ["Betrayal", "Failure", "Loss of control"],
+                    "desires": ["Truth", "Justice", "Purpose"],
+                    "secrets": ["Hidden past", "Secret abilities"]
+                },
+                "physical": {
+                    "description": "Average height and build with distinctive features",
+                    "distinctive_features": ["Intense gaze", "Unique mannerisms"],
+                    "body_language": "Confident yet cautious",
+                    "style": "Practical and functional"
+                },
+                "ghost_wound": {
+                    "ghost": "A traumatic event from their past",
+                    "wound": "Deep psychological scars",
+                    "want": "External validation",
+                    "need": "Inner peace",
+                    "lie_believed": "Control equals safety"
+                }
+            },
+            "arc": {
+                "starting_state": "Guarded and isolated",
+                "transformation_moments": [
+                    "First moment of vulnerability",
+                    "Facing their greatest fear",
+                    "Ultimate choice"
+                ],
+                "ending_state": "Transformed and whole",
+                "arc_type": "Positive change"
+            },
+            "voice_guide": "Speaks with measured words and hidden depths",
+            "relationships": {
+                "allies": [],
+                "rivals": [],
+                "mentor": None,
+                "family": "Unknown"
+            }
+        }

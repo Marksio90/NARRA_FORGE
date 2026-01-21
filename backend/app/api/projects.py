@@ -283,44 +283,67 @@ async def get_chapter_content(
     )
 
 
-@router.post("/{project_id}/export")
+@router.get("/{project_id}/export/{format}")
 async def export_project(
     project_id: int,
-    format: str = "docx",  # docx, epub, pdf, markdown
+    format: str,  # docx, epub, pdf, markdown
     db: Session = Depends(get_db)
 ):
     """
     Export the completed book to various formats
-    
+
     Supported formats:
     - DOCX (Microsoft Word)
     - EPUB (E-book)
     - PDF (Portable Document)
     - Markdown (Plain text with formatting)
+
+    Returns the file as a download (FileResponse)
     """
     project = project_service.get_project(db, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     if project.status != "completed":
         raise HTTPException(
             status_code=400,
             detail="Project must be completed before export"
         )
-    
+
     valid_formats = ["docx", "epub", "pdf", "markdown"]
     if format not in valid_formats:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid format. Must be one of: {', '.join(valid_formats)}"
         )
-    
+
     try:
         file_path = await project_service.export_project(db, project_id, format)
-        return SuccessResponse(
-            message=f"Book exported successfully as {format.upper()}",
-            data={"file_path": file_path, "format": format}
+
+        # Return file as download response
+        from fastapi.responses import FileResponse
+        import os
+
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Export file not found")
+
+        # Determine media type
+        media_types = {
+            "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "epub": "application/epub+zip",
+            "pdf": "application/pdf",
+            "markdown": "text/markdown"
+        }
+
+        filename = f"{project.name}.{format}"
+
+        return FileResponse(
+            path=file_path,
+            media_type=media_types.get(format, "application/octet-stream"),
+            filename=filename
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Export failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

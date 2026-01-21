@@ -412,6 +412,14 @@ const ProjectView: React.FC = () => {
                 <div className="text-gray-500 text-xs">
                   Szacowane tokeny: {(step.estimated_tokens || 0).toLocaleString()}
                 </div>
+                {/* Show current activity with time for active step */}
+                {project.status === 'generating' && project.current_step === step.step && project.current_activity && (
+                  <div className="mt-3 pt-3 border-t border-yellow-600">
+                    <div className="text-yellow-400 font-semibold text-sm">
+                      🔄 {project.current_activity}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -422,15 +430,27 @@ const ProjectView: React.FC = () => {
       {project.status === 'generating' && project.current_step && (
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-4">Postęp Generacji</h3>
-          <div className="w-full bg-gray-700 rounded-full h-4 mb-2">
+          <div className="w-full bg-gray-700 rounded-full h-4 mb-4">
             <div
               className="bg-gradient-to-r from-indigo-600 to-purple-600 h-4 rounded-full transition-all duration-500"
               style={{ width: `${(project.current_step / 15) * 100}%` }}
             />
           </div>
-          <div className="text-gray-400 text-sm">
-            Krok {project.current_step} z 15 • Aktualny koszt: ${project.actual_cost?.toFixed(2) || '0.00'}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-gray-300 text-sm">
+              Krok {project.current_step} z 15
+            </div>
+            <div className="text-green-400 text-sm font-semibold">
+              Aktualny koszt: ${project.actual_cost?.toFixed(2) || '0.00'}
+            </div>
           </div>
+          {project.current_activity && (
+            <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-lg p-4 mt-3 border border-indigo-600">
+              <div className="text-white font-semibold text-base">
+                {project.current_activity}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

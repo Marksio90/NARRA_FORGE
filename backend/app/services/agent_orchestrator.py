@@ -221,16 +221,19 @@ class AgentOrchestrator:
             return report
 
         except Exception as e:
-            logger.error(f"❌ Generation failed for project {self.project.id}: {e}", exc_info=True)
+            error_details = f"{type(e).__name__}: {str(e)}"
+            logger.error(f"❌ Generation failed for project {self.project.id}: {error_details}", exc_info=True)
 
-            # Mark as failed
+            # Mark as failed with detailed error message
             self.project.status = ProjectStatus.FAILED
             self.project.current_activity = f"Błąd: {str(e)}"
+            self.project.error_message = error_details
             self.db.commit()
 
             return {
                 "success": False,
-                "error": str(e),
+                "error": error_details,
+                "error_type": type(e).__name__,
                 "project_id": self.project.id
             }
 

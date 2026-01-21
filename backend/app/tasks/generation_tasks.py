@@ -63,14 +63,25 @@ def run_full_pipeline(self, project_id: int):
         # Create orchestrator
         orchestrator = AgentOrchestrator(db, project)
 
-        # Run async generation
+        # Run async generation with timeout (2 hours max)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         try:
+            # Add timeout to prevent hanging indefinitely
             report = loop.run_until_complete(
-                orchestrator.generate_complete_book()
+                asyncio.wait_for(
+                    orchestrator.generate_complete_book(),
+                    timeout=7200  # 2 hours = 7200 seconds
+                )
             )
+        except asyncio.TimeoutError:
+            logger.error(f"❌ Generation timed out for project {project_id} (exceeded 2 hours)")
+            project.status = ProjectStatus.FAILED
+            project.current_activity = "Przekroczono limit czasu (2 godziny)"
+            project.error_message = "TimeoutError: Generation exceeded 2 hour time limit"
+            db.commit()
+            raise Exception("Generation timed out after 2 hours")
         finally:
             loop.close()
 
@@ -88,21 +99,23 @@ def run_full_pipeline(self, project_id: int):
         return report
 
     except Exception as e:
-        logger.error(f"❌ AI generation pipeline failed for project {project_id}: {e}", exc_info=True)
+        error_details = f"{type(e).__name__}: {str(e)}"
+        logger.error(f"❌ AI generation pipeline failed for project {project_id}: {error_details}", exc_info=True)
 
-        # Mark project as failed
+        # Mark project as failed with detailed error message
         try:
             project = db.query(Project).filter(Project.id == project_id).first()
             if project:
                 project.status = ProjectStatus.FAILED
                 project.current_activity = f"Błąd AI: {str(e)}"
+                project.error_message = error_details
                 db.commit()
-        except:
-            pass
+        except Exception as db_error:
+            logger.error(f"Failed to update project status: {db_error}")
 
         return {
             "success": False,
-            "error": str(e),
+            "error": error_details,
             "error_type": type(e).__name__
         }
     finally:

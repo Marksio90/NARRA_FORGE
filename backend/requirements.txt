@@ -21,12 +21,10 @@ flower==2.0.1
 # AI Models - Multi-Agent System
 openai==1.54.0  # Updated for latest GPT-4o, o1 models
 anthropic==0.39.0  # Claude Opus 4.5, Sonnet 4.5 support
-tiktoken==0.8.0  # Token counting
+tiktoken==0.8.0  # Token counting for OpenAI models
 
-# LangChain (optional - we use direct API)
-langchain==0.1.6
-langchain-openai==0.0.5
-langgraph==0.0.20
+# LangChain removed - we use direct API calls via openai and anthropic SDKs
+# The new multi-agent system doesn't require LangChain
 
 # Pydantic
 pydantic==2.5.3

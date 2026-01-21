@@ -12,7 +12,7 @@ class PlotStructureResponse(BaseModel):
     project_id: int
     structure_type: str
     acts: Dict[str, Any]
-    main_conflict: Optional[str]
+    main_conflict: Dict[str, Any]
     stakes: Dict[str, Any]
     plot_points: Dict[str, Any]
     subplots: List[Dict[str, Any]]

@@ -20,24 +20,9 @@ done
 
 echo "✅ PostgreSQL is ready!"
 
-# Run migrations
-echo "🔄 Running database migrations..."
-
-# Apply migration 001 - simulation fields
-PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" <<EOF
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS simulation_data JSONB;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS estimated_duration_minutes INTEGER;
-COMMENT ON COLUMN projects.simulation_data IS 'Stores the full simulation response including estimated_steps, estimated_total_cost, estimated_duration_minutes, and ai_decisions';
-COMMENT ON COLUMN projects.estimated_duration_minutes IS 'Estimated duration in minutes for the generation pipeline (from simulation)';
-EOF
-
-# Apply migration 002 - error message field
-PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" <<EOF
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS error_message TEXT;
-COMMENT ON COLUMN projects.error_message IS 'Stores detailed error message when generation fails (status = failed)';
-EOF
-
-echo "✅ Migrations applied successfully!"
+# Note: Database tables will be created automatically by SQLAlchemy
+# when the FastAPI application starts (via init_db() in main.py)
+# All schema is defined in models - no manual migrations needed
 
 # Start the application
 echo "🎯 Starting application with command: $@"

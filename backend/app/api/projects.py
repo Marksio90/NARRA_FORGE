@@ -360,7 +360,7 @@ async def delete_project(
     project = project_service.get_project(db, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     try:
         project_service.delete_project(db, project_id)
         return SuccessResponse(
@@ -369,4 +369,38 @@ async def delete_project(
         )
     except Exception as e:
         logger.error(f"Failed to delete project: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/suggest-titles", status_code=200)
+async def suggest_improved_titles_endpoint(
+    title: str,
+    genre: str,
+    db: Session = Depends(get_db)
+):
+    """
+    AI-POWERED: Get improved title suggestions
+
+    Takes user's title and returns AI-generated suggestions that:
+    - Are clearer and more impactful
+    - Work better with AI analysis
+    - Have stronger hooks for world/character/plot generation
+
+    Args:
+        title: Original title from user
+        genre: Book genre (fantasy, sci-fi, thriller, etc.)
+
+    Returns:
+        JSON with original issues, 3 improved suggestions, and recommendation
+    """
+    logger.info(f"🎯 Generating title suggestions for: '{title}' ({genre})")
+
+    try:
+        suggestions = await project_service.suggest_improved_titles(title, genre)
+        return {
+            "success": True,
+            "data": suggestions
+        }
+    except Exception as e:
+        logger.error(f"❌ Failed to generate title suggestions: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

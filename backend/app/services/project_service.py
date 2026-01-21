@@ -83,12 +83,20 @@ async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
 
 Genre: {genre}
 
+🔍 **CRITICAL - POLISH GRAMMAR AWARENESS**:
+If title is in Polish, be aware of grammatical cases:
+- Genitive case (dopełniacz): "Mag Ognia" = Mage OF Fire (ognia = genitive of ogień)
+- Names usually come FIRST: "Mateusz, Mag Ognia" → protagonist is "Mateusz" (NOT "Ognia")
+- "z ziemi niczyiej" = "from no man's land" (setting hint, not character)
+
+Parse the title INTELLIGENTLY. Don't mistake genitive nouns for character names!
+
 Provide a RICH semantic analysis:
 
-1. **Core Meaning**: What is the title REALLY about? Go beyond literal.
+1. **Core Meaning**: What is the title REALLY about? Go beyond literal. Parse grammar correctly.
 2. **Metaphors & Symbolism**: What does it represent metaphorically?
 3. **Emotional Core**: What emotion/feeling does it evoke?
-4. **Character Implications**: What kind of protagonist/story does this title promise?
+4. **Character Implications**: Who is the ACTUAL protagonist? (Check grammar!) What's their archetype?
 5. **World/Setting Clues**: What world is suggested by this title?
 6. **Conflict Hints**: What's the central tension/conflict implied?
 7. **Themes**: What deep themes should the story explore?
@@ -142,6 +150,89 @@ Make this INSIGHTFUL. This will drive the entire story creation."""
             "central_conflict": "To be determined",
             "themes": [],
             "reader_promise": "An engaging story"
+        }
+
+
+async def suggest_improved_titles(title: str, genre: str) -> dict:
+    """
+    AI-POWERED: Suggest improved/alternative titles that will work better with AI generation
+
+    Takes user's original title and suggests:
+    1. Improved version (cleaner, more impactful)
+    2. Alternative variations (different angles)
+    3. Why each suggestion is better for AI analysis
+
+    This helps users whose titles might be:
+    - Too complex/confusing for analysis
+    - Lacking clear hooks for world/character/plot
+    - Grammatically ambiguous
+    """
+    from app.services.ai_service import get_ai_service, ModelTier
+
+    ai_service = get_ai_service()
+
+    prompt = f"""Użytkownik podał tytuł książki: "{title}"
+Gatunek: {genre}
+
+Ten tytuł może być trudny do automatycznej analizy przez AI. Zasugeruj LEPSZE TYTUŁY.
+
+Dla każdego sugerowanego tytułu wyjaśnij:
+1. Dlaczego jest lepszy od oryginału
+2. Jakie elementy są bardziej "AI-readable" (jasne imiona, jasna tematyka, jasny konflikt)
+3. Jak pomoże to w generowaniu lepszej historii
+
+Zwróć JSON:
+{{
+  "original_title": "{title}",
+  "original_issues": ["Problem 1 z oryginalnym tytułem...", "Problem 2..."],
+  "suggestions": [
+    {{
+      "title": "Lepszy Tytuł 1",
+      "why_better": "Wyjaśnienie dlaczego lepszy...",
+      "ai_improvements": ["Jasne imię protagonisty", "Wyraźny konflikt", "..."],
+      "example_story_hook": "Krótki opis historii którą ten tytuł sugeruje..."
+    }},
+    {{
+      "title": "Lepszy Tytuł 2",
+      "why_better": "...",
+      "ai_improvements": ["..."],
+      "example_story_hook": "..."
+    }},
+    {{
+      "title": "Lepszy Tytuł 3",
+      "why_better": "...",
+      "ai_improvements": ["..."],
+      "example_story_hook": "..."
+    }}
+  ],
+  "recommendation": "Który tytuł najbardziej polecasz i dlaczego"
+}}
+
+Bądź KREATYWNY ale ZACHOWAJ esencję oryginalnego tytułu.
+Jeśli oryginalny tytuł jest już dobry, zaproponuj subtelne ulepszenia."""
+
+    try:
+        response = await ai_service.generate(
+            prompt=prompt,
+            tier=ModelTier.TIER_2,  # Use good model for creative suggestions
+            temperature=0.8,  # Higher creativity
+            max_tokens=2000,
+            json_mode=True,
+            metadata={"task": "title_suggestions"}
+        )
+
+        import json
+        suggestions = json.loads(response.content)
+        logger.info(f"💡 TITLE SUGGESTIONS for '{title}': {len(suggestions.get('suggestions', []))} alternatives")
+        return suggestions
+
+    except Exception as e:
+        logger.error(f"❌ Title suggestions failed: {e}")
+        return {
+            "original_title": title,
+            "original_issues": ["Could not analyze"],
+            "suggestions": [],
+            "recommendation": "Use original title"
         }
 
 
@@ -259,10 +350,33 @@ def _analyze_title(title: str, genre: str) -> dict:
 
     # Detect Polish names and set Polish/Eastern European setting
     polish_name_endings = ["a", "ia", "ka", "na", "ska"]
-    for word in words:
+
+    # BLACKLIST: Common Polish words that are NOT names but end with name-like endings
+    not_names_blacklist = [
+        "ognia", "wody", "ziemia", "powietrza", "światła", "ciemności",  # Elements
+        "magia", "siła", "moc", "energia",  # Powers
+        "kraina", "ziemia", "wyspa", "góra",  # Places (genitive)
+        "nocy", "dnia", "świta", "zmierzchu",  # Time (genitive)
+        "wojna", "pokoju", "miłości", "nienawiści",  # Abstract (genitive)
+        "mag", "król", "królowa", "wojownik", "czarodziej",  # Titles/roles
+    ]
+
+    for i, word in enumerate(words):
         word_clean = word.strip('.,!?;:"\'')
+        word_lower = word_clean.lower()
+
+        # Skip if it's in blacklist
+        if word_lower in not_names_blacklist:
+            continue
+
         if word_clean and word_clean[0].isupper() and len(word_clean) > 3:
             if any(word_clean.lower().endswith(ending) for ending in polish_name_endings):
+                # Additional check: if previous word is a title/role, this might not be a name
+                if i > 0:
+                    prev_word = words[i-1].strip('.,!?;:"\'').lower()
+                    if prev_word in ["mag", "król", "królowa", "rycerz", "lord", "lady", "sir", "master"]:
+                        continue  # Skip this, it's likely genitive after a title
+
                 # Likely Polish name
                 if not any(cn["name"] == word_clean for cn in insights["character_names"]):
                     insights["character_names"].append({

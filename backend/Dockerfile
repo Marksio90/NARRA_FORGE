@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -19,7 +20,9 @@ COPY . .
 
 # Copy and make entrypoint script executable
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Convert Windows line endings (CRLF) to Unix (LF) - critical for cross-platform compatibility
+RUN dos2unix /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Create output directory
 RUN mkdir -p /app/output

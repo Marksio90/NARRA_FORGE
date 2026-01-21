@@ -488,7 +488,11 @@ Key Locations: {', '.join([loc.get('name', '') for loc in geography.get('locatio
                 "ending_state": "Transformed and whole",
                 "arc_type": "Positive change"
             },
-            "voice_guide": "Speaks with measured words and hidden depths",
+            "voice_guide": {
+                "speechPatterns": "Speaks with measured words and hidden depths",
+                "vocabularyLevel": "Standard",
+                "signature_phrases": []
+            },
             "relationships": {
                 "allies": [],
                 "rivals": [],

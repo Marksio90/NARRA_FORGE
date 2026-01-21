@@ -259,7 +259,8 @@ class ProseWriterAgent:
 ## POV CHARACTER PROFILE
 
 **Name**: {pov_character['name']}
-**Voice Guide**: {pov_character.get('voice_guide', 'Standard voice')}
+**Voice Guide**: {pov_character.get('voice_guide', {}).get('speechPatterns', 'Standard voice')}
+**Vocabulary Level**: {pov_character.get('voice_guide', {}).get('vocabularyLevel', 'Standard')}
 **Current State**: {pov_character.get('arc', {}).get('starting_state', 'Unknown')}
 **Traits**: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', [])[:5])}
 **Fears**: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('fears', [])[:3])}

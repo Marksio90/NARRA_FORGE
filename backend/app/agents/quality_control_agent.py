@@ -165,7 +165,8 @@ class QualityControlAgent:
 ### 2. CHARACTER VOICE CONSISTENCY
 
 **POV Character**: {pov_character['name']}
-**Expected Voice**: {pov_character.get('voice_guide', 'Not specified')}
+**Expected Voice**: {pov_character.get('voice_guide', {}).get('speechPatterns', 'Not specified')}
+**Vocabulary Level**: {pov_character.get('voice_guide', {}).get('vocabularyLevel', 'Standard')}
 **Traits**: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', [])[:5])}
 
 **Check**:

@@ -355,7 +355,7 @@ class AgentOrchestrator:
                 role=role_map.get(char_data.get('role', 'supporting'), CharacterRole.SUPPORTING),
                 profile=char_data.get('profile', {}),
                 arc=char_data.get('arc', {}),
-                voice_guide=char_data.get('voice_guide', ''),
+                voice_guide=char_data.get('voice_guide', {}),
                 relationships=char_data.get('relationships', {})
             )
 

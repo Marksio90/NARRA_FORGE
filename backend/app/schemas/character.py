@@ -23,7 +23,7 @@ class CharacterResponse(BaseModel):
     role: CharacterRoleEnum
     profile: Dict[str, Any]
     arc: Dict[str, Any]
-    voice_guide: Optional[str]
+    voice_guide: Optional[Dict[str, Any]]
     relationships: Dict[str, Any]
     
     class Config:

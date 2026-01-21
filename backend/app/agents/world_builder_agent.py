@@ -144,7 +144,31 @@ Output Format: Valid JSON only, following the exact schema provided."""
 
         scope = "epic" if target_word_count > 100000 else "focused"
 
+        # Extract semantic analysis if available
+        semantic_analysis = title_analysis.get("semantic_title_analysis", {})
+        core_meaning = semantic_analysis.get("core_meaning", project_name)
+        world_setting_semantic = semantic_analysis.get("world_setting", {})
+        central_conflict = semantic_analysis.get("central_conflict", "")
+        themes_semantic = semantic_analysis.get("themes", [])
+
         prompt = f"""Create a COMPLETE WORLD BIBLE for a {genre} novel titled "{project_name}".
+
+## 🎯 TITLE AS THEMATIC ANCHOR (CRITICAL!)
+
+The title "{project_name}" is NOT just a label - it is the SOUL of this story.
+
+**Core Meaning**: {core_meaning}
+**Central Conflict**: {central_conflict}
+**Themes from Title**: {', '.join(themes_semantic) if themes_semantic else 'To be explored'}
+
+🔥 **MANDATORY REQUIREMENT**: Every element you create MUST resonate with and reinforce this title.
+- The world type must reflect the title's essence
+- Geography must echo the title's themes
+- Systems (magic/tech) must serve the title's meaning
+- Cultures must embody values relevant to the title
+- History must explain why THIS title is THE title
+
+If "{project_name}" means X, then the world must SHOW X in its very fabric.
 
 ## BOOK DETAILS
 - Genre: {genre} ({genre_config['name']})
@@ -152,8 +176,16 @@ Output Format: Valid JSON only, following the exact schema provided."""
 - Scope: {scope} ({target_word_count:,} words)
 - Complexity: {style_complexity}
 
-## TITLE ANALYSIS INSIGHTS
+## SEMANTIC TITLE ANALYSIS (Your Creative Foundation)
 """
+
+        if world_setting_semantic:
+            prompt += f"**World Type Suggested**: {world_setting_semantic.get('type', 'Not specified')}\n"
+            prompt += f"**Atmosphere Required**: {world_setting_semantic.get('atmosphere', 'Not specified')}\n"
+            if world_setting_semantic.get('key_elements'):
+                prompt += f"**Key Elements to Include**: {', '.join(world_setting_semantic['key_elements'])}\n"
+
+        prompt += "\n## BASIC TITLE ANALYSIS\n"
 
         if setting_hints:
             prompt += f"- Setting hints from title: {', '.join(setting_hints)}\n"
@@ -231,18 +263,32 @@ Create a world bible with these sections. Think step-by-step:
 
 ## CRITICAL GUIDELINES
 
-1. **Genre Authenticity**: This MUST feel like an authentic {genre} world
-2. **Internal Logic**: Everything connects and makes sense
-3. **Specificity**: Avoid generic names/concepts - be creative and specific
-4. **Story Service**: Every element should serve potential story needs
-5. **Depth**: Rich enough to feel real, not just surface details
-6. **Consistency**: All elements harmonize with each other
+🎯 **#1 PRIORITY - TITLE COHERENCE**:
+   EVERY element you create must connect to the title "{project_name}".
+   In your response, you MUST include a "title_connection" field explaining:
+   - How the world type reflects the title's meaning
+   - How geography embodies the title's themes
+   - How systems serve the title's central conflict
+   - How cultures represent the title's promise
+
+2. **Genre Authenticity**: This MUST feel like an authentic {genre} world
+3. **Internal Logic**: Everything connects and makes sense
+4. **Specificity**: Avoid generic names/concepts - be creative and specific
+5. **Story Service**: Every element should serve potential story needs
+6. **Depth**: Rich enough to feel real, not just surface details
+7. **Consistency**: All elements harmonize with each other
 
 ## OUTPUT FORMAT
 
 Return a valid JSON object with this exact structure:
 
 {{
+  "title_connection": {{
+    "world_type_reasoning": "How world type serves the title '{project_name}'...",
+    "geography_connection": "How locations embody the title's themes...",
+    "systems_connection": "How systems reflect the title's meaning...",
+    "overall_coherence": "How the entire world reinforces '{project_name}'..."
+  }},
   "geography": {{
     "world_type": "...",
     "locations": [

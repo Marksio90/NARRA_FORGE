@@ -3,7 +3,7 @@ Character schemas
 """
 
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from enum import Enum
 
 
@@ -23,7 +23,7 @@ class CharacterResponse(BaseModel):
     role: CharacterRoleEnum
     profile: Dict[str, Any]
     arc: Dict[str, Any]
-    voice_guide: str | None
+    voice_guide: Optional[str]
     relationships: Dict[str, Any]
     
     class Config:

@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     GPT_4: str = "gpt-4"
     GPT_O1: str = "o1"
     DEFAULT_MODEL_TIER: int = 1
+
+    # Anthropic (optional)
+    ANTHROPIC_API_KEY: Optional[str] = None
+    CLAUDE_OPUS_4_5: str = "claude-opus-4-5-20251101"
+    CLAUDE_SONNET_4_5: str = "claude-sonnet-4-5-20250929"
     
     # Cost Management
     MAX_COST_PER_PROJECT: float = 100.0

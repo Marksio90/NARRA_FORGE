@@ -80,8 +80,9 @@ class Character(Base):
     #   }
     # }
     
-    # Relationship
+    # Relationships
     project = relationship("Project", back_populates="characters")
+    pov_chapters = relationship("Chapter", back_populates="pov_character", foreign_keys="Chapter.pov_character_id")
     
     def __repr__(self):
         return f"<Character(id={self.id}, name='{self.name}', role='{self.role}')>"

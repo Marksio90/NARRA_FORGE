@@ -117,7 +117,8 @@ async def readiness_check(db: Session = Depends(get_db)):
         try:
             r = redis.from_url(settings.REDIS_URL)
             r.ping()
-        except:
+        except Exception as e:
+            logger.error(f"Redis connection failed during readiness check: {e}")
             return {
                 "ready": False,
                 "reason": "Redis not available (required for background tasks)"

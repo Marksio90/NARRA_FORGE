@@ -260,6 +260,13 @@ class AIService:
 
         response = self.openai_client.chat.completions.create(**kwargs)
 
+        # Validate response structure
+        if not response.choices or len(response.choices) == 0:
+            raise Exception("OpenAI API returned empty response")
+
+        if not response.choices[0].message or not response.choices[0].message.content:
+            raise Exception("OpenAI API returned no content in response")
+
         return {
             'content': response.choices[0].message.content,
             'tokens_in': response.usage.prompt_tokens,
@@ -289,6 +296,13 @@ class AIService:
             kwargs["system"] = system_prompt
 
         response = self.anthropic_client.messages.create(**kwargs)
+
+        # Validate response structure
+        if not response.content or len(response.content) == 0:
+            raise Exception("Anthropic API returned empty response")
+
+        if not hasattr(response.content[0], 'text') or not response.content[0].text:
+            raise Exception("Anthropic API returned no text in response")
 
         return {
             'content': response.content[0].text,

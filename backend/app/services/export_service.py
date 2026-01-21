@@ -73,7 +73,7 @@ async def export_to_format(db: Session, project_id: int, format: str) -> str:
     return str(file_path)
 
 
-def _export_docx(project: Project, chapters: list[Chapter], file_path: Path):
+def _export_docx(project: Project, chapters: List[Chapter], file_path: Path):
     """Export to Microsoft Word DOCX"""
     doc = Document()
     
@@ -108,7 +108,7 @@ def _export_docx(project: Project, chapters: list[Chapter], file_path: Path):
     logger.info(f"DOCX exported: {file_path}")
 
 
-def _export_epub(project: Project, chapters: list[Chapter], file_path: Path):
+def _export_epub(project: Project, chapters: List[Chapter], file_path: Path):
     """Export to EPUB e-book format"""
     book = epub.EpubBook()
     
@@ -155,7 +155,7 @@ def _export_epub(project: Project, chapters: list[Chapter], file_path: Path):
     logger.info(f"EPUB exported: {file_path}")
 
 
-def _export_pdf(project: Project, chapters: list[Chapter], file_path: Path):
+def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
     """Export to PDF"""
     doc = SimpleDocTemplate(str(file_path), pagesize=letter)
     styles = getSampleStyleSheet()
@@ -216,7 +216,7 @@ def _export_pdf(project: Project, chapters: list[Chapter], file_path: Path):
     logger.info(f"PDF exported: {file_path}")
 
 
-def _export_markdown(project: Project, chapters: list[Chapter], file_path: Path):
+def _export_markdown(project: Project, chapters: List[Chapter], file_path: Path):
     """Export to Markdown"""
     with open(file_path, 'w', encoding='utf-8') as f:
         # Title

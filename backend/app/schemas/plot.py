@@ -3,7 +3,7 @@ Plot structure schemas
 """
 
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 
 class PlotStructureResponse(BaseModel):
@@ -12,7 +12,7 @@ class PlotStructureResponse(BaseModel):
     project_id: int
     structure_type: str
     acts: Dict[str, Any]
-    main_conflict: str | None
+    main_conflict: Optional[str]
     stakes: Dict[str, Any]
     plot_points: Dict[str, Any]
     subplots: List[Dict[str, Any]]

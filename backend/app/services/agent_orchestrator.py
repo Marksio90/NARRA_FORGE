@@ -39,6 +39,26 @@ from app.services.ai_service import get_ai_service
 logger = logging.getLogger(__name__)
 
 
+# Estimated duration for each step (in minutes)
+STEP_DURATIONS = {
+    1: 1,   # Inicjalizacja Projektu
+    2: 1,   # Parametryzacja
+    3: 1,   # World Bible
+    4: 3,   # Kreacja Postaci Głównych
+    5: 2,   # Kreacja Postaci Pobocznych
+    6: 2,   # Główna Oś Fabularna
+    7: 2,   # Wątki Poboczne
+    8: 2,   # Chapter Breakdown
+    9: 3,   # Scene Detailing
+    10: 1,  # Pre-Writing Validation
+    11: 20, # Prose Generation (LONGEST!)
+    12: 2,  # Continuity Check
+    13: 5,  # Style Polishing
+    14: 1,  # Genre Compliance
+    15: 1,  # Final Assembly
+}
+
+
 class GenerationProgress:
     """Track generation progress"""
     def __init__(self):
@@ -48,16 +68,39 @@ class GenerationProgress:
         self.total_cost = 0.0
         self.errors = []
         self.warnings = []
+        self.step_start_time = None
 
     def update(self, step: int, activity: str, cost: float = 0.0):
         """Update progress"""
         self.current_step = step
         self.current_activity = activity
         self.total_cost += cost
+        self.step_start_time = datetime.now()
 
     def get_percentage(self) -> float:
         """Get completion percentage"""
         return (self.current_step / self.total_steps) * 100
+
+    def get_estimated_time_remaining(self) -> int:
+        """Get estimated time remaining in minutes"""
+        if self.current_step >= self.total_steps:
+            return 0
+
+        # Sum durations of remaining steps
+        remaining = sum(
+            STEP_DURATIONS[step]
+            for step in range(self.current_step + 1, self.total_steps + 1)
+        )
+
+        # Add remaining time for current step
+        current_step_duration = STEP_DURATIONS.get(self.current_step, 1)
+        remaining += current_step_duration
+
+        return remaining
+
+    def get_current_step_duration(self) -> int:
+        """Get estimated duration of current step in minutes"""
+        return STEP_DURATIONS.get(self.current_step, 1)
 
 
 class AgentOrchestrator:
@@ -517,9 +560,16 @@ class AgentOrchestrator:
         """Update project progress in database"""
         self.progress.update(step, activity)
 
+        # Get time estimates
+        current_step_duration = self.progress.get_current_step_duration()
+        time_remaining = self.progress.get_estimated_time_remaining()
+
+        # Update activity with time info
+        activity_with_time = f"{activity} [~{current_step_duration} min | Pozostało: ~{time_remaining} min]"
+
         self.project.current_step = step
         self.project.progress_percentage = self.progress.get_percentage()
-        self.project.current_activity = activity
+        self.project.current_activity = activity_with_time
 
         # Update cost from AI service
         metrics = self.ai_service.get_metrics()
@@ -529,5 +579,5 @@ class AgentOrchestrator:
 
         logger.info(
             f"📊 Progress: Step {step}/15 ({self.progress.get_percentage():.1f}%) - {activity} "
-            f"[Cost: ${metrics.total_cost:.2f}]"
+            f"[Czas: ~{current_step_duration} min | Pozostało: ~{time_remaining} min | Koszt: ${metrics.total_cost:.2f}]"
         )

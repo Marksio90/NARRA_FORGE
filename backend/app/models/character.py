@@ -66,9 +66,14 @@ class Character(Base):
     #   "ending_state": "..."
     # }
     
-    # Voice and speech patterns
-    voice_guide = Column(Text, nullable=True)
+    # Voice and speech patterns (stored as JSONB for structured data)
+    voice_guide = Column(JSONB, nullable=True)
     # Detailed guide on how this character speaks, vocabulary, speech patterns
+    # {
+    #   "speechPatterns": "...",
+    #   "vocabularyLevel": "...",
+    #   "signature_phrases": [...]
+    # }
     
     # Relationships with other characters
     relationships = Column(JSONB, default=dict)

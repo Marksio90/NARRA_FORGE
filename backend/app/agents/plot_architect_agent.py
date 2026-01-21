@@ -409,7 +409,13 @@ Make it impossible to put down."""
             }
         )
 
-        plot_structure = json.loads(response.content)
+        try:
+            plot_structure = json.loads(response.content)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Failed to parse plot structure JSON: {e}")
+            logger.warning(f"Response content: {response.content[:500]}")
+            plot_structure = self._create_fallback_plot(chapter_count, genre)
+
         logger.info(
             f"✅ Plot structure generated (cost: ${response.cost:.4f}, "
             f"tokens: {response.tokens_used['total']})"
@@ -451,6 +457,52 @@ You avoid:
 You create plots readers CAN'T PUT DOWN.
 
 Output Format: Valid JSON only, meticulously structured."""
+
+    def _create_fallback_plot(self, chapter_count: int, genre: str) -> Dict[str, Any]:
+        """Create a basic fallback plot structure when JSON parsing fails"""
+        logger.warning(f"⚠️ Creating fallback plot structure for {chapter_count} chapters")
+
+        # Create simple 3-act structure
+        act1_end = chapter_count // 4
+        act2_end = 3 * chapter_count // 4
+
+        chapters = []
+        for i in range(1, chapter_count + 1):
+            if i <= act1_end:
+                act_label = "Act 1: Setup"
+                purpose = "Introduce world and characters"
+            elif i <= act2_end:
+                act_label = "Act 2: Confrontation"
+                purpose = "Build conflict and tension"
+            else:
+                act_label = "Act 3: Resolution"
+                purpose = "Resolve conflicts"
+
+            chapters.append({
+                "chapter_number": i,
+                "chapter_title": f"Chapter {i}",
+                "act": act_label,
+                "purpose": purpose,
+                "plot_points": ["Story continues", "Characters develop"],
+                "pov_character": "Main Character",
+                "tension_level": min(10, i * 10 // chapter_count),
+                "word_count_target": 3000
+            })
+
+        return {
+            "structure_type": "3-Act Structure",
+            "story_engine": {
+                "opening_image": "Story begins",
+                "inciting_incident": f"Chapter {act1_end // 2}",
+                "midpoint": f"Chapter {chapter_count // 2}",
+                "climax": f"Chapter {chapter_count - 2}",
+                "resolution": f"Chapter {chapter_count}"
+            },
+            "chapters": chapters,
+            "subplots": [],
+            "foreshadowing_plan": [],
+            "tension_graph": list(range(1, 11))
+        }
 
 
 # Helper function for chapter breakdown

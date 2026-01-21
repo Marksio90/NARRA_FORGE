@@ -69,14 +69,26 @@ class AIService:
 
     def __init__(self):
         """Initialize AI Service with API clients"""
+        # Validate OpenAI API key (required)
+        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "sk-placeholder-add-your-key":
+            logger.error("❌ OPENAI_API_KEY not set or using placeholder!")
+            raise ValueError(
+                "OPENAI_API_KEY is required. Please set it in .env file. "
+                "See backend/AI_SETUP.md for instructions."
+            )
+
         # Initialize OpenAI
+        logger.info("✅ Initializing OpenAI client")
         self.openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
         # Initialize Anthropic (if key is available)
         self.anthropic_client = None
         anthropic_key = getattr(settings, 'ANTHROPIC_API_KEY', None)
         if anthropic_key and anthropic_key != "sk-placeholder-add-your-key":
+            logger.info("✅ Initializing Anthropic client")
             self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+        else:
+            logger.warning("⚠️ ANTHROPIC_API_KEY not set - Claude models will not be available")
 
         # Metrics tracking
         self.metrics = GenerationMetrics()

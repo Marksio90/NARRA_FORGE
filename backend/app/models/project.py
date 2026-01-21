@@ -70,7 +70,10 @@ class Project(Base):
     current_step = Column(Integer, default=0)  # 0-15
     progress_percentage = Column(Float, default=0.0)
     current_activity = Column(Text, nullable=True)
-    
+
+    # Error tracking
+    error_message = Column(Text, nullable=True)  # Stores error details if generation fails
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

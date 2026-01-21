@@ -88,6 +88,7 @@ class ProjectResponse(BaseModel):
     current_step: int
     progress_percentage: float
     current_activity: Optional[str]
+    error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     started_at: Optional[datetime]

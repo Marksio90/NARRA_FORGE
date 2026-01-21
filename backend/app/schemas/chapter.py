@@ -11,10 +11,10 @@ class ChapterResponse(BaseModel):
     id: int
     project_id: int
     number: int
-    title: str | None
-    pov_character_id: int | None
+    title: Optional[str]
+    pov_character_id: Optional[int]
     outline: Dict[str, Any]
-    content: str | None
+    content: Optional[str]
     word_count: int
     quality_score: float
     is_complete: int

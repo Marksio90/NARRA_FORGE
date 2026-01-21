@@ -3,7 +3,7 @@ Intelligent Model Tier Manager
 Automatically selects appropriate OpenAI model based on task complexity
 """
 
-from typing import Literal, Dict, Any
+from typing import Literal, Dict, Any, Optional
 import logging
 from openai import AsyncOpenAI
 
@@ -57,7 +57,7 @@ class ModelTierManager:
         task_type: str,
         temperature: float = 0.7,
         max_tokens: int = 4000,
-        force_tier: ModelTier | None = None,
+        force_tier: Optional[ModelTier] = None,
     ) -> Dict[str, Any]:
         """
         Generate content using appropriate model tier

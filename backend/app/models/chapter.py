@@ -54,6 +54,7 @@ class Chapter(Base):
     
     # Relationships
     project = relationship("Project", back_populates="chapters")
+    pov_character = relationship("Character", back_populates="pov_chapters", foreign_keys=[pov_character_id])
     scenes = relationship("Scene", back_populates="chapter", cascade="all, delete-orphan")
     
     def __repr__(self):

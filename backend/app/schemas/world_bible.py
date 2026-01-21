@@ -3,7 +3,7 @@ WorldBible schemas
 """
 
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class WorldBibleResponse(BaseModel):
@@ -16,7 +16,7 @@ class WorldBibleResponse(BaseModel):
     cultures: Dict[str, Any]
     rules: Dict[str, Any]
     glossary: Dict[str, Any]
-    notes: str | None
+    notes: Optional[str]
     
     class Config:
         from_attributes = True

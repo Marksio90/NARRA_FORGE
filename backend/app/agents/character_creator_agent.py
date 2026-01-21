@@ -235,7 +235,13 @@ Create a character readers will NEVER FORGET."""
             logger.warning(f"Response content: {response.content[:500]}")
             character = self._create_fallback_character("protagonist", "Hero")
 
-        logger.info(f"✅ Created protagonist: {character['name']}")
+        # Validate character has required fields
+        if not self._validate_character(character):
+            logger.warning(f"⚠️ Character missing required fields, using fallback")
+            character = self._create_fallback_character("protagonist", "Hero")
+
+        character['role'] = 'protagonist'
+        logger.info(f"✅ Created protagonist: {character.get('name', 'Unknown')}")
         return character
 
     async def _create_antagonist(
@@ -298,8 +304,13 @@ Output JSON with same structure as protagonist."""
             logger.warning(f"Response content: {response.content[:500]}")
             character = self._create_fallback_character("antagonist", "Adversary")
 
+        # Validate character has required fields
+        if not self._validate_character(character):
+            logger.warning(f"⚠️ Antagonist missing required fields, using fallback")
+            character = self._create_fallback_character("antagonist", "Adversary")
+
         character['role'] = 'antagonist'
-        logger.info(f"✅ Created antagonist: {character['name']}")
+        logger.info(f"✅ Created antagonist: {character.get('name', 'Unknown')}")
         return character
 
     async def _create_supporting_character(
@@ -353,8 +364,13 @@ Output JSON matching character structure."""
             logger.warning(f"Response content: {response.content[:500]}")
             character = self._create_fallback_character("supporting", f"Companion_{index}")
 
+        # Validate character has required fields
+        if not self._validate_character(character):
+            logger.warning(f"⚠️ Supporting character missing required fields, using fallback")
+            character = self._create_fallback_character("supporting", f"Companion_{index}")
+
         character['role'] = 'supporting'
-        logger.info(f"✅ Created supporting character: {character['name']} ({role})")
+        logger.info(f"✅ Created supporting character: {character.get('name', 'Unknown')} ({role})")
         return character
 
     def _get_character_system_prompt(self) -> str:
@@ -394,6 +410,36 @@ Technology/Magic: {systems.get('technology_level', 'Unknown')}
 Key Locations: {', '.join([loc.get('name', '') for loc in geography.get('locations', [])][:3])}
 """
         return summary
+
+    def _validate_character(self, character: Dict[str, Any]) -> bool:
+        """
+        Validate that character has all required fields
+
+        Args:
+            character: Character dictionary from AI
+
+        Returns:
+            True if valid, False if missing required fields
+        """
+        required_fields = ['name', 'profile', 'arc']
+
+        # Check top-level required fields
+        for field in required_fields:
+            if field not in character or not character[field]:
+                logger.warning(f"⚠️ Character missing required field: {field}")
+                return False
+
+        # Check profile has required nested fields
+        if not isinstance(character['profile'], dict):
+            logger.warning(f"⚠️ Character profile is not a dict")
+            return False
+
+        # Check arc has required nested fields
+        if not isinstance(character['arc'], dict):
+            logger.warning(f"⚠️ Character arc is not a dict")
+            return False
+
+        return True
 
     def _create_fallback_character(self, role: str, name: str) -> Dict[str, Any]:
         """Create a basic fallback character when JSON parsing fails"""

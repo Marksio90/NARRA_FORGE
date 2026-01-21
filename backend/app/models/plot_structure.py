@@ -33,7 +33,13 @@ class PlotStructure(Base):
     # }
     
     # Main conflict
-    main_conflict = Column(Text, nullable=True)
+    main_conflict = Column(JSONB, default=dict)
+    # {
+    #   "Protagonist's Goal": "...",
+    #   "Antagonist's Goal": "...",
+    #   "Central Conflict": "...",
+    #   "What's at Stake": "..."
+    # }
     
     # Stakes
     stakes = Column(JSONB, default=dict)

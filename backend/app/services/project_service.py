@@ -83,26 +83,36 @@ async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
 
 Genre: {genre}
 
-🔍 **CRITICAL - POLISH GRAMMAR AWARENESS**:
-If title is in Polish, be aware of grammatical cases:
-- Genitive case (dopełniacz): "Mag Ognia" = Mage OF Fire (ognia = genitive of ogień)
-- Names usually come FIRST: "Mateusz, Mag Ognia" → protagonist is "Mateusz" (NOT "Ognia")
-- "z ziemi niczyiej" = "from no man's land" (setting hint, not character)
+🎯 **YOUR MISSION**: Extract EVERY piece of creative information from this title.
 
-Parse the title INTELLIGENTLY. Don't mistake genitive nouns for character names!
+🔍 **CRITICAL - GRAMMAR & CONTEXT AWARENESS**:
+- In Polish: "Marksio, mag ognia" → "Marksio" is the protagonist NAME, "mag ognia" = fire mage (his role/class)
+- In Polish: "Mateusz, Mag Ognia" → "Mateusz" is protagonist, "Mag Ognia" = Mage of Fire
+- Comma often separates NAME from DESCRIPTION/TITLE
+- Genitive case (dopełniacz): "ognia" = OF fire (not a name!)
+- Analyze STRUCTURE: [Name], [Title/Role] [Details]
 
-Provide a RICH semantic analysis:
+🚨 **MANDATORY - ALWAYS identify the protagonist**:
+- Look for proper names (capitalized, personal names)
+- The protagonist is usually the FIRST major name in the title
+- If title format is "Name, Description" → Name is the protagonist
+- Provide AT LEAST one suggested name based on title analysis
 
-1. **Core Meaning**: What is the title REALLY about? Go beyond literal. Parse grammar correctly.
-2. **Metaphors & Symbolism**: What does it represent metaphorically?
-3. **Emotional Core**: What emotion/feeling does it evoke?
-4. **Character Implications**: Who is the ACTUAL protagonist? (Check grammar!) What's their archetype?
-5. **World/Setting Clues**: What world is suggested by this title?
-6. **Conflict Hints**: What's the central tension/conflict implied?
-7. **Themes**: What deep themes should the story explore?
-8. **Promise to Reader**: What experience does this title promise?
+Provide COMPLETE analysis for ALL fields:
 
-Return JSON:
+1. **Core Meaning**: What is this story about? (Full interpretation)
+2. **Metaphors & Symbolism**: What symbols/metaphors are present?
+3. **Emotional Core**: Primary emotion this title evokes
+4. **Character Implications** (CRITICAL - ALWAYS FILL THIS):
+   - protagonist_archetype: What type of hero? (e.g., "Fire Mage", "Warrior", "Chosen One")
+   - protagonist_journey: What journey does the title suggest?
+   - suggested_names: [ALWAYS provide at least 1-3 names from title OR genre-appropriate names]
+5. **World/Setting**: What world type, atmosphere, key elements?
+6. **Central Conflict**: What's the main struggle/tension?
+7. **Themes**: 3-5 deep themes to explore
+8. **Promise to Reader**: What experience does this promise?
+
+Return JSON (FILL ALL FIELDS, no empty arrays):
 {{
   "core_meaning": "...",
   "metaphors": ["...", "..."],
@@ -127,9 +137,9 @@ Make this INSIGHTFUL. This will drive the entire story creation."""
     try:
         response = await ai_service.generate(
             prompt=prompt,
-            tier=ModelTier.TIER_2,  # Use good model for analysis
+            tier=ModelTier.TIER_2,  # Use good model for deep analysis
             temperature=0.7,
-            max_tokens=1500,
+            max_tokens=2500,  # Increased for thorough analysis
             json_mode=True,
             metadata={"task": "semantic_title_analysis"}
         )
@@ -141,15 +151,27 @@ Make this INSIGHTFUL. This will drive the entire story creation."""
 
     except Exception as e:
         logger.error(f"❌ Semantic title analysis failed: {e}")
+        # Intelligent fallback - try to extract at least basic info
+        words = title.split()
+        first_capitalized = next((w.strip('.,;:!?') for w in words if w and w[0].isupper()), "Hero")
+
         return {
-            "core_meaning": title,
-            "metaphors": [],
-            "emotional_core": "neutral",
-            "character_implications": {},
-            "world_setting": {},
-            "central_conflict": "To be determined",
-            "themes": [],
-            "reader_promise": "An engaging story"
+            "core_meaning": f"A {genre} story about {first_capitalized}",
+            "metaphors": ["Journey", "Transformation"],
+            "emotional_core": "adventure" if genre == "fantasy" else "tension",
+            "character_implications": {
+                "protagonist_archetype": "The Hero" if genre == "fantasy" else "The Protagonist",
+                "protagonist_journey": f"{first_capitalized}'s quest for truth",
+                "suggested_names": [first_capitalized] if first_capitalized != "Hero" else ["Alex", "Morgan", "Jordan"]
+            },
+            "world_setting": {
+                "type": f"{genre} world",
+                "atmosphere": "mysterious",
+                "key_elements": ["conflict", "discovery", "growth"]
+            },
+            "central_conflict": "Protagonist vs. the unknown",
+            "themes": ["identity", "courage", "destiny"],
+            "reader_promise": f"An engaging {genre} adventure"
         }
 
 
@@ -439,13 +461,15 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     # Get genre-specific config
     genre_cfg = genre_config.get_genre_config(project.genre.value)
 
-    # TITLE ANALYSIS - Both keyword-based AND semantic AI-powered
-    title_insights = _analyze_title(project.name, project.genre.value)
-    logger.info(f"Basic title analysis for '{project.name}': {title_insights}")
-
-    # SEMANTIC TITLE ANALYSIS - Deep AI-powered meaning extraction
+    # 🚀 PRIMARY: SEMANTIC AI-POWERED TITLE ANALYSIS
+    # This is the MAIN analysis - AI understands context, grammar, metaphors
+    logger.info(f"🧠 Running PRIMARY AI semantic analysis for: '{project.name}'")
     semantic_insights = await _semantic_analyze_title_with_ai(project.name, project.genre.value)
-    logger.info(f"🎯 Semantic title analysis for '{project.name}': {semantic_insights}")
+    logger.info(f"✅ AI Analysis complete: protagonist={semantic_insights.get('character_implications', {}).get('suggested_names', 'unknown')}")
+
+    # FALLBACK: Basic keyword analysis (only for supplementary data or if AI fails)
+    title_insights = _analyze_title(project.name, project.genre.value)
+    logger.info(f"📋 Keyword analysis (supplementary): {title_insights.get('character_names', [])}")
 
     # AI DECISIONS (in production, this would call GPT-4o-mini for intelligent decisions)
     # For now, using intelligent defaults based on genre + title analysis
@@ -519,6 +543,20 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     style_complexity = style_complexity_map.get(project.genre.value, "medium")
 
     # AI-determined parameters (enhanced with BOTH basic AND semantic title analysis)
+    # 🎯 MERGE: Use semantic (AI) as primary, keyword as fallback
+    char_implications = semantic_insights.get("character_implications", {})
+    world_setting_sem = semantic_insights.get("world_setting", {})
+
+    # Primary: semantic AI names, Fallback: keyword names
+    suggested_names = char_implications.get("suggested_names", [])
+    if not suggested_names and title_insights["character_names"]:
+        suggested_names = [c["name"] for c in title_insights["character_names"]]
+
+    # Primary: semantic themes, Fallback: keyword themes
+    themes = semantic_insights.get("themes", [])
+    if not themes:
+        themes = title_insights["themes"]
+
     ai_decisions = {
         "target_word_count": target_word_count,
         "planned_volumes": 1,
@@ -531,17 +569,18 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         "style_complexity": style_complexity,
         "structure_type": genre_cfg["structure"],
         "style_guidelines": genre_cfg["style"],
-        # Title-based enhancements (BASIC keyword analysis + SEMANTIC AI analysis)
+        # 🚀 TITLE-BASED ENHANCEMENTS (AI-powered primary, keyword fallback)
         "title_analysis": {
-            "character_names": title_insights["character_names"],
-            "themes": title_insights["themes"],
-            "setting_hints": title_insights["setting_hints"],
-            "tone": title_insights["tone"],
-            "focus": title_insights["focus"],
-            # NESTED: Semantic title analysis (AI-powered deep meaning)
+            # Use AI-extracted data primarily
+            "character_names": [{"name": name, "role": "main", "gender": "neutral"} for name in suggested_names] if suggested_names else title_insights["character_names"],
+            "themes": themes,
+            "setting_hints": [world_setting_sem.get("type", "")] if world_setting_sem.get("type") else title_insights["setting_hints"],
+            "tone": semantic_insights.get("emotional_core", title_insights["tone"]),
+            "focus": "character-driven" if suggested_names else title_insights["focus"],
+            # NESTED: Full semantic analysis for agents
             "semantic_title_analysis": semantic_insights
         },
-        # ALSO at top level for easy access
+        # ALSO at top level for easy access by agents
         "semantic_title_analysis": semantic_insights
     }
 

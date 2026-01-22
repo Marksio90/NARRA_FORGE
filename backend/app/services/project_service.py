@@ -184,30 +184,29 @@ Suggest 3-5 subplots:
 {{
   "core_meaning": "Pełna interpretacja...",
   "cultural_analysis": {{
-    "literary_references": ["odniesienie1"],
-    "cultural_associations": "skojarzenia",
-    "epic_tone": true
+    "mythological_references": ["Wergiliusz - przewodnik przez zaświaty", "Feniks - odrodzenie z ognia"],
+    "cultural_context": "Odniesienia do klasycznej mitologii i epickich podróży",
+    "symbolic_elements": ["ogień jako transformacja", "pustkowie jako izolacja"],
+    "archetypal_patterns": ["Bohater odrzucony", "Mag poszukujący", "Podróż do ciemności"]
   }},
-  "metaphors": ["metafora1", "metafora2"],
-  "emotional_core": "główna emocja",
+  "metaphors": ["zapomniany = odrzucony przez społeczeństwo", "ogień = niszcząca ale oczyszczająca moc"],
+  "emotional_core": "samotność i poszukiwanie celu",
   "magic_system": {{
-    "present": true,
-    "type": "elementarna",
-    "elements": ["ogień"],
-    "rarity": "rzadka",
-    "hierarchy": ["uczeń", "mag", "archimag"],
-    "costs": "fizyczne i mentalne",
-    "power_dynamics": "uczy się kontroli"
+    "magic_type": "Elementarna magia ognia",
+    "power_source": "Wewnętrzna energia emocjonalna",
+    "limitations": "Wymaga kontroli emocji, niebezpieczna gdy niekontrolowana",
+    "cost": "Fizyczne i mentalne wyczerpanie, ryzyko spalenia się od środka",
+    "scope": "Od małych płomieni po niszczycielskie inferno"
   }},
   "setting_analysis": {{
-    "physical_description": "opis",
-    "historical_context": "co się stało",
-    "emotional_landscape": "wpływ na mieszkańców",
-    "setting_role": "antagonista",
-    "protagonist_relationship": "chce zmienić"
+    "environment": "Puste pustkowia, opuszczone tereny, izolacja",
+    "time_period": "Nieokreślona fantastyczna era",
+    "emotional_landscape": "Samotność, zapomnienie, odrzucenie",
+    "setting_role": "Odzwierciedla stan wewnętrzny protagonisty",
+    "protagonist_relationship": "Protagonista jest częścią pustkowia - zapomniany i odizolowany"
   }},
   "tone_and_maturity": {{
-    "tone": "ciemny",
+    "tone": "ciemny i melancholijny",
     "maturity_level": "Mature 16+",
     "violence_level": "średnia",
     "moral_complexity": "odcienie szarości",
@@ -299,27 +298,26 @@ Be COMPREHENSIVE. Fill EVERY field with rich, specific details."""
         return {
             "core_meaning": f"Historia {genre_pl} o {first_capitalized}",
             "cultural_analysis": {
-                "literary_references": [],
-                "cultural_associations": f"Typowa narracja {genre_pl}",
-                "epic_tone": genre in ["fantasy", "sci-fi"]
+                "mythological_references": [],
+                "cultural_context": f"Typowa narracja {genre_pl}",
+                "symbolic_elements": ["Podróż", "Transformacja"],
+                "archetypal_patterns": ["Bohater" if genre == "fantasy" else "Protagonista"]
             },
             "metaphors": ["Podróż", "Transformacja"],
             "emotional_core": "przygoda" if genre == "fantasy" else "napięcie",
             "magic_system": {
-                "present": genre in ["fantasy", "sci-fi"],
-                "type": "nieznana",
-                "elements": [],
-                "rarity": "nieznana",
-                "hierarchy": [],
-                "costs": "nieznane",
-                "power_dynamics": "nieznane"
+                "magic_type": "Nieznany system magii" if genre in ["fantasy", "sci-fi"] else "Brak magii",
+                "power_source": "Nieznane" if genre in ["fantasy", "sci-fi"] else "Nie dotyczy",
+                "limitations": "Nieznane" if genre in ["fantasy", "sci-fi"] else "Nie dotyczy",
+                "cost": "Nieznane" if genre in ["fantasy", "sci-fi"] else "Nie dotyczy",
+                "scope": "Nieznany" if genre in ["fantasy", "sci-fi"] else "Nie dotyczy"
             },
             "setting_analysis": {
-                "physical_description": "Nieznane miejsce akcji",
-                "historical_context": "Historia do odkrycia",
-                "emotional_landscape": "Neutralne",
-                "setting_role": "neutralne",
-                "protagonist_relationship": "zrozumieć"
+                "environment": "Nieznane miejsce akcji",
+                "time_period": "Nieokreślony",
+                "emotional_landscape": "Neutralny",
+                "setting_role": "Tło dla akcji",
+                "protagonist_relationship": "Protagonista odkrywa świat"
             },
             "tone_and_maturity": {
                 "tone": "neutralny",

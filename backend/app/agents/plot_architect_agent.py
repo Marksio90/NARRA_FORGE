@@ -358,18 +358,84 @@ Create {subplot_count} INTEGRATED subplots:
 - Each subplot needs its own mini-arc
 - Subplots resolve before or during climax
 
-### 6. TENSION GRAPH
+### 6. TENSION & EMOTIONAL ARC GRAPH (READER EXPERIENCE!)
 
-For EACH chapter ({chapter_count} total), rate the tension level (1-10):
+For EACH chapter ({chapter_count} total), map the **READER'S** emotional journey:
 
-Consider:
-- Pacing (not every chapter at 10!)
-- Peaks and valleys (reader needs to breathe)
-- Escalation (overall upward trend)
-- Genre expectations (thrillers start higher than dramas)
+**Tension Level** (1-10 scale):
+- 1-3: Low tension (breather, world-building, character moments)
+- 4-6: Medium tension (complications, discoveries, conflicts)
+- 7-8: High tension (crises, confrontations, revelations)
+- 9-10: Maximum tension (climax, life-or-death, point of no return)
 
-Also assign emotional beat for each chapter:
-- Curious, anxious, hopeful, fearful, triumphant, devastated, etc.
+**Tension Pacing Rules**:
+✅ NOT every chapter at 10 (exhausting!)
+✅ Peaks and valleys (reader needs breathers)
+✅ Overall UPWARD trend (escalation to climax)
+✅ Genre-appropriate baseline:
+  - Thriller: Start ~6, climb to 10
+  - Romance: Start ~3, peaks at 7-8
+  - Horror: Start ~4, slow build to 9-10
+  - Drama: Start ~2, gradual to 7-8
+
+**Emotional Beat** (Primary emotion reader feels):
+
+Map to specific emotions (not vague!):
+- **Curiosity**: "What's happening? I need to know more."
+- **Anticipation**: "Something big is about to happen!"
+- **Anxiety**: "I'm worried for the character."
+- **Fear**: "This is dangerous, they're in trouble!"
+- **Hope**: "Maybe they can do this!"
+- **Triumph**: "Yes! They did it!"
+- **Devastation**: "Oh no... everything's falling apart."
+- **Anger**: "That's not fair! How dare they!"
+- **Grief**: "I'm sad for what they've lost."
+- **Relief**: "Thank god, they're safe now."
+- **Dread**: "Something terrible is coming..."
+- **Joy**: "This is wonderful!"
+- **Betrayal**: "They were deceived!"
+- **Resolve**: "They've made their choice."
+
+**Emotional Arc Pattern Examples**:
+
+**Thriller Arc**:
+```
+Ch1: Curiosity (3) → Ch5: Anxiety (6) → Ch10: Fear (8) →
+Ch15: Dread (9) → Ch18: Triumph (7) → Ch20: Devastation (10)
+```
+
+**Romance Arc**:
+```
+Ch1: Curiosity (2) → Ch5: Hope (4) → Ch10: Joy (6) →
+Ch15: Betrayal (8) → Ch18: Grief (5) → Ch20: Triumph (9)
+```
+
+**Horror Arc**:
+```
+Ch1: Unease (3) → Ch5: Anxiety (5) → Ch10: Fear (7) →
+Ch15: Dread (8) → Ch18: Terror (10) → Ch20: Relief (4)
+```
+
+**Emotional Pacing Guidelines**:
+✅ Vary emotions (not all anxiety!)
+✅ Earn big emotions with setup (can't go 0→10 instantly)
+✅ Give breathers after intense chapters
+✅ Build to emotional peaks strategically
+✅ End acts on strong emotions (hooks!)
+✅ Climax = maximum emotional + tension convergence
+
+**Reader Investment Checkpoints**:
+
+Ask for each act:
+- **End of Act 1**: Does reader CARE about protagonist? (If NO, fix!)
+- **Midpoint**: Is reader INVESTED in outcome? (If NO, raise stakes!)
+- **End of Act 2**: Is reader DESPERATE to know what happens? (If NO, amp tension!)
+- **Climax**: Does reader FEEL the emotional weight? (If NO, earn it better!)
+- **Resolution**: Does reader feel SATISFIED? (If NO, deliver on promises!)
+
+**Emotional Variety Rule**:
+Within any 5-chapter span, use at LEAST 3 different emotions.
+(Prevents monotony, keeps reader engaged)
 
 ### 7. FORESHADOWING & PAYOFF
 
@@ -534,11 +600,49 @@ Return valid JSON with this structure:
       "intersection_points": [3, 7, 12, ...]
     }}
   ],
-  "tension_graph": [
-    {{"chapter": 1, "tension": 3, "emotion": "curious"}},
-    {{"chapter": 2, "tension": 5, "emotion": "anxious"}},
-    ...
-  ],
+  "emotional_arc": {{
+    "tension_graph": [
+      {{
+        "chapter": 1,
+        "tension": 3,
+        "primary_emotion": "Curiosity",
+        "reader_feeling": "What's happening? Need to know more.",
+        "justification": "Opening hook with mysterious event"
+      }},
+      {{
+        "chapter": 2,
+        "tension": 5,
+        "primary_emotion": "Anxiety",
+        "reader_feeling": "Worried for protagonist's safety",
+        "justification": "First major obstacle, stakes established"
+      }},
+      ...for all {chapter_count} chapters
+    ],
+    "act_checkpoints": {{
+      "end_of_act_1": {{
+        "reader_cares": "YES - protagonist's vulnerability shown, relatable wound revealed",
+        "emotional_peak": "Hope mixed with anxiety"
+      }},
+      "midpoint": {{
+        "reader_invested": "YES - stakes raised dramatically, can't predict outcome",
+        "emotional_peak": "Triumph turning to dread"
+      }},
+      "end_of_act_2": {{
+        "reader_desperate": "YES - all is lost, protagonist at lowest point",
+        "emotional_peak": "Devastation, desperate to see resolution"
+      }},
+      "climax": {{
+        "reader_feels_weight": "YES - emotional journey earned this moment",
+        "emotional_peak": "Maximum tension + cathartic release"
+      }},
+      "resolution": {{
+        "reader_satisfied": "YES - promises fulfilled, arc complete",
+        "emotional_peak": "Bittersweet triumph, satisfying closure"
+      }}
+    }},
+    "emotional_variety_check": "Emotions used: Curiosity, Anxiety, Hope, Fear, Dread, Triumph, Devastation, Resolve, Joy (9 different - PASS)",
+    "genre_appropriateness": "Tension baseline and peaks match {genre} expectations"
+  }},
   "chapter_outlines": [
     {{
       "chapter": 1,

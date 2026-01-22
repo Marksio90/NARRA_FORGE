@@ -803,14 +803,14 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         "style_guidelines": genre_cfg["style"],
         # 🚀 TITLE-BASED ENHANCEMENTS (AI-powered primary, keyword fallback)
         "title_analysis": {
-            # Use AI-extracted data primarily
+            # Basic fields (for backward compatibility)
             "character_names": [{"name": name, "role": "main", "gender": "neutral"} for name in suggested_names] if suggested_names else title_insights["character_names"],
             "themes": themes,
             "setting_hints": [world_setting_sem.get("type", "")] if world_setting_sem.get("type") else title_insights["setting_hints"],
             "tone": semantic_insights.get("emotional_core", title_insights["tone"]),
             "focus": "oparty na postaciach" if suggested_names else title_insights["focus"],
-            # NESTED: Full semantic analysis for agents
-            "semantic_title_analysis": semantic_insights
+            # 🔮 ADVANCED: Unpack all 10 dimensions from semantic_insights directly here (not nested!)
+            **{k: v for k, v in semantic_insights.items() if k not in ["emotional_core", "themes"]}
         },
         # ALSO at top level for easy access by agents
         "semantic_title_analysis": semantic_insights

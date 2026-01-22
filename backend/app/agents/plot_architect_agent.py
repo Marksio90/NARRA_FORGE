@@ -254,7 +254,8 @@ By the end, the reader must say: "NOW I understand why it's called '{project_nam
                 prompt += f"- **Expected Scenes**: {', '.join(reader_expectations['expected_scenes'][:5])}\n"
 
         prompt += "\n## THEMES (from basic analysis)"
-        prompt += f"\n{', '.join(themes)}
+        prompt += f"""
+{', '.join(themes)}
 
 **Structure**: {structure_type}
 **Chapter Count**: {chapter_count}

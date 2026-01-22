@@ -279,6 +279,45 @@ When writing this chapter, constantly ask yourself:
 
 If not, rewrite it until it does.
 
+## 📖 POLISH DIALOGUE FORMATTING (MANDATORY!)
+
+⚠️ **CRITICAL**: Use PROPER POLISH BOOK FORMATTING for all dialogues:
+
+**Polish Standard**:
+- Dialogue ALWAYS starts with an EM DASH (—) at the beginning of a new paragraph
+- NO quotation marks ("") - Polish books use dashes!
+- Action/dialogue tags on the same line or new paragraph as needed
+- Internal thoughts in italics (if needed) or clearly distinguished from dialogue
+
+**CORRECT Polish Dialogue Format**:
+```
+— Nie rozumiem, co się dzieje — powiedziała Anna, patrząc w okno.
+Deszcz bębnił w szybę, jakby chciał się wedrzeć do środka.
+— To nie ma sensu — dodała po chwili. — Nic z tego nie ma sensu.
+Tomasz milczał. Wiedział, że każde słowo tylko pogorszy sytuację.
+— Powiedz coś! — Odwróciła się gwałtownie, a jej oczy błyszczały wilgocią.
+— Co mam powiedzieć? — Wzruszył ramionami, starając się zachować obojętny ton. — Że miałaś rację?
+```
+
+**INCORRECT (NEVER use quotation marks in Polish books)**:
+```
+❌ "Nie rozumiem" powiedziała Anna.
+❌ "Co się dzieje?" zapytała.
+```
+
+**Dialogue with Action Beats**:
+```
+— Musimy iść. — Jan chwycił kurtkę z wieszaka.
+— Teraz? — Anna spojrzała na zegar. — Jest trzecia nad ranem.
+— Właśnie dlatego. — Rzucił jej płaszcz. — Nikt nas nie zauważy.
+```
+
+**Internal Monologue** (no dash, clearly a thought):
+```
+Wiedziała, że to błąd. Każda komórka jej ciała krzyczała, żeby uciekła, ale nogi nie chciały słuchać.
+— Zostań — usłyszała jego głos za sobą.
+```
+
 ## 🎭 TONE GUIDANCE (From Advanced Analysis)
 """
 
@@ -394,56 +433,267 @@ This creates natural cause-and-effect flow.
 
 Vary your rhythm!
 
-### 6. DIALOGUE INTEGRATION
+### 6. DIALOGUE MASTERY (Bestseller-Level!)
 
-- Dialogue reveals character (voice, education, mood)
-- Avoid "talking heads" - add action beats
-- Use subtext (what's NOT said)
-- Vary speech patterns per character
-- No info dumps in dialogue
+**Polish Formatting** (MANDATORY):
+- Use EM DASH (—) to start dialogue, not quotation marks
+- Each speaker gets a new paragraph starting with —
+- Action beats can be on the same line or separate paragraph
 
-Example:
+**Voice Differentiation**:
+- Each character has UNIQUE speech patterns
+- Education level shows in vocabulary
+- Emotional state affects sentence length and structure
+- Regional/social background influences word choice
+
+**Subtext** (What's NOT said is crucial):
 ```
-"I'm fine." She turned away, shoulders tight.
-He reached for her arm. "That's not what I—"
-"I said I'm fine." The words came out sharper than intended.
+— Miło cię widzieć — powiedziała, nie odrywając wzroku od telefonu.
+❌ She doesn't mean it (direct telling)
+✅ Reader infers it from her body language
 ```
 
-### 7. AVOID COMMON MISTAKES
+**Dialogue Rhythm**:
+- Short exchanges = tension, conflict
+- Longer speeches = explanation, emotion, revelation
+- Interrupted dialogue = urgency, stress
+- Pauses (...) = hesitation, uncertainty
 
-❌ Purple prose (overwrit
+**Advanced Technique - Dialogue Layering**:
+```
+— Jak było na spotkaniu?
+— W porządku. — Odwiesił płaszcz, unikając jej wzroku.
+Przez chwilę milczeli. W kuchni kapała woda z kranu.
+— Tylko w porządku?
+— Co chcesz usłyszeć, Aniu?
+— Prawdę.
+Zaśmiał się, ale to był suchy, pozbawiony radości dźwięk.
+— Prawda jest przereklamowana.
+```
+Note how:
+- Subtext: He's hiding something
+- Body language: avoiding eye contact
+- Sensory detail: dripping water (tension)
+- Short, clipped exchanges = conflict
+- Final line = revelation of character state
 
-ten, flowery language)
-❌ Info dumps (world-building as lectures)
-❌ Telling emotions ("She felt sad")
-❌ Adverb abuse ("he said angrily" - show it!)
-❌ Passive voice (unless intentional)
-❌ Filter words (saw, heard, felt, knew, wondered)
-❌ Head-hopping (stay in ONE POV)
+**Common Dialogue Mistakes to AVOID**:
+❌ Info dumps in dialogue ("As you know, John, we've been friends for 10 years...")
+❌ All characters sound the same
+❌ Perfect grammar (people speak in fragments!)
+❌ No action beats (talking heads)
+❌ Overusing names in conversation
+❌ Attribution after every line ("he said", "she said" - trust your reader!)
 
-## YOUR TASK
+### 7. SCENE STRUCTURE (Architecture of Bestsellers)
 
-Write the COMPLETE chapter content ({target_word_count} words).
+Every scene must have PURPOSE and STRUCTURE:
 
-**Structure**:
-1. **Opening Hook** (grab attention immediately)
-2. **Scene Development** (show the events of this chapter)
-3. **Character Growth** (internal change, realization, or deepening conflict)
-4. **Cliffhanger/Transition** (make them want to keep reading)
+**Scene Formula**:
+1. **Goal**: Character enters scene wanting something
+2. **Conflict**: Obstacles prevent them from getting it
+3. **Disaster**: They fail OR succeed with unexpected consequences
+4. **Reaction**: Emotional response to disaster
+5. **Dilemma**: New problem arises
+6. **Decision**: Character chooses next action (leads to next scene)
 
-**Requirements**:
-- Stay in {pov_character['name']}'s POV the ENTIRE time
-- Use their voice consistently
-- Reach {target_word_count} words (don't cut short!)
-- Include dialogue where appropriate
-- Balance action with interiority
-- Advance the plot while developing character
-- Employ {genre} genre conventions
-- Make it ENGAGING and UNPUTDOWNABLE
+**Opening Lines** (Hook the reader immediately):
+❌ Weak: "Anna obudziła się rano."
+✅ Strong: "Anna obudziła się z przekonaniem, że dziś umrze."
 
-Write the chapter now. Begin with the chapter title and dive in.
+**Scene Transitions**:
+- Time jump: Clear but smooth ("Dwie godziny później...")
+- Location shift: Ground reader immediately ("Kawiarnia tonęła w hałasie...")
+- POV change: New chapter or clear break
 
-OUTPUT FORMAT: Plain text prose only (no JSON, no formatting instructions).
+**Scene vs. Sequel**:
+- **Scene** = Action, external conflict, plot advancement
+- **Sequel** = Reaction, internal processing, character development
+- Alternate between them for perfect pacing
+
+### 8. PROSE RHYTHM & MUSICALITY (The Secret Sauce!)
+
+**Sentence Variety** (This is what makes prose sing):
+```
+❌ Monotonous (all same length):
+"Anna weszła do pokoju. Pokój był ciemny. Była zmęczona. Usiadła na krześle."
+
+✅ Varied rhythm:
+"Anna pchnęła drzwi. Ciemność. Zmęczenie osiadło na ramionach jak mokry płaszcz, więc opadła na krzesło, nie dbając o skrzypienie starego drewna."
+```
+
+**Power of Three** (Rhetoric device):
+- "Był głodny, zmęczony i przerażony."
+- Groups of three are satisfying to the ear
+- Use for emphasis and rhythm
+
+**Paragraph Length for Pacing**:
+- **Single sentence paragraph** = Maximum impact. Shock. Revelation.
+- **Short paragraphs (2-3 sentences)** = Fast pace, action, tension
+- **Medium (4-6 sentences)** = Standard narrative flow
+- **Long (7+ sentences)** = Slow, contemplative, descriptive
+
+**Sound and Cadence**:
+- Read aloud mentally - does it flow?
+- Harsh sounds (k, t, p) = tension
+- Soft sounds (l, m, n) = calm
+- Alliteration used sparingly = poetic effect
+
+**Metaphor and Simile** (Not purple prose - purposeful imagery):
+✅ Fresh: "Strach rozlał się w jego żołądku jak rozlana benzyna - jedno słowo i wszystko spłonie."
+❌ Cliché: "Biały jak śnieg", "Czarny jak noc"
+
+### 9. EMOTIONAL RESONANCE (Make readers FEEL!)
+
+**Visceral Emotion** (Body sensations):
+Don't write: "Był przestraszony"
+Write: "Serce waliło o żebra. Pot spływał po plecach. Każdy oddech był walką."
+
+**Emotional Truth**:
+- Ground emotions in physical reality
+- Use character's specific fears/wounds
+- Build emotion gradually (not 0 to 100 instantly)
+- Earn big emotional moments with setup
+
+**Reader Investment**:
+- Give readers someone to root for
+- Create empathy through vulnerability
+- Show character's internal struggle
+- Make stakes personal and clear
+
+**Emotional Beats Pacing**:
+- Don't bombard reader with constant intensity
+- Give quiet moments after high emotion
+- Build to emotional peaks strategically
+- Relief and humor after darkness (unless horror/tragedy)
+
+### 10. BESTSELLER TECHNIQUES (Pro-Level Craft!)
+
+**Foreshadowing** (Plant seeds):
+```
+Wcześniej: "Nigdy nie ufała psom. Nawet małym."
+Później: [Dog attack becomes meaningful]
+```
+
+**Motifs** (Recurring elements):
+- Repeated images/objects gain symbolic weight
+- Connect to title themes
+- Example: Broken watches in a story about time running out
+
+**Narrative Drive** (Always pull reader forward):
+- End scenes with questions
+- Create promises to keep reader engaged
+- Each scene must raise new questions while answering old ones
+
+**Specific > Generic**:
+❌ "Ładny dom"
+✅ "Wiktoriańska kamienica z odrapaną zieloną farbą i kocim łbem w oknie"
+
+**Filter Elimination** (Deep POV mastery):
+❌ "Zobaczyła, że drzwi są otwarte"
+✅ "Drzwi stały otwarte"
+(We're IN her head - we see what she sees)
+
+**Active Voice Dominance**:
+❌ "Decyzja została podjęta przez Jana"
+✅ "Jan podjął decyzję"
+(Exception: When passive voice serves the story)
+
+### 11. AVOID THESE FATAL MISTAKES
+
+❌ **Purple prose**: Overwrought, flowery language that draws attention to itself
+❌ **Info dumps**: World-building lectures, backstory paragraphs
+❌ **Telling emotions**: "She felt sad" - SHOW through action/sensation
+❌ **Adverb abuse**: "he said angrily" - show anger through dialogue/action
+❌ **Passive voice**: Unless specifically needed
+❌ **Filter words**: saw, heard, felt, knew, wondered, realized
+❌ **Head-hopping**: Stay in ONE POV per scene
+❌ **Clichés**: "Dark as night", "white as snow", etc.
+❌ **Deus ex machina**: Convenient solutions from nowhere
+❌ **Inconsistent character voice**: Check {pov_character['name']}'s voice guide!
+❌ **Quotation marks in Polish dialogue**: Use EM DASHES (—)
+
+## YOUR TASK: Write a BESTSELLER-QUALITY Chapter
+
+Write the COMPLETE chapter content ({target_word_count} words minimum).
+
+**Chapter Architecture**:
+1. **Opening Hook** (First sentence must grab reader by throat!)
+   - Start with action, dialogue, or compelling image
+   - NO throat-clearing or weather descriptions
+   - Ground reader in POV, place, conflict immediately
+
+2. **Scene Development** (Build with purpose)
+   - Every scene has Goal → Conflict → Disaster structure
+   - Show through action and dialogue (minimal exposition)
+   - Use all five senses to immerse reader
+   - Vary sentence rhythm for musicality
+   - Each paragraph earns its place
+
+3. **Character Interiority** (Deep POV!)
+   - Filter through {pov_character['name']}'s perspective constantly
+   - Internal thoughts in their voice
+   - Emotional reactions grounded in body sensations
+   - Character wounds/fears influence their perception
+
+4. **Dialogue Excellence**
+   - Polish formatting: EM DASHES (—) to start dialogue
+   - Each character has distinct voice
+   - Subtext layered under surface meaning
+   - Action beats prevent talking heads
+   - Conflict and tension in exchanges
+
+5. **Emotional Beats** (Make readers FEEL)
+   - Build emotion gradually through scene
+   - Ground feelings in physical sensations
+   - Use character's specific fears from profile
+   - Earn big emotional moments with setup
+
+6. **Pacing Mastery**
+   - Vary paragraph length (single sentence for impact!)
+   - Short sentences for tension/action
+   - Flowing sentences for emotion/description
+   - Balance scene (action) with sequel (reflection)
+
+7. **Thematic Resonance**
+   - Every element must ECHO the book title "{book_title}"
+   - Weave in title's themes through imagery/metaphor
+   - Symbolism serves the title's meaning
+
+8. **Cliffhanger/Transition**
+   - End with question, decision, or revelation
+   - Make reader NEED next chapter
+   - Tension rises, never fully releases
+
+**Mandatory Quality Checklist**:
+✅ Opening line hooks immediately (no "Anna woke up")
+✅ All dialogue uses EM DASH (—) format, no quotation marks
+✅ POV character's voice consistent throughout
+✅ Show don't tell (body language, not "she felt sad")
+✅ Deep POV (no filter words: saw, heard, felt, knew)
+✅ Five senses engaged (not just sight!)
+✅ Sentence variety (rhythm and musicality)
+✅ Dialogue has subtext and distinct voices
+✅ Scene structure: Goal → Conflict → Disaster
+✅ Emotional truth grounded in body sensations
+✅ Reaches {target_word_count} words minimum (CRITICAL!)
+✅ Every element reinforces title "{book_title}"
+✅ {genre} genre conventions respected
+✅ Reader cannot stop reading (unputdownable!)
+
+**Final Requirements**:
+- Language: 100% POLISH (narrator and all dialogue)
+- POV: Stay in {pov_character['name']}'s head ENTIRE time
+- Length: {target_word_count} words minimum (count carefully!)
+- Voice: Use {pov_character['name']}'s vocabulary and thought patterns
+- Genre: Employ {genre} conventions and reader expectations
+- Quality: Publication-ready, bestseller-level prose
+
+This chapter will compete with the best {genre} novels on the market.
+Write at that level. No excuses. Begin now.
+
+OUTPUT FORMAT: Plain text prose in Polish only (no JSON, no meta-text, no formatting instructions).
+Start with "Rozdział {chapter_number}" and dive immediately into compelling prose.
 """
 
         system_prompt = self._get_system_prompt(genre)
@@ -479,52 +729,105 @@ OUTPUT FORMAT: Plain text prose only (no JSON, no formatting instructions).
 
     def _get_system_prompt(self, genre: str) -> str:
         """System prompt for prose writing"""
-        return f"""You are a MASTER FICTION WRITER specializing in {genre.upper()}.
+        return f"""You are an ELITE BESTSELLING AUTHOR specializing in {genre.upper()}.
 
-🇵🇱 KRYTYCZNIE WAŻNE - JĘZYK PISANIA:
-WSZYSTKIE rozdziały MUSZĄ być napisane W CAŁOŚCI PO POLSKU!
-- Cała narracja → PO POLSKU
-- Wszystkie dialogi → PO POLSKU
-- Wszystkie opisy → PO POLSKU
-- Zero angielskich słów lub zwrotów!
-- Pisz jak profesjonalny polski autor książek!
+Your novels top the charts. Publishers fight for your manuscripts. Readers stay up all night devouring your words.
 
-Your expertise:
-- Show don't tell (sensory details, body language, subtext)
-- Deep POV (character voice, no filtering, interiority)
-- MRU sequences (Motivation-Reaction-Action flow)
-- Five senses immersion
-- Pacing control (sentence rhythm, paragraph variation)
-- Dialogue craft (voice, subtext, action beats)
-- Scene structure (hook, development, turn, escalation)
-- Genre conventions and reader expectations
-- Voice consistency and character-specific language
+🇵🇱 JĘZYK I FORMATOWANIE (BEZWZGLĘDNE WYMAGANIE):
 
-Your prose:
-- Draws readers in from the first sentence
-- Makes them FEEL what characters feel
-- Balances action with reflection
-- Has rhythm and musicality
-- Avoids clichés and purple prose
-- Serves both plot and character
-- Honors the genre while surprising readers
+**Język**: 100% POLSKI
+- Każde słowo po polsku
+- Narracja po polsku
+- Dialogi po polsku
+- Myśli postaci po polsku
+- Zero anglicyzmów (chyba że postać tak mówi!)
+- Styl: profesjonalny polski autor bestsellerów
 
-You write like:
-- {GENRE_PROSE_STYLES[genre]['examples']}
+**Formatowanie Dialogów** (STANDARDY POLSKIEJ KSIĄŻKI):
+- Dialogi zaczynają się PAUZĄ (—) na początku nowego akapitu
+- BEZ cudzysłowów ("") - to błąd!
+- Przykład prawidłowy:
+  — To niemożliwe — szepnęła Anna.
+  — Wszystko jest możliwe — odpowiedział, nie odrywając wzroku od okna.
 
-You avoid:
-- Telling instead of showing
-- Filter words (saw, heard, felt)
-- Info dumps
-- Adverb abuse
-- Passive voice
-- Generic descriptions
-- Talking heads
-- Inconsistent voice
+🎯 Your Mastery:
 
-Every sentence you write is purposeful, engaging, and publication-quality.
+**Craft Fundamentals**:
+- Show don't tell (body language over emotion labels)
+- Deep POV (no filter words, character's voice throughout)
+- MRU sequences (Motivation → Reaction → Action)
+- Scene structure (Goal → Conflict → Disaster → Sequel)
+- Five senses immersion (sight, sound, touch, smell, taste)
+- Subtext (what's NOT said matters more)
 
-Output Format: Natural prose only IN POLISH. No JSON, no meta-text, no English, just pure Polish storytelling."""
+**Dialogue Excellence**:
+- Polish format: EM DASH (—) always, never quotation marks
+- Each character has unique voice (education, mood, background)
+- Subtext layered beneath words
+- Action beats integrated (no talking heads)
+- Conflict and tension in every exchange
+- Speech patterns reflect psychology
+
+**Prose Artistry**:
+- Sentence rhythm varies (short for tension, flowing for emotion)
+- Paragraph length controls pacing
+- Metaphors fresh and purposeful (no clichés)
+- Sound and cadence considered
+- Opening hooks grab immediately
+- Every word earns its place
+
+**Emotional Mastery**:
+- Feelings grounded in body sensations
+- Emotional truth over sentimentality
+- Gradual building to peaks
+- Reader empathy through vulnerability
+- Visceral, not abstract
+
+**Genre Expertise** ({genre}):
+- Conventions: {GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Engaging and immersive')}
+- Pacing matches reader expectations
+- Tropes used fresh, not tired
+- Writing style: {GENRE_PROSE_STYLES.get(genre, {}).get('examples', 'Masters of the craft')}
+
+**What Makes Your Prose Bestselling**:
+✅ Unputdownable from first sentence
+✅ Readers FEEL characters' emotions viscerally
+✅ Every scene has purpose and propulsion
+✅ Dialogue crackles with life and subtext
+✅ Prose has rhythm and musicality
+✅ No filter words (saw/heard/felt) - pure Deep POV
+✅ Show through action and body language
+✅ Specific details over generic descriptions
+✅ Paragraph variety controls pacing perfectly
+✅ Themes woven subtly through imagery
+✅ Endings make readers crave next chapter
+✅ Polish formatting with EM DASHES (—) for dialogue
+
+**What You NEVER Do**:
+❌ Quotation marks for dialogue (against Polish standards!)
+❌ Telling emotions ("she felt sad")
+❌ Filter words (saw, heard, felt, knew, realized)
+❌ Info dumps (lecturing reader)
+❌ Adverb abuse (show, don't label with "angrily")
+❌ Purple prose (overwrought flowery language)
+❌ Passive voice (unless strategic)
+❌ Clichéd metaphors ("black as night")
+❌ Generic descriptions ("nice house")
+❌ Talking heads (dialogue without action)
+❌ Inconsistent character voice
+❌ Head-hopping POV
+❌ Deus ex machina solutions
+
+**Your Standard**: Publication-ready prose that would make editors weep with joy.
+**Your Goal**: Make readers miss sleep because they can't stop reading.
+**Your Method**: Craft every sentence with purpose, rhythm, and emotional truth.
+
+You are not just writing a chapter. You are creating an EXPERIENCE that readers will remember for years.
+
+Write at the level of the masters. Write prose that SELLS. Write words that SING.
+
+Output: Pure Polish prose (narrator + dialogue). No JSON. No meta-commentary. No English.
+Start with "Rozdział [number]" and immediately deliver compelling, bestseller-quality storytelling."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

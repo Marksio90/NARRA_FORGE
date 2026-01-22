@@ -228,12 +228,99 @@ This is K.M. Weiland's framework - the foundation of character arc!
 - **Ending State**: Who they become (healed, transformed)
 - **Arc Type**: Positive change / Tragic fall / Flat (already knows truth)
 
-### 6. VOICE & SPEECH
-- **Speech Patterns**: How do they talk?
-- **Vocabulary Level**: Educated? Street-smart? Technical?
-- **Verbal Tics**: Repeated phrases or habits
-- **Internal Voice**: How do they think? (For POV narration)
-- **Example Dialogue**: 2-3 lines showing their voice
+### 6. VOICE & SPEECH (CRITICAL for Dialogue Authenticity!)
+
+This character's voice must be SO DISTINCTIVE that readers could identify them by dialogue alone.
+
+**Speech Patterns** (How they construct sentences):
+- Long, flowing sentences vs. short, clipped phrases?
+- Complete grammar vs. fragments and slang?
+- Formal vs. casual register?
+- Question frequency (insecure? curious? challenging?)
+- Interrupting others vs. letting them finish?
+- Example patterns:
+  * Academic: "I would posit that..." "Arguably..." "One might say..."
+  * Street-smart: "Nah, man." "You kidding me?" "Listen up."
+  * Noble/Formal: "I should think..." "One must consider..." "Indeed."
+  * Young: "Like, seriously?" "Whatever." "OMG."
+
+**Vocabulary Level & Word Choice**:
+- Education: University? High school? Self-taught? Street?
+- Profession: Technical jargon? Medical terms? Military slang?
+- Social class: Polished language? Working-class idioms?
+- Reading habits: Literary references? Pop culture? None?
+- Specific words they USE: List 5-7 favorite words/phrases
+- Specific words they AVOID: List 3-5 words they'd never say
+
+**Verbal Tics & Signature Phrases** (Make them memorable!):
+- Repeated phrases: "You know what I mean?" "Honestly..." "Listen..."
+- Filler words: "Um..." "Like..." "Well..." "So..."
+- Oaths/Curses: Do they swear? Mild? Profane? Religious euphemisms?
+- Catchphrases: Unique expressions others don't use
+- Example: A detective might say "Facts are facts" when closing arguments
+- Example: A nervous character might start every sentence with "Well..."
+
+**Dialect & Regional Speech**:
+- Accent indicators (if any): Regional pronunciations
+- Local idioms or expressions
+- Contractions: Do they use "don't" or "do not"?
+- Dropping letters: "goin'" vs "going"
+
+**Sentence Structure Preferences**:
+- Declarative (statements): "The sky is blue."
+- Interrogative (questions): "Is the sky blue?"
+- Exclamatory: "The sky is so blue!"
+- Imperative (commands): "Look at the blue sky!"
+- Which do they favor?
+
+**Emotional Speech Variations**:
+How does their speech CHANGE under stress/emotion?
+- Angry: Shorter? Louder? More profanity? Colder?
+- Afraid: Stuttering? Faster? Higher pitch? Fragments?
+- Happy: More rambling? Laughter mid-sentence? Exclamations?
+- Sad: Quieter? Slower? Trailing off? Fewer words?
+
+**Internal Voice** (For POV chapters - VERY DIFFERENT from dialogue!):
+- Thinking vocabulary: More complex? More honest? More profane?
+- Stream of consciousness: Organized? Chaotic? Poetic?
+- Self-talk: Critical? Encouraging? Sarcastic?
+- Metaphors in thought: What do they compare things to?
+- Example: A soldier thinks in tactical terms; a poet thinks in metaphors
+
+**Dialogue Examples** (MANDATORY - Write 5-7 lines showing DISTINCT voice):
+
+Provide actual dialogue that shows:
+1. Their typical speech pattern
+2. How they respond to stress
+3. How they express emotion
+4. Their unique word choices
+5. Their personality through words
+
+Example format (Polish, using EM DASHES):
+```
+Conversation with stranger about danger:
+— To niemożliwe — powiedział Jan, krzyżując ramiona. — Sprawdziłem dwukrotnie.
+— Niemożliwe? — Kobieta zaśmiała się gorzko. — Panie, wszystko jest możliwe, gdy ktoś chce cię zabić.
+— Hipotetycznie rzecz biorąc, gdyby pani twierdzenie było prawdziwe... — zaczął Jan, ale urwał. — Nie, to absurd.
+
+When angry at friend who betrayed him:
+— Wiedziałem! — krzyknął, uderzając pięścią w stół. — Kurwa, wiedziałem, że coś jest nie tak!
+(Note: He abandons formal speech when emotional)
+
+Internal thought after the conversation:
+"Niemożliwe, powiedziałem. Jakbym był idiotą. A może nim jestem? Może wszyscy mieli rację..."
+(Note: More self-critical, uses fragmented thoughts)
+```
+
+**Voice Consistency Rules for Writer**:
+- These patterns should appear in EVERY dialogue scene
+- Internal narration reflects thinking style
+- Voice shifts appropriately with emotion
+- Other characters react to their unique speech style
+- Readers should "hear" this character's voice
+
+**What Makes This Voice UNIQUE**:
+Write 2-3 sentences explaining what makes this character's voice different from everyone else in the cast. What would a reader recognize even without dialogue tags?
 
 ### 7. RELATIONSHIPS
 - **Allies**: Who supports them?
@@ -470,30 +557,106 @@ Output JSON matching character structure."""
 
     def _get_character_system_prompt(self) -> str:
         """System prompt for character creation"""
-        return """You are an EXPERT CHARACTER CREATOR for fiction.
+        return """You are a MASTER CHARACTER ARCHITECT - the creator behind bestselling fiction's most memorable characters.
 
-Your expertise:
-- Psychology (MBTI, Enneagram, trauma, motivation)
-- Character arc theory (K.M. Weiland, John Truby, Save the Cat)
-- Voice differentiation and dialogue
-- Character relationships and dynamics
-- Archetypes and how to transcend them
+Your characters live in readers' minds long after they close the book. They feel like real people with depth, contradictions, and authentic voices.
 
-You create characters that:
-- Feel REAL and three-dimensional
-- Have psychological depth and complexity
-- Undergo meaningful transformation
-- Have distinct, memorable voices
-- Serve the story while feeling authentic
+🎯 Your Expertise:
 
-You avoid:
-- Generic "chosen one" tropes without depth
-- Mary Sues / Gary Stus (characters without flaws)
-- Flat, one-dimensional personalities
-- Inconsistent character behavior
-- Stereotypes and clichés
+**Psychological Mastery**:
+- MBTI and Enneagram with deep understanding (not surface labels)
+- Trauma psychology (Ghost/Wound theory by K.M. Weiland)
+- Motivation layers (Want vs. Need - external vs. internal)
+- Flaws that drive conflict (fatal flaws, blind spots, lies believed)
+- Cognitive biases that shape perception
+- Attachment styles affecting relationships
+- Defense mechanisms and coping strategies
 
-Output Format: Valid JSON only, rich with specific details."""
+**Character Arc Theory**:
+- K.M. Weiland's Ghost/Wound/Want/Need/Lie framework
+- Positive change arcs (character grows, learns truth)
+- Negative/tragic arcs (character succumbs to lie)
+- Flat arcs (character already knows truth, changes world)
+- Transformation moments and turning points
+- Character arc integration with plot structure
+
+**Voice Differentiation** (CRITICAL):
+- Every character speaks DISTINCTLY
+- Speech patterns reflect psychology, education, background
+- Vocabulary choices reveal character depth
+- Verbal tics and signature phrases for memorability
+- Emotional speech variations (how voice changes under stress)
+- Internal voice vs. external dialogue differences
+- Regional/social dialects where appropriate
+- Age-appropriate speech patterns
+
+**Relationship Dynamics**:
+- Character chemistry (allies, rivals, romance)
+- Power dynamics (mentor/student, boss/employee)
+- Family systems and formative relationships
+- Conflict sources in every relationship
+- How characters bring out different sides of each other
+
+**Archetype Transcendence**:
+- Start with archetype, make it SPECIFIC
+- Add contradictions and surprises
+- Ground in unique psychology and background
+- Universal recognition + specific individuality
+
+**What Makes Your Characters BESTSELLING**:
+✅ Psychological depth readers recognize as TRUE
+✅ Flaws that make them human and relatable
+✅ Distinct voices - reader knows who's talking without tags
+✅ Transformative arcs with earned emotional payoffs
+✅ Contradictions that make them complex (kind but vengeful, brave but afraid)
+✅ Secrets and wounds that drive behavior
+✅ Relationships that feel authentic and dynamic
+✅ Agency - they DRIVE the plot, not passive victims
+✅ Specific sensory details (how they move, smell, sound)
+✅ Unique perspective that colors their world view
+
+**What You NEVER Create**:
+❌ Mary Sues / Gary Stus (perfect, flawless characters)
+❌ Generic "chosen one" without depth or cost
+❌ Characters who all sound the same
+❌ Inconsistent behavior (without psychological reason)
+❌ Stereotypes (ethnic, gender, professional clichés)
+❌ Flat personalities (all angry, all nice, one-note)
+❌ Characters who exist only to serve plot (they must live!)
+❌ Motivations that don't make psychological sense
+❌ Trauma without lasting psychological impact
+❌ Relationships without complexity or conflict
+
+**Voice Guide Creation** (Your Secret Weapon):
+
+For EVERY character, you create a comprehensive VOICE GUIDE including:
+- Speech patterns (sentence structure, length, complexity)
+- Vocabulary level and favorite words
+- Verbal tics and signature phrases
+- How speech changes under emotion (anger, fear, joy, sadness)
+- Specific dialogue examples (5-7 lines in Polish with EM DASHES)
+- Internal voice style (for POV chapters)
+- What makes this voice UNIQUE from all other characters
+
+This ensures the prose writer can write authentic, differentiated dialogue.
+
+**Your Standard**: Characters worthy of fan fiction, cosplay, and lifelong reader devotion.
+
+**Your Method**:
+1. Start with psychology (trauma, fears, desires, lies)
+2. Build appearance and voice from psychology
+3. Create arc that challenges their lie and forces growth
+4. Ensure they're flawed, specific, and ALIVE
+5. Make their voice so distinct it's unmistakable
+
+You are creating PEOPLE, not chess pieces. Every detail has psychological truth.
+
+**Output Format**:
+- Valid JSON with ALL fields filled richly
+- Specific details, never generic
+- Voice guide with actual dialogue examples in POLISH using EM DASHES (—)
+- Psychological depth in every section
+- No placeholder text or "TBD" - complete every field thoughtfully"""
 
     def _summarize_world(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world summary for context"""

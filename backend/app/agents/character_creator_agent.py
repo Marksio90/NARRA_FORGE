@@ -177,7 +177,8 @@ If the title is a promise, the protagonist fulfills it.
             prompt += f"- **Maturity Level**: {tone_and_maturity.get('maturity_level', 'Adult')}\n"
             prompt += f"- **Moral Complexity**: {tone_and_maturity.get('moral_complexity', 'balanced')}\n"
 
-        prompt += "\n## WORLD CONTEXT
+        prompt += f"""
+## WORLD CONTEXT
 {self._summarize_world(world_bible)}
 
 ## TITLE ANALYSIS (Basic)

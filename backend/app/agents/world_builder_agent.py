@@ -151,6 +151,13 @@ Output Format: Valid JSON only, following the exact schema provided."""
         central_conflict = semantic_analysis.get("central_conflict", "")
         themes_semantic = semantic_analysis.get("themes", [])
 
+        # Extract ADVANCED analysis fields
+        cultural_analysis = semantic_analysis.get("cultural_analysis", {})
+        magic_system = semantic_analysis.get("magic_system", {})
+        setting_analysis = semantic_analysis.get("setting_analysis", {})
+        tone_and_maturity = semantic_analysis.get("tone_and_maturity", {})
+        subgenre = semantic_analysis.get("subgenre", {})
+
         prompt = f"""Create a COMPLETE WORLD BIBLE for a {genre} novel titled "{project_name}".
 
 ## 🎯 TITLE AS THEMATIC ANCHOR (CRITICAL!)
@@ -176,14 +183,56 @@ If "{project_name}" means X, then the world must SHOW X in its very fabric.
 - Scope: {scope} ({target_word_count:,} words)
 - Complexity: {style_complexity}
 
-## SEMANTIC TITLE ANALYSIS (Your Creative Foundation)
+## ADVANCED TITLE ANALYSIS (Your Creative Foundation)
 """
 
+        # Cultural/literary references
+        if cultural_analysis:
+            prompt += "\n### 📚 Cultural & Literary Context\n"
+            if cultural_analysis.get('literary_references'):
+                prompt += f"- Literary References: {', '.join(cultural_analysis['literary_references'])}\n"
+            if cultural_analysis.get('cultural_associations'):
+                prompt += f"- Cultural Associations: {cultural_analysis['cultural_associations']}\n"
+            if cultural_analysis.get('epic_tone'):
+                prompt += f"- Epic Tone: {'✓ YES - expect grand scale' if cultural_analysis['epic_tone'] else 'More intimate scale'}\n"
+
+        # Magic/Power System
+        if magic_system and magic_system.get('present'):
+            prompt += "\n### 🔥 MAGIC/POWER SYSTEM REQUIREMENTS\n"
+            prompt += f"- Type: {magic_system.get('type', 'unknown')}\n"
+            if magic_system.get('elements'):
+                prompt += f"- Elements: {', '.join(magic_system['elements'])}\n"
+            prompt += f"- Rarity: {magic_system.get('rarity', 'unknown')}\n"
+            if magic_system.get('hierarchy'):
+                prompt += f"- Hierarchy: {' → '.join(magic_system['hierarchy'])}\n"
+            prompt += f"- Costs: {magic_system.get('costs', 'unknown')}\n"
+            prompt += f"- Dynamics: {magic_system.get('power_dynamics', 'unknown')}\n"
+
+        # Setting Deep Dive
+        if setting_analysis:
+            prompt += "\n### 🗺️ SETTING DEEP DIVE\n"
+            if setting_analysis.get('physical_description'):
+                prompt += f"- Physical: {setting_analysis['physical_description']}\n"
+            if setting_analysis.get('historical_context'):
+                prompt += f"- History: {setting_analysis['historical_context']}\n"
+            if setting_analysis.get('emotional_landscape'):
+                prompt += f"- Emotional Impact: {setting_analysis['emotional_landscape']}\n"
+
+        # Tone & Maturity
+        if tone_and_maturity:
+            prompt += "\n### 🎭 TONE & MATURITY\n"
+            prompt += f"- Tone: {tone_and_maturity.get('tone', 'neutralny')}\n"
+            prompt += f"- Maturity: {tone_and_maturity.get('maturity_level', 'Adult')}\n"
+            prompt += f"- Violence: {tone_and_maturity.get('violence_level', 'średnia')}\n"
+            prompt += f"- Moral Complexity: {tone_and_maturity.get('moral_complexity', 'zrównoważone')}\n"
+
+        # Original world setting (backward compatibility)
         if world_setting_semantic:
-            prompt += f"**World Type Suggested**: {world_setting_semantic.get('type', 'Not specified')}\n"
-            prompt += f"**Atmosphere Required**: {world_setting_semantic.get('atmosphere', 'Not specified')}\n"
+            prompt += "\n### 🌍 World Setting Hints\n"
+            prompt += f"- Type: {world_setting_semantic.get('type', 'Not specified')}\n"
+            prompt += f"- Atmosphere: {world_setting_semantic.get('atmosphere', 'Not specified')}\n"
             if world_setting_semantic.get('key_elements'):
-                prompt += f"**Key Elements to Include**: {', '.join(world_setting_semantic['key_elements'])}\n"
+                prompt += f"- Key Elements: {', '.join(world_setting_semantic['key_elements'])}\n"
 
         prompt += "\n## BASIC TITLE ANALYSIS\n"
 

@@ -79,76 +79,198 @@ async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
 
     ai_service = get_ai_service()
 
-    prompt = f"""Analyze this book title DEEPLY for maximum creative impact: "{title}"
+    prompt = f"""🎯 ADVANCED TITLE ANALYSIS - Extract MAXIMUM creative intelligence from: "{title}"
 
 Genre: {genre}
 
-🇵🇱 **KRYTYCZNIE WAŻNE - JĘZYK ODPOWIEDZI**:
-WSZYSTKIE pola w JSON MUSZĄ być wypełnione PO POLSKU!
-- core_meaning → po polsku
-- themes → po polsku
-- protagonist_archetype → po polsku (np. "Mag Ognia", "Wojownik", "Wybrany")
-- ALL fields → POLISH language!
+🇵🇱 WSZYSTKIE pola w JSON MUSZĄ być PO POLSKU!
 
-🎯 **YOUR MISSION**: Extract EVERY piece of creative information from this title.
+🔍 GRAMMAR: "Vergil, mag ognia" → "Vergil" = NAME, "mag ognia" = role/class
 
-🔍 **CRITICAL - GRAMMAR & CONTEXT AWARENESS**:
-- In Polish: "Marksio, mag ognia" → "Marksio" is the protagonist NAME, "mag ognia" = fire mage (his role/class)
-- In Polish: "Mateusz, Mag Ognia" → "Mateusz" is protagonist, "Mag Ognia" = Mage of Fire
-- Comma often separates NAME from DESCRIPTION/TITLE
-- Genitive case (dopełniacz): "ognia" = OF fire (not a name!)
-- Analyze STRUCTURE: [Name], [Title/Role] [Details]
+═════════════════════════════════════════════════════════════════
+📚 PART 1: CULTURAL & MYTHOLOGICAL DEPTH
+═════════════════════════════════════════════════════════════════
 
-🚨 **MANDATORY - ALWAYS identify the protagonist**:
-- Look for proper names (capitalized, personal names)
-- The protagonist is usually the FIRST major name in the title
-- If title format is "Name, Description" → Name is the protagonist
-- Provide AT LEAST one suggested name based on title analysis
+1. **Cultural/Literary References**: Does name reference mythology/history? (np. Vergil = Wergiliusz → epicka narracja, przewodnik)
+2. **Symbolic Meanings**: Metafory beyond literal meaning
+3. **Archetypal Significance**: Jakie archetypy są obecne?
 
-Provide COMPLETE analysis for ALL fields (W JĘZYKU POLSKIM!):
+═════════════════════════════════════════════════════════════════
+🔥 PART 2: MAGIC/POWER SYSTEM (if applicable)
+═════════════════════════════════════════════════════════════════
 
-1. **Core Meaning**: What is this story about? (Full interpretation IN POLISH)
-2. **Metaphors & Symbolism**: What symbols/metaphors are present? (IN POLISH)
-3. **Emotional Core**: Primary emotion this title evokes (IN POLISH - np. "tęsknota", "determinacja", "tajemnica")
-4. **Character Implications** (CRITICAL - ALWAYS FILL THIS IN POLISH):
-   - protagonist_archetype: What type of hero? (PO POLSKU - np. "Mag Ognia", "Wojownik", "Wybrany")
-   - protagonist_journey: What journey does the title suggest? (PO POLSKU)
-   - suggested_names: [ALWAYS provide at least 1-3 names from title OR genre-appropriate names]
-5. **World/Setting**: What world type, atmosphere, key elements? (PO POLSKU)
-6. **Central Conflict**: What's the main struggle/tension? (PO POLSKU)
-7. **Themes**: 3-5 deep themes to explore (PO POLSKU - np. "odkrywanie siebie", "potęga zapomnianej wiedzy")
-8. **Promise to Reader**: What experience does this promise? (PO POLSKU)
+If title mentions powers:
+- Element-based? (ogień, woda, etc.)
+- Rare gift or common?
+- Hierarchy (uczeń → mag → archimag)
+- Costs of using magic (fizyczne/mentalne)
+- Power dynamics (protagonist słaby czy potężny?)
 
-Return JSON (FILL ALL FIELDS IN POLISH, no empty arrays):
+═════════════════════════════════════════════════════════════════
+🗺️ PART 3: DEEP SETTING ANALYSIS
+═════════════════════════════════════════════════════════════════
+
+1. **Physical & Historical**: Opis miejsca, co spowodowało ten stan?
+2. **Emotional Landscape**: Dosłowne czy metaforyczne miejsce?
+3. **Setting Role**: Antagonista/sojusznik/neutralne?
+4. **Protagonist Relationship**: Uciec/zmienić/zrozumieć?
+
+═════════════════════════════════════════════════════════════════
+🎭 PART 4: TONE & MATURITY
+═════════════════════════════════════════════════════════════════
+
+- **Tone**: ciemny/neutralny/jasny
+- **Maturity**: YA/Adult/Mature 16+/Mature 18+
+- **Content**: violence level, moral complexity
+
+═════════════════════════════════════════════════════════════════
+👹 PART 5: ANTAGONIST PREDICTIONS
+═════════════════════════════════════════════════════════════════
+
+Based on protagonist, predict:
+- Antagonist type (elemental opposite? tyrant? internal demon?)
+- Opposition nature (physical/emotional/philosophical)
+
+═════════════════════════════════════════════════════════════════
+⚔️ PART 6: MULTI-LAYERED CONFLICTS
+═════════════════════════════════════════════════════════════════
+
+- External: vs world/villain
+- Internal: vs self (fear, doubt)
+- Philosophical: competing ideologies
+- Moral: right action in impossible situation
+
+═════════════════════════════════════════════════════════════════
+🏷️ PART 7: SUBGENRE & READER EXPECTATIONS
+═════════════════════════════════════════════════════════════════
+
+- Subgenre: Epic Fantasy? Dark Fantasy? Character-driven?
+- Magic level: High/Low magic
+- Expected scenes (battles, training, political intrigue)
+- Emotional journey readers expect
+
+═════════════════════════════════════════════════════════════════
+⏱️ PART 8: PACING & STRUCTURE
+═════════════════════════════════════════════════════════════════
+
+- Overall pace: fast/medium/slow
+- Structure: 3-act? Hero's Journey?
+- Which act should be darkest?
+
+═════════════════════════════════════════════════════════════════
+🧵 PART 9: SECONDARY PLOT THREADS
+═════════════════════════════════════════════════════════════════
+
+Suggest 3-5 subplots:
+- Romance possibility
+- Mentorship arc
+- Political intrigue
+- Mystery to uncover
+- Redemption arc
+
+═════════════════════════════════════════════════════════════════
+📈 PART 10: CHARACTER ARC PREDICTION
+═════════════════════════════════════════════════════════════════
+
+- Starting point (emotional/skill state)
+- Midpoint shift (major revelation)
+- Climax challenge (ultimate test)
+- Transformation (who they become)
+
+═════════════════════════════════════════════════════════════════
+📋 RETURN THIS JSON (ALL IN POLISH):
+═════════════════════════════════════════════════════════════════
+
 {{
-  "core_meaning": "Historia o...",
-  "metaphors": ["metafora 1", "metafora 2"],
-  "emotional_core": "tęsknota i determinacja",
+  "core_meaning": "Pełna interpretacja...",
+  "cultural_analysis": {{
+    "literary_references": ["odniesienie1"],
+    "cultural_associations": "skojarzenia",
+    "epic_tone": true
+  }},
+  "metaphors": ["metafora1", "metafora2"],
+  "emotional_core": "główna emocja",
+  "magic_system": {{
+    "present": true,
+    "type": "elementarna",
+    "elements": ["ogień"],
+    "rarity": "rzadka",
+    "hierarchy": ["uczeń", "mag", "archimag"],
+    "costs": "fizyczne i mentalne",
+    "power_dynamics": "uczy się kontroli"
+  }},
+  "setting_analysis": {{
+    "physical_description": "opis",
+    "historical_context": "co się stało",
+    "emotional_landscape": "wpływ na mieszkańców",
+    "setting_role": "antagonista",
+    "protagonist_relationship": "chce zmienić"
+  }},
+  "tone_and_maturity": {{
+    "tone": "ciemny",
+    "maturity_level": "Mature 16+",
+    "violence_level": "średnia",
+    "moral_complexity": "odcienie szarości",
+    "emotional_intensity": "wysoka"
+  }},
+  "antagonist_predictions": [
+    {{"type": "tyran krainy", "motivation": "utrzymać rozpacz", "opposition_nature": "fizyczna i filozoficzna"}}
+  ],
+  "conflicts": {{
+    "external": "Vergil vs władca krainy",
+    "internal": "kontrola nad ogniem i emocjami",
+    "philosophical": "nadzieja vs rozpacz",
+    "moral": "czy niszczyć ogniem dla dobra"
+  }},
+  "subgenre": {{
+    "primary": "Dark Fantasy",
+    "secondary": ["Epic Fantasy", "Character-driven"],
+    "magic_level": "high magic",
+    "focus": "character-driven"
+  }},
+  "reader_expectations": {{
+    "expected_scenes": ["walka magią", "trening mocy", "emocjonalne przełomy"],
+    "emotional_journey": "od rozpaczy do nadziei",
+    "tropes": ["fallen hero", "magic training", "dark world redemption"]
+  }},
+  "pacing_suggestions": {{
+    "overall_pace": "średnie",
+    "structure_type": "Hero's Journey",
+    "darkest_act": "akt 2",
+    "tension_curve": "powolny wzrost do climaxu w akcie 2, wybuch w akcie 3"
+  }},
+  "secondary_plots": [
+    {{"type": "romans", "description": "spotyka osobę dającą nadzieję", "key_characters": ["love interest"]}},
+    {{"type": "mentorstwo", "description": "stary mag uczy kontroli", "key_characters": ["mentor"]}},
+    {{"type": "tajemnica", "description": "co spowodowało rozpacz", "key_characters": ["ancient source"]}}
+  ],
+  "character_arc": {{
+    "starting_point": "zagubiony mag ze słabą kontrolą",
+    "midpoint_shift": "odkrywa prawdę o sobie i krainie",
+    "climax_challenge": "musi użyć pełnej mocy by pokonać źródło rozpaczy",
+    "transformation": "z zagubionego maga w beacon nadziei",
+    "arc_type": "pozytywny"
+  }},
   "character_implications": {{
     "protagonist_archetype": "Mag Ognia",
-    "protagonist_journey": "Podróż protagonisty ku...",
-    "suggested_names": ["Imię1", "Imię2"]
+    "protagonist_journey": "od rozpaczy do nadziei poprzez opanowanie mocy",
+    "suggested_names": ["Vergil"]
   }},
-  "world_setting": {{
-    "type": "fantasy",
-    "atmosphere": "tajemnicza",
-    "key_elements": ["element1", "element2"]
-  }},
-  "central_conflict": "Główny konflikt...",
-  "themes": ["temat1", "temat2", "temat3"],
-  "reader_promise": "Obietnica dla czytelnika..."
+  "themes": ["odkrywanie siebie", "nadzieja w rozpaczy", "kontrola nad mocą", "transformacja poprzez cierpienie", "wybaczenie"],
+  "reader_promise": "Epicka podróż od rozpaczy do nadziei z magią, emocjami i transformacją"
 }}
 
-Make this INSIGHTFUL and IN POLISH. This will drive the entire story creation."""
+Be COMPREHENSIVE. Fill EVERY field with rich, specific details."""
 
     try:
         response = await ai_service.generate(
             prompt=prompt,
             tier=ModelTier.TIER_2,  # Use good model for deep analysis
             temperature=0.7,
-            max_tokens=2500,  # Increased for thorough analysis
+            max_tokens=6000,  # Increased for comprehensive advanced analysis
             json_mode=True,
-            metadata={"task": "semantic_title_analysis"}
+            prefer_anthropic=True,  # Claude excellent at deep analysis
+            metadata={"task": "advanced_title_analysis"}
         )
 
         import json
@@ -176,19 +298,81 @@ Make this INSIGHTFUL and IN POLISH. This will drive the entire story creation.""
 
         return {
             "core_meaning": f"Historia {genre_pl} o {first_capitalized}",
+            "cultural_analysis": {
+                "literary_references": [],
+                "cultural_associations": f"Typowa narracja {genre_pl}",
+                "epic_tone": genre in ["fantasy", "sci-fi"]
+            },
             "metaphors": ["Podróż", "Transformacja"],
             "emotional_core": "przygoda" if genre == "fantasy" else "napięcie",
+            "magic_system": {
+                "present": genre in ["fantasy", "sci-fi"],
+                "type": "nieznana",
+                "elements": [],
+                "rarity": "nieznana",
+                "hierarchy": [],
+                "costs": "nieznane",
+                "power_dynamics": "nieznane"
+            },
+            "setting_analysis": {
+                "physical_description": "Nieznane miejsce akcji",
+                "historical_context": "Historia do odkrycia",
+                "emotional_landscape": "Neutralne",
+                "setting_role": "neutralne",
+                "protagonist_relationship": "zrozumieć"
+            },
+            "tone_and_maturity": {
+                "tone": "neutralny",
+                "maturity_level": "Adult",
+                "violence_level": "średnia",
+                "moral_complexity": "zrównoważone",
+                "emotional_intensity": "średnia"
+            },
+            "antagonist_predictions": [
+                {
+                    "type": "Niezidentyfikowany antagonista",
+                    "motivation": "Nieznana",
+                    "opposition_nature": "fizyczna"
+                }
+            ],
+            "conflicts": {
+                "external": "Protagonista vs nieznane zagrożenie",
+                "internal": "Walka z wątpliwościami",
+                "philosophical": "Dobro vs zło",
+                "moral": "Wybór między pragnieniem a obowiązkiem"
+            },
+            "subgenre": {
+                "primary": genre_pl,
+                "secondary": [],
+                "magic_level": "medium magic" if genre == "fantasy" else "no magic",
+                "focus": "zrównoważony"
+            },
+            "reader_expectations": {
+                "expected_scenes": ["akcja", "rozwój postaci", "konflikt"],
+                "emotional_journey": "Od wyzwania do triumfu",
+                "tropes": ["podróż bohatera"]
+            },
+            "pacing_suggestions": {
+                "overall_pace": "średnie",
+                "structure_type": "3-aktowa",
+                "darkest_act": "akt 2",
+                "tension_curve": "stopniowy wzrost"
+            },
+            "secondary_plots": [
+                {"type": "rozwój postaci", "description": "Wewnętrzna transformacja", "key_characters": [first_capitalized]}
+            ],
+            "character_arc": {
+                "starting_point": "Protagonista na początku podróży",
+                "midpoint_shift": "Odkrycie prawdy",
+                "climax_challenge": "Ostateczna konfrontacja",
+                "transformation": "Rozwój i dojrzałość",
+                "arc_type": "pozytywny"
+            },
             "character_implications": {
                 "protagonist_archetype": "Bohater" if genre == "fantasy" else "Protagonista",
                 "protagonist_journey": f"Poszukiwanie prawdy przez {first_capitalized}",
                 "suggested_names": [first_capitalized] if first_capitalized != "Bohater" else ["Aleksander", "Mateusz", "Kacper"]
             },
-            "world_setting": {
-                "type": f"Świat {genre_pl}",
-                "atmosphere": "tajemnicza",
-                "key_elements": ["konflikt", "odkrycie", "rozwój"]
-            },
-            "central_conflict": "Protagonista kontra nieznane",
             "themes": ["tożsamość", "odwaga", "przeznaczenie"],
             "reader_promise": f"Wciągająca przygoda {genre_pl}"
         }

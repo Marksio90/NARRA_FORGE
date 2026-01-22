@@ -179,6 +179,12 @@ class PlotArchitectAgent:
         themes_semantic = semantic_title_analysis.get("themes", [])
         reader_promise = semantic_title_analysis.get("reader_promise", "")
 
+        # Extract ADVANCED analysis
+        conflicts = semantic_title_analysis.get("conflicts", {})
+        pacing_suggestions = semantic_title_analysis.get("pacing_suggestions", {})
+        secondary_plots = semantic_title_analysis.get("secondary_plots", [])
+        reader_expectations = semantic_title_analysis.get("reader_expectations", {})
+
         prompt = f"""Create a MASTERFUL PLOT STRUCTURE for "{project_name}" ({genre}).
 
 ## 🎯 TITLE AS PLOT DNA (CRITICAL!)
@@ -212,6 +218,43 @@ By the end, the reader must say: "NOW I understand why it's called '{project_nam
 **World**: {world_bible.get('geography', {}).get('world_type', 'Unknown')}
 
 **Themes (from basic analysis)**: {', '.join(themes)}
+
+## ⚔️ CONFLICT LAYERS (From Advanced Analysis)
+"""
+
+        if conflicts:
+            if conflicts.get('external'):
+                prompt += f"- **External**: {conflicts['external']}\n"
+            if conflicts.get('internal'):
+                prompt += f"- **Internal**: {conflicts['internal']}\n"
+            if conflicts.get('philosophical'):
+                prompt += f"- **Philosophical**: {conflicts['philosophical']}\n"
+            if conflicts.get('moral'):
+                prompt += f"- **Moral**: {conflicts['moral']}\n"
+
+        if pacing_suggestions:
+            prompt += "\n## ⏱️ PACING GUIDANCE\n"
+            if pacing_suggestions.get('overall_pace'):
+                prompt += f"- **Overall Pace**: {pacing_suggestions['overall_pace']}\n"
+            if pacing_suggestions.get('structure_type'):
+                prompt += f"- **Structure Type**: {pacing_suggestions['structure_type']}\n"
+            if pacing_suggestions.get('darkest_act'):
+                prompt += f"- **Darkest Act**: {pacing_suggestions['darkest_act']}\n"
+            if pacing_suggestions.get('tension_curve'):
+                prompt += f"- **Tension Curve**: {pacing_suggestions['tension_curve']}\n"
+
+        if secondary_plots:
+            prompt += "\n## 🧵 SUGGESTED SUBPLOTS\n"
+            for sp in secondary_plots[:5]:  # Top 5
+                prompt += f"- **{sp.get('type', 'Unknown')}**: {sp.get('description', '')}\n"
+
+        if reader_expectations:
+            if reader_expectations.get('expected_scenes'):
+                prompt += "\n## 📖 READER EXPECTATIONS\n"
+                prompt += f"- **Expected Scenes**: {', '.join(reader_expectations['expected_scenes'][:5])}\n"
+
+        prompt += "\n## THEMES (from basic analysis)"
+        prompt += f"\n{', '.join(themes)}
 
 **Structure**: {structure_type}
 **Chapter Count**: {chapter_count}

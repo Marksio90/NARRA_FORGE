@@ -399,15 +399,60 @@ Use:
 ❌ Filtering: "She saw the door open."
 ✅ Deep POV: "The door creaked. Her breath caught."
 
-### 3. FIVE SENSES (Immersion!)
-Every scene needs:
-- **Sight**: What they see (most common)
-- **Sound**: Dialogue, ambient noise, silence
-- **Touch**: Temperature, texture, physical sensation
-- **Smell**: Powerful for emotion and memory
-- **Taste**: When relevant
+### 3. FIVE SENSES IMMERSION (Transport the Reader!)
 
-Don't info-dump - sprinkle throughout.
+Bestsellers don't TELL about a place - they make readers LIVE there.
+
+**Sensory Hierarchy** (Use all five, not just sight!):
+
+**Sight** (Most common - but make it SPECIFIC):
+❌ Generic: "Pokój był duży."
+✅ Specific: "Sufit ginął w mroku, a przez zakurzone okna sączyło się blade światło."
+
+**Sound** (Creates atmosphere):
+- Dialogue (primary sound)
+- Ambient: "Zegar tykał. Gdzieś daleko szczekał pies."
+- Silence: "Cisza była tak gęsta, że słyszała własny puls."
+- Quality: "Głos miał ostry jak potłuczone szkło."
+
+**Touch** (Most visceral):
+- Temperature: "Pot spływał po plecach mimo zimna."
+- Texture: "Szorstki beton ocierał dłonie."
+- Pain: "Głowa pulsowała rytmicznie z każdym uderzeniem serca."
+- Pressure: "Kurczył palce, aż paznokcie wbiły się w dłonie."
+
+**Smell** (Strongest for memory/emotion):
+- Evocative: "Pachniało wilgocią i czymś słodkawym - rozkładem."
+- Character detail: "Jego woda kolońska wypełniła windę - drzewo cedrowe i aroganacja."
+- Setting: "Szpital śmierdział środkiem dezynfekującym i desperacją."
+
+**Taste** (When relevant):
+- Fear: "Gorycz żółci na języku."
+- Blood: "Metaliczny smak krwi wypełnił usta."
+- Memory: "Kawa smakowała tak jak tamtego poranka - gorzko i z nadzieją."
+
+**Sensory Integration Example**:
+```
+Anna pchnęła drzwi (dotyk). Zawiasy zapiszczały ostro (dźwięk), a w twarz uderzył
+zapach stęchlizny i kurzu (zapach). Ciemność była gęsta, prawie namacalna (wzrok +
+dotyk), a podłoga jęknęła pod jej stopami (dźwięk + dotyk). Strach smakował jak
+żelazo na języku (smak).
+```
+
+**Sensory Balance Per Scene**:
+✅ Minimum 3-4 zmysły zaangażowane
+✅ Rozsiane naturalnie, nie jako lista
+✅ Dopasowane do POV (co TAKA postać zauważy?)
+✅ Służą emocji i atmosferze
+✅ Specyficzne detale, nie ogólniki
+
+**Character-Specific Sensing**:
+- Chef: Najpierw zapach, smak
+- Musician: Dźwięki, rytmy
+- Artist: Kolory, światło, kompozycja
+- Soldier: Zagrożenia, wyjścia, pozycje taktyczne
+
+Filter through POV character's profession, obsessions, fears!
 
 ### 4. MRU SEQUENCES (Motivation-Reaction Units)
 Scene structure:
@@ -459,7 +504,11 @@ Vary your rhythm!
 - Interrupted dialogue = urgency, stress
 - Pauses (...) = hesitation, uncertainty
 
-**Advanced Technique - Dialogue Layering**:
+**Advanced Technique - Dialogue Layering** (Bestseller-Level Craft):
+
+Great dialogue operates on MULTIPLE LEVELS simultaneously:
+
+**Example 1 - Conflict Through Subtext**:
 ```
 — Jak było na spotkaniu?
 — W porządku. — Odwiesił płaszcz, unikając jej wzroku.
@@ -470,12 +519,80 @@ Przez chwilę milczeli. W kuchni kapała woda z kranu.
 Zaśmiał się, ale to był suchy, pozbawiony radości dźwięk.
 — Prawda jest przereklamowana.
 ```
-Note how:
-- Subtext: He's hiding something
-- Body language: avoiding eye contact
-- Sensory detail: dripping water (tension)
-- Short, clipped exchanges = conflict
-- Final line = revelation of character state
+Analysis:
+- **Subtext**: He's hiding something (not stated directly)
+- **Body language**: Avoiding eye contact (shows guilt)
+- **Sensory detail**: Dripping water (builds tension)
+- **Rhythm**: Short, clipped = conflict escalating
+- **Revelation**: Final line shows his philosophy/wound
+
+**Example 2 - Romance Through Banter**:
+```
+— Wyglądasz okropnie — powiedziała Kasia, opierając się o framugę.
+— Dzięki. Ty też wyglądasz... — zawahał się.
+— Skończ zdanie, Michał.
+— ...jak ktoś, kto ostatniej nocy nie spał przez myślenie o kimś.
+Zarumieniła się.
+— Jesteś niemożliwy.
+— To dlatego tak ci się podobam.
+```
+Analysis:
+- **Banter**: Playful teasing shows chemistry
+- **Interruption**: Builds sexual tension
+- **Implication**: He knows she thought about him
+- **Physical reaction**: Blush shows truth
+- **Power play**: He's confident, she's defensive
+
+**Example 3 - Thriller Through Implications**:
+```
+— Wiem, co zrobiłeś tamtej nocy.
+Tomasz zamarzł z filiżanką przy ustach.
+— Nie mam pojęcia, o czym mówisz.
+— Naprawdę? — Nieznajomy wysunął zdjęcie na stół. — To ci nie przypomina?
+Krew odpłynęła Tomaszowi z twarzy.
+— Gdzie to znalazłeś?
+— Złe pytanie. — Mężczyzna się uśmiechnął. — Powinieneś zapytać: kto jeszcze to widział?
+```
+Analysis:
+- **Mystery**: What did he do?
+- **Physical tells**: Frozen, blood draining (fear)
+- **Visual prop**: Photo (concrete threat)
+- **Power dynamic**: Stranger has control
+- **Escalation**: Each line raises stakes
+
+**Dialogue Enhancement Checklist**:
+✅ Every exchange reveals character OR advances plot (preferably both)
+✅ Subtext layer under surface words
+✅ Body language/action beats every 2-3 lines
+✅ Sensory details grounding scene
+✅ Rhythm matches emotion (fast = tense, slow = intimate)
+✅ Each character's unique voice clear
+✅ Conflict or tension present (even in friendly chat)
+✅ Information revealed naturally, not info-dumped
+✅ Silence used strategically (pauses, beats)
+✅ Tags minimal ("powiedział/a" only when needed)
+
+**Pro Techniques**:
+- **Dodge and Parry**: Characters don't answer directly
+  ```
+  — Kochasz mnie?
+  — To skomplikowane.
+  — To nie jest odpowiedź.
+  — To jedyna, jaką mam.
+  ```
+
+- **Escalating Repetition**: Repeat for emphasis/desperation
+  ```
+  — Musisz iść. Teraz.
+  — Nie zostawię cię.
+  — Musisz iść. — Głos jej pękł. — Proszę.
+  ```
+
+- **Cut-off/Interruption**: Shows urgency/emotion
+  ```
+  — Myślałem, że ty—
+  — Nie. — Odwróciła się. — Nie myślałeś wcale.
+  ```
 
 **Common Dialogue Mistakes to AVOID**:
 ❌ Info dumps in dialogue ("As you know, John, we've been friends for 10 years...")
@@ -497,9 +614,48 @@ Every scene must have PURPOSE and STRUCTURE:
 5. **Dilemma**: New problem arises
 6. **Decision**: Character chooses next action (leads to next scene)
 
-**Opening Lines** (Hook the reader immediately):
-❌ Weak: "Anna obudziła się rano."
-✅ Strong: "Anna obudziła się z przekonaniem, że dziś umrze."
+**Opening Lines** (Hook the reader IMMEDIATELY - this is CRITICAL!):
+
+The first sentence determines if readers buy your book. Make it COUNT.
+
+**Types of Killer Hooks**:
+1. **Action Hook**: Start mid-action
+   ✅ "Anna rzuciła się na ziemię sekundę przed eksplozją."
+
+2. **Dialogue Hook**: Intriguing conversation
+   ✅ "— Musisz zabić kogoś, kogo kochasz — powiedział kapłan spokojnie."
+
+3. **Character Hook**: Compelling character detail
+   ✅ "Anna miała trzydzieści sekund na podjęcie decyzji, która zmieni wszystko."
+
+4. **Setting Hook**: Vivid, unusual world detail
+   ✅ "Niebo było koloru krwi, odkąd słońce umarło trzy lata temu."
+
+5. **Mystery Hook**: Question that demands answer
+   ✅ "Anna nie pamiętała ostatnich sześciu miesięcy swojego życia."
+
+6. **Conflict Hook**: Stakes established immediately
+   ✅ "Jeśli Anna nie znajdzie antidotum w ciągu godziny, wszyscy umrą."
+
+**What NEVER to Start With**:
+❌ Weather: "Był słoneczny dzień."
+❌ Waking up: "Anna obudziła się rano."
+❌ Alarm clocks: "Budzik zadzwonił o szóstej."
+❌ Throat-clearing: "Zawsze lubiła poranki."
+❌ Info dump: "Anna miała 25 lat i mieszkała w Warszawie od trzech lat..."
+❌ Generic description: "Pokój był duży i jasny."
+
+**First Chapter = CRITICAL**:
+If this is Chapter 1, the stakes are HIGHEST:
+- First sentence must GRAB (no exceptions!)
+- First paragraph establishes voice, tone, POV
+- First page grounds reader in world
+- First scene makes promises about the book
+- By end of chapter, reader MUST care about protagonist
+
+**First Sentence Testing**:
+Ask yourself: "Would a reader in bookstore keep reading after THIS sentence?"
+If answer is anything but "HELL YES!", rewrite it.
 
 **Scene Transitions**:
 - Time jump: Clear but smooth ("Dwie godziny później...")
@@ -527,11 +683,78 @@ Every scene must have PURPOSE and STRUCTURE:
 - Groups of three are satisfying to the ear
 - Use for emphasis and rhythm
 
-**Paragraph Length for Pacing**:
-- **Single sentence paragraph** = Maximum impact. Shock. Revelation.
-- **Short paragraphs (2-3 sentences)** = Fast pace, action, tension
-- **Medium (4-6 sentences)** = Standard narrative flow
-- **Long (7+ sentences)** = Slow, contemplative, descriptive
+**Paragraph Length for Pacing** (Control reading speed!):
+
+Paragraph length CONTROLS how fast readers read. Use this power!
+
+**Single Sentence Paragraph** = MAXIMUM IMPACT
+```
+Anna sięgnęła po gałkę. Zawahała się. Co jeśli on tam jest?
+Wzięła głęboki oddech i pchnęła drzwi.
+Ciało upadło na podłogę u jej stóp.
+```
+Effect: Each sentence HITS like a punch. Reader slows, absorbs each word.
+Use for: Revelations, shock, emotional gut-punches, turning points.
+
+**Short Paragraphs (2-3 sentences)** = FAST PACE
+```
+Biegła korytarzem. Kroki za nią były coraz bliżej. Płuca płonęły.
+
+Drzwi. Tam! Rzuciła się do przodu, palce zsunęły się z gałki.
+
+Czyjaś ręka chwyciła ją za ramię. Krzyknęła.
+```
+Effect: Breathless, urgent, no time to think.
+Use for: Action, chase scenes, panic, high tension.
+
+**Medium Paragraphs (4-6 sentences)** = STANDARD FLOW
+```
+Anna usiadła przy stole i rozłożyła papiery. Rachunki, wszystkie zaległe. Od kiedy
+Tom zniknął, finanse były koszmarem. Próbowała liczyć, ale cyfry rozmazywały się
+przed oczami. Zmęczenie. Albo łzy. Trudno powiedzieć.
+```
+Effect: Comfortable reading pace, room to breathe.
+Use for: Standard narrative, dialogue, moderate tension, exposition.
+
+**Long Paragraphs (7+ sentences)** = SLOW, CONTEMPLATIVE
+```
+Anna patrzyła przez okno na miasto rozciągające się w dole. Światła zaczynały się
+palić jedno po drugim, jak gwiazdy spadające do góry. Kiedyś uwielbiała tę porę
+dnia - moment kiedy dzień spotyka się z nocą, a świat zamiera w oczekiwaniu.
+Kiedyś. Teraz to była tylko kolejna godzina do przeżycia, kolejny krok bliżej
+nieuniknionego. Zastanawiała się, czy Tom też patrzy teraz na niebo, gdziekolwiek
+jest. Czy myśli o niej? Czy w ogóle jeszcze żyje? Pytania bez odpowiedzi kręciły
+się w głowie jak sępy.
+```
+Effect: Meditative, lyrical, reader zanurza się w myślach.
+Use for: Introspection, description, emotional processing, world-building.
+
+**Pacing Variety Example** (Action → Reflection):
+```
+Biegła. (Fast)
+
+Płuca płonęły, a nogi zamieniały się w ołów, ale nie mogła się zatrzymać.
+Nie teraz. Nie kiedy był tak blisko. (Fast)
+
+Za rogiem potknęła się i runęła na kolana. Beton rozdarł spodnie, zostawiając
+mokrą, pulsującą ranę. (Medium - transition)
+
+Leżała przez chwilę, dysząc, próbując zmusić świat do przestania wirowania.
+Co ona robiła? Uciekała. Znowu. Przez całe życie od czegoś uciekała -
+od przeszłości, od prawdy, od siebie samej. A dokąd to ją zaprowadziło?
+Na kolana w zaśmieconej uliczce, sama, przerażona, bez planu. (Long - reflection)
+
+Musiała wstać. (Fast - decision)
+```
+
+**Pacing Control Rules**:
+✅ Vary paragraph length throughout chapter
+✅ Fast pace (short) for action, danger, panic
+✅ Slow pace (long) for emotion, description, thought
+✅ Single-sentence paragraphs = sparingly, for IMPACT
+✅ Match pace to scene's emotional beat
+✅ Transition between speeds smoothly
+✅ End on fast/medium (keep momentum for next chapter)
 
 **Sound and Cadence**:
 - Read aloud mentally - does it flow?
@@ -660,26 +883,147 @@ Write the COMPLETE chapter content ({target_word_count} words minimum).
    - Weave in title's themes through imagery/metaphor
    - Symbolism serves the title's meaning
 
-8. **Cliffhanger/Transition**
-   - End with question, decision, or revelation
-   - Make reader NEED next chapter
-   - Tension rises, never fully releases
+8. **Cliffhanger/Transition** (Force reader to turn the page!)
 
-**Mandatory Quality Checklist**:
-✅ Opening line hooks immediately (no "Anna woke up")
-✅ All dialogue uses EM DASH (—) format, no quotation marks
-✅ POV character's voice consistent throughout
-✅ Show don't tell (body language, not "she felt sad")
-✅ Deep POV (no filter words: saw, heard, felt, knew)
-✅ Five senses engaged (not just sight!)
-✅ Sentence variety (rhythm and musicality)
-✅ Dialogue has subtext and distinct voices
-✅ Scene structure: Goal → Conflict → Disaster
-✅ Emotional truth grounded in body sensations
-✅ Reaches {target_word_count} words minimum (CRITICAL!)
-✅ Every element reinforces title "{book_title}"
-✅ {genre} genre conventions respected
-✅ Reader cannot stop reading (unputdownable!)
+The last line makes readers UNABLE to stop reading. Master this.
+
+**Types of Killer Cliffhangers**:
+
+1. **Revelation Cliffhanger**: Shocking discovery
+   ✅ "Otworzyła drzwi. W środku stała jej matka. Tyle że matka Anna pochowała trzy lata temu."
+
+2. **Decision Cliffhanger**: Character must choose
+   ✅ "Telefon zadzwonił. Anna patrzyła na wyświetlacz: Nieznany numer. To mógł być on. Albo pułapka. Palec zawisł nad zieloną słuchawką."
+
+3. **Danger Cliffhanger**: Imminent threat
+   ✅ "Kroki na korytarzu ucichły. Gałka zaczęła się obracać."
+
+4. **Mystery Cliffhanger**: Unanswered question
+   ✅ "W lustrze odbicie Anny uśmiechnęło się. Ale Anna wcale się nie uśmiechała."
+
+5. **Dialogue Cliffhanger**: Shocking statement
+   ✅ "— Musimy porozmawiać o twoim synu — powiedział detektyw. — Znaleźliśmy ciało."
+
+6. **Internal Cliffhanger**: Character realization
+   ✅ "I wtedy Anna zrozumiała. Zdrajcą nie był Tomasz. To była ona."
+
+7. **Action Cliffhanger**: Mid-crisis freeze
+   ✅ "Pocisk pomknął przez powietrze. Anna miała może pół sekundy."
+
+**Cliffhanger Requirements**:
+✅ Last sentence = maximum tension
+✅ Raise new question OR complicate existing one
+✅ Make resolution impossible to predict
+✅ Create NEED to read next chapter immediately
+✅ Never fully resolve tension (leave them hanging!)
+
+**What NOT to Do**:
+❌ Wrap everything up neatly (save for last chapter!)
+❌ End on calm, peaceful note (unless deliberate contrast)
+❌ Resolve the chapter's main question completely
+❌ Let tension drop at the end
+❌ Generic transitions ("I następnego dnia...")
+
+**Tension Management**:
+- Throughout chapter: Build → Peak → Higher Peak
+- Last paragraph: MAXIMUM tension
+- Last sentence: Hook that pulls reader forward
+- Never: Drop tension right before chapter end
+
+Each chapter should make readers think: "Just one more chapter...""
+
+**Mandatory Quality Checklist** (All must be YES!):
+
+**Opening (First 100 words)**:
+✅ First sentence GRABS reader (action/dialogue/mystery/conflict)
+✅ NO waking up, weather, alarms, or throat-clearing
+✅ POV, place, and conflict established within first paragraph
+✅ Character voice clear from first line
+✅ Hook promises genre and tone
+
+**Dialogue Excellence**:
+✅ ALL dialogue uses EM DASH (—), ZERO quotation marks
+✅ Each character sounds DIFFERENT (vocabulary, rhythm, patterns)
+✅ Subtext present (what's NOT said matters)
+✅ Action beats every 2-3 dialogue lines (no talking heads)
+✅ Tension or conflict in exchanges (even friendly ones)
+✅ Dodge-and-parry, interruptions, and natural speech patterns
+✅ Minimal tags ("powiedział/a" only when needed)
+
+**Deep POV & Voice**:
+✅ ZERO filter words (saw, heard, felt, knew, wondered, realized)
+✅ Everything filtered through {pov_character['name']}'s perspective
+✅ Internal thoughts in character's unique voice
+✅ Vocabulary matches character's education/background
+✅ Biases and wounds color their perception
+
+**Sensory Immersion**:
+✅ ALL five senses engaged (not just sight!)
+✅ Minimum 3-4 senses per scene
+✅ Sensory details specific, not generic
+✅ Details match POV character (what THEY'd notice)
+✅ Smell used for atmosphere/memory
+✅ Touch for visceral emotion
+
+**Show Don't Tell**:
+✅ Emotions shown through body language/actions
+✅ "Był zły" → "Szczęka zacisnęła się. Pięści zacisnęły."
+✅ Character traits revealed through behavior
+✅ Setting shown through character interaction
+✅ No info dumps or exposition lectures
+
+**Pacing & Rhythm**:
+✅ Sentence length varies (short/medium/long)
+✅ Paragraph variety (1 sentence for impact, varied lengths)
+✅ Fast pace (short) for action, slow (long) for reflection
+✅ Rhythm matches scene emotion
+✅ At least 3 single-sentence paragraphs for impact
+✅ No monotonous same-length paragraphs
+
+**Scene Structure**:
+✅ Goal → Conflict → Disaster structure clear
+✅ Every scene advances plot OR develops character (both ideal)
+✅ No filler scenes (every scene earns its place)
+✅ Transitions smooth between scenes/time/place
+✅ Scene alternates with sequel (action with reflection)
+
+**Cliffhanger/Ending**:
+✅ Last paragraph raises tension to MAXIMUM
+✅ Cliffhanger forces reader to next chapter
+✅ Question raised, decision pending, or revelation shocking
+✅ NO resolution or tension drop at end
+✅ Reader thinks "I need to know what happens next!"
+
+**Character Consistency**:
+✅ {pov_character['name']}'s voice guide followed
+✅ Speech patterns consistent with their profile
+✅ Fears and wounds influence their actions
+✅ Vocabulary matches their background
+✅ Character arc progression visible
+
+**Thematic Integration**:
+✅ Title "{book_title}" echoed through imagery/metaphor
+✅ Themes woven naturally (not forced)
+✅ Symbolism serves title's meaning
+✅ Every major element reinforces book's core
+
+**Technical Excellence**:
+✅ Reaches {target_word_count} words MINIMUM (count carefully!)
+✅ 100% POLISH language (narrator and dialogue)
+✅ {genre} conventions respected and used fresh
+✅ Active voice dominates (passive only when strategic)
+✅ Specific details over generic ("Wiktoriańska kamienica" not "dom")
+✅ Fresh metaphors (no clichés: "czarny jak noc")
+
+**Reader Experience**:
+✅ Unputdownable - reader CANNOT stop
+✅ Emotional engagement (reader FEELS with character)
+✅ Questions raised that demand answers
+✅ Promises made that create anticipation
+✅ No moment where reader would skim or get bored
+
+**Final Test**: If this chapter appeared in a bookstore, would readers BUY the book based on it alone?
+Answer must be: ABSOLUTELY YES.
 
 **Final Requirements**:
 - Language: 100% POLISH (narrator and all dialogue)
@@ -789,19 +1133,23 @@ Your novels top the charts. Publishers fight for your manuscripts. Readers stay 
 - Tropes used fresh, not tired
 - Writing style: {GENRE_PROSE_STYLES.get(genre, {}).get('examples', 'Masters of the craft')}
 
-**What Makes Your Prose Bestselling**:
-✅ Unputdownable from first sentence
-✅ Readers FEEL characters' emotions viscerally
-✅ Every scene has purpose and propulsion
-✅ Dialogue crackles with life and subtext
-✅ Prose has rhythm and musicality
-✅ No filter words (saw/heard/felt) - pure Deep POV
-✅ Show through action and body language
-✅ Specific details over generic descriptions
-✅ Paragraph variety controls pacing perfectly
-✅ Themes woven subtly through imagery
-✅ Endings make readers crave next chapter
-✅ Polish formatting with EM DASHES (—) for dialogue
+**What Makes Your Prose BESTSELLING**:
+✅ **Opening lines are KILLER** - readers hooked in first sentence
+✅ **Cliffhangers are MAGNETIC** - impossible to not turn page
+✅ **Dialogue CRACKLES** - subtext, banter, unique voices, EM DASH format
+✅ **Pacing is MASTERFUL** - paragraph variety controls reading speed
+✅ **Sensory immersion COMPLETE** - all 5 senses engaged every scene
+✅ **Deep POV FLAWLESS** - zero filter words, pure character voice
+✅ **Show don't tell ALWAYS** - body language over emotion labels
+✅ **Rhythm and MUSICALITY** - sentence variety creates flow
+✅ **Scene structure TIGHT** - Goal → Conflict → Disaster every time
+✅ **Emotional truth VISCERAL** - readers FEEL with characters
+✅ **Specific over generic** - "Wiktoriańska kamienica" not "dom"
+✅ **Themes woven NATURALLY** - title echoed through imagery
+✅ **Every word EARNS its place** - zero filler, all purposeful
+✅ **Endings create NEED** - readers must know what happens next
+✅ **Polish standards PERFECT** - EM DASHES (—) for all dialogue
+✅ **Reader experience: UNPUTDOWNABLE** - miss sleep to finish chapter
 
 **What You NEVER Do**:
 ❌ Quotation marks for dialogue (against Polish standards!)

@@ -297,7 +297,8 @@ If not, rewrite it until it does.
                 prompt += f"**Types of Scenes Readers Expect**: {', '.join(reader_expectations['expected_scenes'][:3])}\n"
             prompt += "\n"
 
-        prompt += "## CHAPTER REQUIREMENTS
+        prompt += f"""
+## CHAPTER REQUIREMENTS
 
 **Target Length**: {target_word_count} words (CRITICAL: Must reach this target!)
 **POV Character**: {pov_character['name']} (Deep POV - we're IN their head)

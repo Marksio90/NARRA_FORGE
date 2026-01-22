@@ -426,12 +426,14 @@ OUTPUT FORMAT: Plain text prose only (no JSON, no formatting instructions).
         system_prompt = self._get_system_prompt(genre)
 
         # Generate!
+        # Note: ai_service.generate() automatically calculates safe max_tokens
+        # to prevent context length errors based on model limits
         response = await self.ai_service.generate(
             prompt=prompt,
             system_prompt=system_prompt,
             tier=tier,
             temperature=0.85,  # Creative prose needs higher temp
-            max_tokens=target_word_count * 2,  # Rough token estimate
+            max_tokens=target_word_count * 2,  # Rough estimate (will be adjusted to fit model context)
             json_mode=False,  # Plain prose output
             prefer_anthropic=True,  # Claude Opus/Sonnet excellent for prose
             metadata={

@@ -32,6 +32,17 @@ class ModelTier(int, Enum):
     TIER_3 = 3  # Premium - GPT-4, Claude Opus
 
 
+# Model context limits (total tokens including prompt + completion)
+MODEL_CONTEXT_LIMITS = {
+    "gpt-4o-mini": 8192,
+    "gpt-4o": 128000,
+    "gpt-4": 8192,
+    "gpt-4-turbo": 128000,
+    "claude-sonnet-4-5-20250929": 200000,
+    "claude-opus-4-5-20251101": 200000,
+}
+
+
 @dataclass
 class AIResponse:
     """Standardized AI response"""
@@ -128,6 +139,46 @@ class AIService:
         cost = (tokens_in / 1_000_000) * input_cost + (tokens_out / 1_000_000) * output_cost
         return round(cost, 6)
 
+    def calculate_safe_max_tokens(
+        self,
+        model: str,
+        estimated_prompt_tokens: int,
+        requested_max_tokens: int,
+        safety_buffer: int = 100
+    ) -> int:
+        """
+        Calculate a safe max_tokens value that respects model context limits
+
+        Args:
+            model: Model name
+            estimated_prompt_tokens: Estimated tokens in the prompt
+            requested_max_tokens: Desired max_tokens
+            safety_buffer: Safety buffer to leave (default 100)
+
+        Returns:
+            Safe max_tokens value that won't exceed context limit
+        """
+        # Get model context limit (default to conservative 8192 if unknown)
+        context_limit = MODEL_CONTEXT_LIMITS.get(model, 8192)
+
+        # Calculate maximum allowed completion tokens
+        max_allowed = context_limit - estimated_prompt_tokens - safety_buffer
+
+        # Ensure it's positive
+        max_allowed = max(1000, max_allowed)  # Minimum 1000 tokens
+
+        # Return the smaller of requested and max_allowed
+        safe_max = min(requested_max_tokens, max_allowed)
+
+        if safe_max < requested_max_tokens:
+            logger.warning(
+                f"Reduced max_tokens from {requested_max_tokens} to {safe_max} "
+                f"to fit within {model} context limit ({context_limit} tokens). "
+                f"Estimated prompt: {estimated_prompt_tokens} tokens"
+            )
+
+        return safe_max
+
     async def generate(
         self,
         prompt: str,
@@ -159,6 +210,17 @@ class AIService:
         """
         model, provider = self._get_model_for_tier(tier, prefer_anthropic)
 
+        # Estimate prompt tokens (rough: 1 token ≈ 4 characters)
+        prompt_chars = len(prompt) + len(system_prompt or "")
+        estimated_prompt_tokens = prompt_chars // 4
+
+        # Calculate safe max_tokens that respects model context limits
+        safe_max_tokens = self.calculate_safe_max_tokens(
+            model=model,
+            estimated_prompt_tokens=estimated_prompt_tokens,
+            requested_max_tokens=max_tokens
+        )
+
         start_time = time.time()
         last_error = None
 
@@ -171,7 +233,7 @@ class AIService:
                         prompt=prompt,
                         system_prompt=system_prompt,
                         temperature=temperature,
-                        max_tokens=max_tokens,
+                        max_tokens=safe_max_tokens,
                         json_mode=json_mode
                     )
                 else:  # Anthropic
@@ -180,7 +242,7 @@ class AIService:
                         prompt=prompt,
                         system_prompt=system_prompt,
                         temperature=temperature,
-                        max_tokens=max_tokens
+                        max_tokens=safe_max_tokens
                     )
 
                 # Calculate metrics

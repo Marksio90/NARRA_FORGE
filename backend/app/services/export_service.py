@@ -75,50 +75,221 @@ async def export_to_format(db: Session, project_id: int, format: str) -> str:
 
 
 def _export_docx(project: Project, chapters: List[Chapter], file_path: Path):
-    """Export to Microsoft Word DOCX"""
+    """Export to Microsoft Word DOCX with professional book formatting"""
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
     doc = Document()
-    
+
+    # Set up styles for professional book formatting
+    styles = doc.styles
+
+    # Body text style (for narrative paragraphs)
+    try:
+        body_style = styles['Body Text']
+    except KeyError:
+        body_style = styles.add_style('Body Text', 1)  # 1 = paragraph style
+
+    # Configure body text for book-like appearance
+    body_font = body_style.font
+    body_font.name = 'Times New Roman'  # Classic book font
+    body_font.size = Pt(12)
+
+    # First line indent (classic book style)
+    body_para = body_style.paragraph_format
+    body_para.first_line_indent = Inches(0.3)  # Half-inch indent
+    body_para.line_spacing = 1.15  # Comfortable reading
+    body_para.space_after = Pt(0)  # No space between paragraphs (book style)
+    body_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justified text
+
+    # Dialogue style (for paragraphs starting with em dash)
+    try:
+        dialogue_style = styles['Dialogue']
+    except KeyError:
+        dialogue_style = styles.add_style('Dialogue', 1)
+
+    dialogue_font = dialogue_style.font
+    dialogue_font.name = 'Times New Roman'
+    dialogue_font.size = Pt(12)
+
+    dialogue_para = dialogue_style.paragraph_format
+    dialogue_para.first_line_indent = Inches(0.3)
+    dialogue_para.line_spacing = 1.15
+    dialogue_para.space_after = Pt(0)
+    dialogue_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    # Chapter title style
+    try:
+        chapter_style = styles['Heading 1']
+        chapter_font = chapter_style.font
+        chapter_font.name = 'Times New Roman'
+        chapter_font.size = Pt(18)
+        chapter_font.bold = True
+        chapter_para = chapter_style.paragraph_format
+        chapter_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        chapter_para.space_before = Pt(72)  # Space before chapter title
+        chapter_para.space_after = Pt(24)
+    except:
+        pass
+
+    # Add page numbers to footer
+    section = doc.sections[0]
+    footer = section.footer
+    footer_para = footer.paragraphs[0]
+    footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Add page number field
+    run = footer_para.add_run()
+    fldChar1 = OxmlElement('w:fldChar')
+    fldChar1.set(qn('w:fldCharType'), 'begin')
+    run._r.append(fldChar1)
+
+    instrText = OxmlElement('w:instrText')
+    instrText.set(qn('xml:space'), 'preserve')
+    instrText.text = "PAGE"
+    run._r.append(instrText)
+
+    fldChar2 = OxmlElement('w:fldChar')
+    fldChar2.set(qn('w:fldCharType'), 'end')
+    run._r.append(fldChar2)
+
     # Title page
     title = doc.add_heading(project.name, level=0)
-    title.alignment = 1  # Center
-    
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_font = title.runs[0].font
+    title_font.name = 'Times New Roman'
+    title_font.size = Pt(24)
+    title_font.bold = True
+
     doc.add_paragraph()
-    doc.add_paragraph(f"Gatunek: {project.genre.value.title()}")
-    doc.add_paragraph(f"Wygenerowano: {datetime.now().strftime('%d.%m.%Y')}")
-    doc.add_paragraph()
-    doc.add_paragraph("Stworzone przez NarraForge")
+
+    info_para = doc.add_paragraph()
+    info_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    info_run = info_para.add_run(f"Gatunek: {project.genre.value.title()}\n")
+    info_run.font.name = 'Times New Roman'
+    info_run.font.size = Pt(11)
+
+    date_run = info_para.add_run(f"Wygenerowano: {datetime.now().strftime('%d.%m.%Y')}\n\n")
+    date_run.font.name = 'Times New Roman'
+    date_run.font.size = Pt(11)
+
+    credit_run = info_para.add_run("Stworzone przez NarraForge")
+    credit_run.font.name = 'Times New Roman'
+    credit_run.font.size = Pt(10)
+    credit_run.italic = True
+
     doc.add_page_break()
-    
+
     # Chapters
     for chapter in chapters:
         if chapter.content:
             # Chapter title
-            doc.add_heading(f"Rozdział {chapter.number}", level=1)
+            chapter_heading = doc.add_heading(f"Rozdział {chapter.number}", level=1)
             if chapter.title:
-                doc.add_heading(chapter.title, level=2)
-            
-            # Chapter content
-            for paragraph in chapter.content.split('\n\n'):
-                if paragraph.strip():
-                    doc.add_paragraph(paragraph.strip())
-            
+                title_para = doc.add_paragraph(chapter.title)
+                title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                title_run = title_para.runs[0]
+                title_run.font.name = 'Times New Roman'
+                title_run.font.size = Pt(14)
+                title_run.italic = True
+                title_para.space_after = Pt(24)
+
+            # Chapter content with smart formatting
+            paragraphs = chapter.content.split('\n\n')
+            for i, paragraph_text in enumerate(paragraphs):
+                paragraph_text = paragraph_text.strip()
+                if not paragraph_text:
+                    continue
+
+                # Detect if paragraph is dialogue (starts with em dash)
+                is_dialogue = paragraph_text.startswith('—') or paragraph_text.startswith('-')
+
+                # Choose appropriate style
+                if is_dialogue:
+                    para = doc.add_paragraph(paragraph_text, style='Dialogue')
+                else:
+                    para = doc.add_paragraph(paragraph_text, style='Body Text')
+
+                # First paragraph of chapter shouldn't have indent (book convention)
+                if i == 0:
+                    para.paragraph_format.first_line_indent = Pt(0)
+
             doc.add_page_break()
-    
+
     # Save
     doc.save(file_path)
-    logger.info(f"DOCX exported: {file_path}")
+    logger.info(f"DOCX exported with professional formatting: {file_path}")
 
 
 def _export_epub(project: Project, chapters: List[Chapter], file_path: Path):
-    """Export to EPUB e-book format"""
+    """Export to EPUB e-book format with professional book styling"""
     book = epub.EpubBook()
-    
+
     # Metadata
     book.set_identifier(f"narraforge_{project.id}")
     book.set_title(project.name)
     book.set_language('pl')
     book.add_author('NarraForge AI')
-    
+
+    # Add CSS for professional book styling
+    book_css = '''
+    @namespace epub "http://www.idpf.org/2007/ops";
+
+    body {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.1em;
+        line-height: 1.5;
+        text-align: justify;
+        margin: 1em;
+    }
+
+    h1 {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.8em;
+        text-align: center;
+        margin-top: 3em;
+        margin-bottom: 1em;
+        font-weight: bold;
+    }
+
+    h2 {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.3em;
+        text-align: center;
+        margin-bottom: 2em;
+        font-style: italic;
+        font-weight: normal;
+    }
+
+    p {
+        margin: 0;
+        text-indent: 1.5em;
+        orphans: 2;
+        widows: 2;
+    }
+
+    p.first {
+        text-indent: 0;  /* First paragraph of chapter has no indent */
+    }
+
+    p.dialogue {
+        text-indent: 1.5em;
+    }
+
+    .chapter-break {
+        page-break-before: always;
+    }
+    '''
+
+    nav_css = epub.EpubItem(
+        uid="style_nav",
+        file_name="style/nav.css",
+        media_type="text/css",
+        content=book_css
+    )
+    book.add_item(nav_css)
+
     # Add chapters
     epub_chapters = []
     for chapter in chapters:
@@ -128,16 +299,29 @@ def _export_epub(project: Project, chapters: List[Chapter], file_path: Path):
                 file_name=f"chap_{chapter.number:03d}.xhtml",
                 lang='pl'
             )
-            
-            content = f"<h1>Rozdział {chapter.number}</h1>"
+
+            content = f'<div class="chapter-break"><h1>Rozdział {chapter.number}</h1>'
             if chapter.title:
                 content += f"<h2>{chapter.title}</h2>"
-            
-            for paragraph in chapter.content.split('\n\n'):
-                if paragraph.strip():
-                    content += f"<p>{paragraph.strip()}</p>"
-            
+
+            # Process paragraphs with proper styling
+            paragraphs = [p.strip() for p in chapter.content.split('\n\n') if p.strip()]
+            for i, paragraph_text in enumerate(paragraphs):
+                # Detect dialogue
+                is_dialogue = paragraph_text.startswith('—') or paragraph_text.startswith('-')
+
+                # Apply appropriate class
+                if i == 0:
+                    # First paragraph - no indent
+                    content += f'<p class="first">{paragraph_text}</p>'
+                elif is_dialogue:
+                    content += f'<p class="dialogue">{paragraph_text}</p>'
+                else:
+                    content += f'<p>{paragraph_text}</p>'
+
+            content += '</div>'
             c.content = content
+            c.add_item(nav_css)  # Link CSS to chapter
             book.add_item(c)
             epub_chapters.append(c)
     
@@ -182,7 +366,43 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
         parent=styles['BodyText'],
         alignment=TA_JUSTIFY,
         fontSize=12,
-        leading=16
+        leading=16,
+        fontName='Times-Roman',  # Classic book font
+        firstLineIndent=18,  # First line indent (book style)
+        leftIndent=0,
+        rightIndent=0,
+        spaceAfter=0,  # No space between paragraphs
+        spaceBefore=0
+    )
+
+    # Dialogue style (for lines starting with em dash)
+    dialogue_style = ParagraphStyle(
+        'Dialogue',
+        parent=styles['BodyText'],
+        alignment=TA_JUSTIFY,
+        fontSize=12,
+        leading=16,
+        fontName='Times-Roman',
+        firstLineIndent=18,
+        leftIndent=0,
+        rightIndent=0,
+        spaceAfter=0,
+        spaceBefore=0
+    )
+
+    # First paragraph style (no indent, book convention)
+    first_para_style = ParagraphStyle(
+        'FirstParagraph',
+        parent=styles['BodyText'],
+        alignment=TA_JUSTIFY,
+        fontSize=12,
+        leading=16,
+        fontName='Times-Roman',
+        firstLineIndent=0,  # No indent for first paragraph
+        leftIndent=0,
+        rightIndent=0,
+        spaceAfter=0,
+        spaceBefore=0
     )
     
     # Build content
@@ -201,15 +421,33 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
         if chapter.content:
             content.append(Paragraph(f"Rozdział {chapter.number}", chapter_style))
             if chapter.title:
-                content.append(Paragraph(chapter.title, styles['Heading3']))
-            
-            content.append(Spacer(1, 0.2*Inches))
-            
-            for paragraph in chapter.content.split('\n\n'):
-                if paragraph.strip():
-                    content.append(Paragraph(paragraph.strip(), body_style))
-                    content.append(Spacer(1, 0.1*Inches))
-            
+                title_style_italic = ParagraphStyle(
+                    'ChapterTitleItalic',
+                    parent=styles['Heading3'],
+                    fontName='Times-Italic',
+                    alignment=TA_CENTER
+                )
+                content.append(Paragraph(chapter.title, title_style_italic))
+
+            content.append(Spacer(1, 0.3*Inches))
+
+            # Chapter content with professional formatting
+            paragraphs = [p.strip() for p in chapter.content.split('\n\n') if p.strip()]
+            for i, paragraph_text in enumerate(paragraphs):
+                # Detect if dialogue (starts with em dash)
+                is_dialogue = paragraph_text.startswith('—') or paragraph_text.startswith('-')
+
+                # Choose style: first paragraph has no indent
+                if i == 0:
+                    current_style = first_para_style
+                elif is_dialogue:
+                    current_style = dialogue_style
+                else:
+                    current_style = body_style
+
+                content.append(Paragraph(paragraph_text, current_style))
+                content.append(Spacer(1, 0.05*Inches))  # Small space between paragraphs
+
             content.append(PageBreak())
     
     # Build PDF

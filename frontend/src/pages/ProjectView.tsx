@@ -17,12 +17,102 @@ interface CharacterName {
   gender: string;
 }
 
+interface CulturalAnalysis {
+  mythological_references?: string[];
+  cultural_context?: string;
+  symbolic_elements?: string[];
+  archetypal_patterns?: string[];
+}
+
+interface MagicSystem {
+  magic_type?: string;
+  power_source?: string;
+  limitations?: string;
+  cost?: string;
+  scope?: string;
+}
+
+interface SettingAnalysis {
+  environment?: string;
+  time_period?: string;
+  emotional_landscape?: string;
+  setting_role?: string;
+  protagonist_relationship?: string;
+}
+
+interface ToneAndMaturity {
+  tone?: string;
+  maturity_level?: string;
+  violence_level?: string;
+  moral_complexity?: string;
+  emotional_intensity?: string;
+}
+
+interface AntagonistPrediction {
+  type?: string;
+  motivation?: string;
+  opposition_nature?: string;
+}
+
+interface Conflicts {
+  external?: string;
+  internal?: string;
+  philosophical?: string;
+  moral?: string;
+}
+
+interface Subgenre {
+  primary?: string;
+  secondary?: string[];
+  magic_level?: string;
+  focus?: string;
+}
+
+interface ReaderExpectations {
+  expected_scenes?: string[];
+  emotional_journey?: string;
+  tropes?: string[];
+}
+
+interface PacingSuggestions {
+  overall_pace?: string;
+  structure_type?: string;
+  darkest_act?: string;
+  tension_curve?: string;
+}
+
+interface SecondaryPlot {
+  type?: string;
+  description?: string;
+  key_characters?: string[];
+}
+
+interface CharacterArc {
+  starting_point?: string;
+  midpoint_shift?: string;
+  climax_challenge?: string;
+  transformation?: string;
+  arc_type?: string;
+}
+
 interface TitleAnalysis {
   character_names: CharacterName[];
   themes: string[];
   setting_hints: string[];
   tone: string;
   focus: string;
+  // New advanced analysis fields
+  cultural_analysis?: CulturalAnalysis;
+  magic_system?: MagicSystem;
+  setting_analysis?: SettingAnalysis;
+  tone_and_maturity?: ToneAndMaturity;
+  antagonist_predictions?: AntagonistPrediction[];
+  conflicts?: Conflicts;
+  subgenre?: Subgenre;
+  reader_expectations?: ReaderExpectations;
+  pacing_suggestions?: PacingSuggestions;
+  secondary_plots?: SecondaryPlot[];
+  character_arc?: CharacterArc;
 }
 
 interface AIDecisions {
@@ -275,6 +365,233 @@ const ProjectView: React.FC = () => {
                 <div>Ton: <span className="text-purple-400">{simulation.ai_decisions.title_analysis.tone}</span></div>
                 <div>Fokus: <span className="text-purple-400">{simulation.ai_decisions.title_analysis.focus}</span></div>
               </div>
+            </div>
+          </div>
+
+          {/* ADVANCED ANALYSIS - 10 New Dimensions */}
+          <div className="mt-6 pt-6 border-t border-purple-700">
+            <h4 className="text-lg font-bold text-white mb-4">🔮 Zaawansowana Analiza (10 Wymiarów)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Cultural/Mythological Depth */}
+              {simulation.ai_decisions.title_analysis.cultural_analysis && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🏛️ Głębia Kulturowa/Mitologiczna</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.cultural_analysis.cultural_context && (
+                      <div><span className="text-gray-400">Kontekst:</span> {simulation.ai_decisions.title_analysis.cultural_analysis.cultural_context}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.cultural_analysis.mythological_references && simulation.ai_decisions.title_analysis.cultural_analysis.mythological_references.length > 0 && (
+                      <div><span className="text-gray-400">Mitologia:</span> {simulation.ai_decisions.title_analysis.cultural_analysis.mythological_references.join(', ')}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns && simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns.length > 0 && (
+                      <div><span className="text-gray-400">Archetypy:</span> {simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns.join(', ')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Magic System Analysis */}
+              {simulation.ai_decisions.title_analysis.magic_system && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">✨ Analiza Systemu Magii</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.magic_system.magic_type && (
+                      <div><span className="text-gray-400">Typ:</span> {simulation.ai_decisions.title_analysis.magic_system.magic_type}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.magic_system.power_source && (
+                      <div><span className="text-gray-400">Źródło mocy:</span> {simulation.ai_decisions.title_analysis.magic_system.power_source}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.magic_system.limitations && (
+                      <div><span className="text-gray-400">Ograniczenia:</span> {simulation.ai_decisions.title_analysis.magic_system.limitations}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.magic_system.scope && (
+                      <div><span className="text-gray-400">Zasięg:</span> {simulation.ai_decisions.title_analysis.magic_system.scope}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Deep Setting Analysis */}
+              {simulation.ai_decisions.title_analysis.setting_analysis && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🌍 Głęboka Analiza Świata</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.setting_analysis.environment && (
+                      <div><span className="text-gray-400">Środowisko:</span> {simulation.ai_decisions.title_analysis.setting_analysis.environment}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.setting_analysis.time_period && (
+                      <div><span className="text-gray-400">Okres czasu:</span> {simulation.ai_decisions.title_analysis.setting_analysis.time_period}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.setting_analysis.emotional_landscape && (
+                      <div><span className="text-gray-400">Klimat emocjonalny:</span> {simulation.ai_decisions.title_analysis.setting_analysis.emotional_landscape}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.setting_analysis.setting_role && (
+                      <div><span className="text-gray-400">Rola świata:</span> {simulation.ai_decisions.title_analysis.setting_analysis.setting_role}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tone & Maturity */}
+              {simulation.ai_decisions.title_analysis.tone_and_maturity && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🎭 Ton i Dojrzałość</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.tone_and_maturity.maturity_level && (
+                      <div><span className="text-gray-400">Poziom dojrzałości:</span> {simulation.ai_decisions.title_analysis.tone_and_maturity.maturity_level}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.tone_and_maturity.violence_level && (
+                      <div><span className="text-gray-400">Poziom przemocy:</span> {simulation.ai_decisions.title_analysis.tone_and_maturity.violence_level}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.tone_and_maturity.moral_complexity && (
+                      <div><span className="text-gray-400">Złożoność moralna:</span> {simulation.ai_decisions.title_analysis.tone_and_maturity.moral_complexity}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.tone_and_maturity.emotional_intensity && (
+                      <div><span className="text-gray-400">Intensywność emocjonalna:</span> {simulation.ai_decisions.title_analysis.tone_and_maturity.emotional_intensity}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Antagonist Predictions */}
+              {simulation.ai_decisions.title_analysis.antagonist_predictions && simulation.ai_decisions.title_analysis.antagonist_predictions.length > 0 && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">⚔️ Predykcje Antagonisty</div>
+                  <div className="text-white text-sm space-y-2">
+                    {simulation.ai_decisions.title_analysis.antagonist_predictions.map((ant, idx) => (
+                      <div key={idx} className="border-l-2 border-purple-500 pl-2">
+                        {ant.type && <div><span className="text-gray-400">Typ:</span> {ant.type}</div>}
+                        {ant.motivation && <div><span className="text-gray-400">Motywacja:</span> {ant.motivation}</div>}
+                        {ant.opposition_nature && <div><span className="text-gray-400">Natura opozycji:</span> {ant.opposition_nature}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Multi-layered Conflicts */}
+              {simulation.ai_decisions.title_analysis.conflicts && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">💥 Wielowarstwowe Konflikty</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.conflicts.external && (
+                      <div><span className="text-gray-400">Zewnętrzny:</span> {simulation.ai_decisions.title_analysis.conflicts.external}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.conflicts.internal && (
+                      <div><span className="text-gray-400">Wewnętrzny:</span> {simulation.ai_decisions.title_analysis.conflicts.internal}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.conflicts.philosophical && (
+                      <div><span className="text-gray-400">Filozoficzny:</span> {simulation.ai_decisions.title_analysis.conflicts.philosophical}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.conflicts.moral && (
+                      <div><span className="text-gray-400">Moralny:</span> {simulation.ai_decisions.title_analysis.conflicts.moral}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Subgenre Detection */}
+              {simulation.ai_decisions.title_analysis.subgenre && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">📚 Detekcja Podgatunku</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.subgenre.primary && (
+                      <div><span className="text-gray-400">Główny:</span> {simulation.ai_decisions.title_analysis.subgenre.primary}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.subgenre.secondary && simulation.ai_decisions.title_analysis.subgenre.secondary.length > 0 && (
+                      <div><span className="text-gray-400">Drugorzędne:</span> {simulation.ai_decisions.title_analysis.subgenre.secondary.join(', ')}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.subgenre.magic_level && (
+                      <div><span className="text-gray-400">Poziom magii:</span> {simulation.ai_decisions.title_analysis.subgenre.magic_level}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.subgenre.focus && (
+                      <div><span className="text-gray-400">Fokus:</span> {simulation.ai_decisions.title_analysis.subgenre.focus}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pacing Suggestions */}
+              {simulation.ai_decisions.title_analysis.pacing_suggestions && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">⏱️ Sugestie Tempa</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.pacing_suggestions.overall_pace && (
+                      <div><span className="text-gray-400">Ogólne tempo:</span> {simulation.ai_decisions.title_analysis.pacing_suggestions.overall_pace}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.pacing_suggestions.structure_type && (
+                      <div><span className="text-gray-400">Struktura:</span> {simulation.ai_decisions.title_analysis.pacing_suggestions.structure_type}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.pacing_suggestions.darkest_act && (
+                      <div><span className="text-gray-400">Najciemniejszy akt:</span> {simulation.ai_decisions.title_analysis.pacing_suggestions.darkest_act}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.pacing_suggestions.tension_curve && (
+                      <div><span className="text-gray-400">Krzywa napięcia:</span> {simulation.ai_decisions.title_analysis.pacing_suggestions.tension_curve}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Secondary Plot Threads */}
+              {simulation.ai_decisions.title_analysis.secondary_plots && simulation.ai_decisions.title_analysis.secondary_plots.length > 0 && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🧵 Wątki Poboczne</div>
+                  <div className="text-white text-sm space-y-2">
+                    {simulation.ai_decisions.title_analysis.secondary_plots.map((plot, idx) => (
+                      <div key={idx} className="border-l-2 border-purple-500 pl-2">
+                        {plot.type && <div><span className="text-gray-400">Typ:</span> {plot.type}</div>}
+                        {plot.description && <div><span className="text-gray-400">Opis:</span> {plot.description}</div>}
+                        {plot.key_characters && plot.key_characters.length > 0 && (
+                          <div><span className="text-gray-400">Kluczowe postacie:</span> {plot.key_characters.join(', ')}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Character Arc Predictions */}
+              {simulation.ai_decisions.title_analysis.character_arc && (
+                <div className="bg-gray-800/50 rounded-lg p-4 md:col-span-2">
+                  <div className="text-purple-300 font-semibold mb-2">🎬 Predykcje Łuku Postaci</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.character_arc.starting_point && (
+                      <div><span className="text-gray-400">Punkt startowy:</span> {simulation.ai_decisions.title_analysis.character_arc.starting_point}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.character_arc.midpoint_shift && (
+                      <div><span className="text-gray-400">Zmiana w połowie:</span> {simulation.ai_decisions.title_analysis.character_arc.midpoint_shift}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.character_arc.climax_challenge && (
+                      <div><span className="text-gray-400">Wyzwanie w klimaksie:</span> {simulation.ai_decisions.title_analysis.character_arc.climax_challenge}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.character_arc.transformation && (
+                      <div><span className="text-gray-400">Transformacja:</span> {simulation.ai_decisions.title_analysis.character_arc.transformation}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.character_arc.arc_type && (
+                      <div><span className="text-gray-400">Typ łuku:</span> {simulation.ai_decisions.title_analysis.character_arc.arc_type}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Reader Expectations */}
+              {simulation.ai_decisions.title_analysis.reader_expectations && (
+                <div className="bg-gray-800/50 rounded-lg p-4 md:col-span-2">
+                  <div className="text-purple-300 font-semibold mb-2">📖 Oczekiwania Czytelnika</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.reader_expectations.emotional_journey && (
+                      <div><span className="text-gray-400">Emocjonalna podróż:</span> {simulation.ai_decisions.title_analysis.reader_expectations.emotional_journey}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.reader_expectations.expected_scenes && simulation.ai_decisions.title_analysis.reader_expectations.expected_scenes.length > 0 && (
+                      <div><span className="text-gray-400">Oczekiwane sceny:</span> {simulation.ai_decisions.title_analysis.reader_expectations.expected_scenes.join(', ')}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.reader_expectations.tropes && simulation.ai_decisions.title_analysis.reader_expectations.tropes.length > 0 && (
+                      <div><span className="text-gray-400">Tropy:</span> {simulation.ai_decisions.title_analysis.reader_expectations.tropes.join(', ')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

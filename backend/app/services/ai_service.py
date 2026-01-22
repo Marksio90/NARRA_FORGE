@@ -124,17 +124,44 @@ class AIService:
                 return "claude-opus-4-5-20251101", ModelProvider.ANTHROPIC
             return settings.GPT_4, ModelProvider.OPENAI
 
-    def _calculate_cost(self, tokens_in: int, tokens_out: int, tier: ModelTier) -> float:
-        """Calculate cost based on token usage and tier"""
-        if tier == ModelTier.TIER_1:
-            input_cost = settings.TIER1_INPUT_COST
-            output_cost = settings.TIER1_OUTPUT_COST
-        elif tier == ModelTier.TIER_2:
-            input_cost = settings.TIER2_INPUT_COST
-            output_cost = settings.TIER2_OUTPUT_COST
-        else:  # TIER_3
-            input_cost = settings.TIER3_INPUT_COST
-            output_cost = settings.TIER3_OUTPUT_COST
+    def _calculate_cost(self, tokens_in: int, tokens_out: int, model: str, provider: ModelProvider) -> float:
+        """
+        Calculate cost based on token usage and actual model used
+
+        Args:
+            tokens_in: Input tokens
+            tokens_out: Output tokens
+            model: Actual model name used
+            provider: Model provider (OpenAI or Anthropic)
+
+        Returns:
+            Cost in USD
+        """
+        # Define pricing per model (per 1M tokens)
+        # Source: https://openai.com/api/pricing/ and https://anthropic.com/pricing
+        pricing = {
+            # OpenAI models
+            "gpt-4o-mini": (0.15, 0.60),
+            "gpt-4o": (2.50, 10.00),
+            "gpt-4": (30.00, 60.00),
+            "gpt-4-turbo": (10.00, 30.00),
+            # Anthropic models
+            "claude-sonnet-4-5-20250929": (3.00, 15.00),
+            "claude-opus-4-5-20251101": (15.00, 75.00),
+        }
+
+        # Get pricing for this model, fallback to tier-based if unknown
+        if model in pricing:
+            input_cost, output_cost = pricing[model]
+        else:
+            logger.warning(f"Unknown model '{model}' - using tier-based fallback pricing")
+            # Fallback to old tier-based logic
+            if "mini" in model.lower():
+                input_cost, output_cost = settings.TIER1_INPUT_COST, settings.TIER1_OUTPUT_COST
+            elif "4o" in model or "sonnet" in model.lower():
+                input_cost, output_cost = settings.TIER2_INPUT_COST, settings.TIER2_OUTPUT_COST
+            else:
+                input_cost, output_cost = settings.TIER3_INPUT_COST, settings.TIER3_OUTPUT_COST
 
         cost = (tokens_in / 1_000_000) * input_cost + (tokens_out / 1_000_000) * output_cost
         return round(cost, 6)
@@ -250,7 +277,8 @@ class AIService:
                 cost = self._calculate_cost(
                     response['tokens_in'],
                     response['tokens_out'],
-                    tier
+                    model,
+                    provider
                 )
 
                 # Update global metrics

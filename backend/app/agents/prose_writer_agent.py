@@ -458,6 +458,14 @@ OUTPUT FORMAT: Plain text prose only (no JSON, no formatting instructions).
         """System prompt for prose writing"""
         return f"""You are a MASTER FICTION WRITER specializing in {genre.upper()}.
 
+🇵🇱 KRYTYCZNIE WAŻNE - JĘZYK PISANIA:
+WSZYSTKIE rozdziały MUSZĄ być napisane W CAŁOŚCI PO POLSKU!
+- Cała narracja → PO POLSKU
+- Wszystkie dialogi → PO POLSKU
+- Wszystkie opisy → PO POLSKU
+- Zero angielskich słów lub zwrotów!
+- Pisz jak profesjonalny polski autor książek!
+
 Your expertise:
 - Show don't tell (sensory details, body language, subtext)
 - Deep POV (character voice, no filtering, interiority)
@@ -493,7 +501,7 @@ You avoid:
 
 Every sentence you write is purposeful, engaging, and publication-quality.
 
-Output Format: Natural prose only. No JSON, no meta-text, just pure storytelling."""
+Output Format: Natural prose only IN POLISH. No JSON, no meta-text, no English, just pure Polish storytelling."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

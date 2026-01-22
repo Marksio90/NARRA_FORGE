@@ -3,6 +3,7 @@ Export service for book formats
 Exports completed books to DOCX, EPUB, PDF, and Markdown
 """
 
+from typing import List
 from sqlalchemy.orm import Session
 import logging
 from pathlib import Path

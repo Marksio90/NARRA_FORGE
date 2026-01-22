@@ -171,7 +171,7 @@ class AIService:
         model: str,
         estimated_prompt_tokens: int,
         requested_max_tokens: int,
-        safety_buffer: int = 100
+        safety_buffer: int = 500
     ) -> int:
         """
         Calculate a safe max_tokens value that respects model context limits
@@ -180,7 +180,7 @@ class AIService:
             model: Model name
             estimated_prompt_tokens: Estimated tokens in the prompt
             requested_max_tokens: Desired max_tokens
-            safety_buffer: Safety buffer to leave (default 100)
+            safety_buffer: Safety buffer to leave (default 500, was 100 but too small)
 
         Returns:
             Safe max_tokens value that won't exceed context limit
@@ -188,10 +188,17 @@ class AIService:
         # Get model context limit (default to conservative 8192 if unknown)
         context_limit = MODEL_CONTEXT_LIMITS.get(model, 8192)
 
-        # Calculate maximum allowed completion tokens
-        max_allowed = context_limit - estimated_prompt_tokens - safety_buffer
+        # Add 15% margin to estimated_prompt_tokens because tokenization estimation is imprecise
+        # Real prompt can be 10-20% larger than estimated due to:
+        # - Special tokens
+        # - Formatting tokens
+        # - System prompt overhead
+        conservative_prompt_estimate = int(estimated_prompt_tokens * 1.15)
 
-        # Ensure it's positive
+        # Calculate maximum allowed completion tokens
+        max_allowed = context_limit - conservative_prompt_estimate - safety_buffer
+
+        # Ensure it's positive and reasonable
         max_allowed = max(1000, max_allowed)  # Minimum 1000 tokens
 
         # Return the smaller of requested and max_allowed
@@ -201,7 +208,7 @@ class AIService:
             logger.warning(
                 f"Reduced max_tokens from {requested_max_tokens} to {safe_max} "
                 f"to fit within {model} context limit ({context_limit} tokens). "
-                f"Estimated prompt: {estimated_prompt_tokens} tokens"
+                f"Estimated prompt: {estimated_prompt_tokens} → conservative: {conservative_prompt_estimate} tokens"
             )
 
         return safe_max

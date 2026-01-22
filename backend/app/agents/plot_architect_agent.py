@@ -383,13 +383,89 @@ Plan 5-7 foreshadowing moments:
 
 Great stories make readers say "OH! That was set up in chapter 3!"
 
-### 8. SCENE CAUSALITY
+### 8. CHAPTER OUTLINES (CRITICAL - Scene Structure!)
+
+For EVERY chapter ({chapter_count} total), provide a detailed outline following the **SCENE/SEQUEL** structure:
+
+**Scene Structure (Action chapters)** - Goal → Conflict → Disaster:
+1. **Goal**: What does the POV character want in this chapter?
+2. **Conflict**: What obstacles prevent them from getting it?
+3. **Disaster**: They fail OR succeed with unexpected bad consequences
+
+**Sequel Structure (Reaction chapters)** - Reaction → Dilemma → Decision:
+1. **Reaction**: Emotional response to disaster (fear, anger, grief)
+2. **Dilemma**: What are their options now? (All bad!)
+3. **Decision**: What do they choose to do? (Leads to next Scene)
+
+**Alternate Scene/Sequel for pacing** - not every chapter same type!
+
+**For each chapter outline, include**:
+- **Chapter Number**: X
+- **Type**: Scene (action) or Sequel (reflection)
+- **POV Character**: Who's telling this chapter?
+- **Setting**: Where does it take place?
+- **Characters Present**: Who's in this chapter?
+- **Goal** (Scene) or **Reaction** (Sequel): What character wants/feels
+- **Conflict** (Scene) or **Dilemma** (Sequel): Obstacles/tough choices
+- **Disaster** (Scene) or **Decision** (Sequel): Outcome/choice
+- **Emotional Beat**: Primary emotion (curious, anxious, triumphant, devastated, etc.)
+- **Tension Level**: 1-10 scale
+- **Key Reveals**: What new information emerges?
+- **Cliffhanger**: Yes/No - does it end on unresolved tension?
+- **Purpose**: How does this chapter advance plot AND/OR develop character?
+
+**Scene Purpose Validation** - Every chapter must answer YES to:
+✅ Does this chapter advance the plot? (new information, events, decisions)
+OR
+✅ Does this chapter develop character? (reveal personality, growth, relationships)
+
+If answer is NO to both → DELETE THIS CHAPTER (it's filler!)
+
+**Example Strong Chapter Outline**:
+```
+Chapter 5:
+- Type: Scene
+- POV: Anna
+- Setting: Abandoned warehouse, night
+- Characters: Anna, Detective Kowalski, mysterious figure
+- Goal: Anna wants to find evidence that clears her brother
+- Conflict: Detective warns her off, warehouse is dangerous, figure attacks
+- Disaster: She finds evidence BUT it implicates HER, not clears her brother
+- Emotional Beat: Hope → Fear → Devastation
+- Tension: 8/10
+- Key Reveals: Anna's brother may have been framed, but Anna is now a suspect
+- Cliffhanger: YES - police sirens approaching, she's holding murder weapon
+- Purpose: Plot advancement (new suspect twist) + Character (Anna's loyalty tested)
+```
+
+**Example Strong Sequel Outline**:
+```
+Chapter 6:
+- Type: Sequel
+- POV: Anna
+- Setting: Her apartment, dawn
+- Characters: Anna alone
+- Reaction: Panic, betrayal, grief - brother lied to her for years
+- Dilemma: Turn herself in? Run? Confront brother? All options terrible.
+- Decision: She decides to find brother and force truth, whatever cost
+- Emotional Beat: Devastation → Resolve
+- Tension: 4/10 (calm before storm)
+- Key Reveals: Anna's internal strength, her wound (trust issues) triggered
+- Cliffhanger: NO - ends on decision, ready for next action
+- Purpose: Character development (shows her wound, choice reveals who she is)
+```
+
+### 9. SCENE CAUSALITY & NO FILLER
 
 Explain the CAUSE-AND-EFFECT chain:
-- How does Scene 1 cause Scene 2?
-- What would break if we removed Chapter X?
-- Are there any "and then" moments? (bad!)
-- Should be "therefore/but" connections (good!)
+- Chapter 1 leads to Chapter 2 because... (use "therefore" or "but", never "and then")
+- Every chapter must be NECESSARY - removing it breaks the story
+- No "and then" moments - each event CAUSES the next
+- No filler chapters - each earns its place through purpose
+
+**Test**: "Can I remove this chapter without breaking the story?"
+- If YES → Delete it or combine with another
+- If NO → It's necessary, keep it
 
 ## CRITICAL GUIDELINES
 
@@ -463,6 +539,24 @@ Return valid JSON with this structure:
     {{"chapter": 2, "tension": 5, "emotion": "anxious"}},
     ...
   ],
+  "chapter_outlines": [
+    {{
+      "chapter": 1,
+      "type": "Scene",
+      "pov_character": "Anna",
+      "setting": "...",
+      "characters_present": ["Anna", "..."],
+      "goal": "..." (for Scene) OR "reaction": "..." (for Sequel),
+      "conflict": "..." (for Scene) OR "dilemma": "..." (for Sequel),
+      "disaster": "..." (for Scene) OR "decision": "..." (for Sequel),
+      "emotional_beat": "curious",
+      "tension": 3,
+      "key_reveals": ["...", "..."],
+      "cliffhanger": true/false,
+      "purpose": "Advances plot by... AND develops character by..."
+    }},
+    ...for all {chapter_count} chapters
+  ],
   "foreshadowing": [
     {{
       "planted_in_chapter": X,
@@ -471,11 +565,18 @@ Return valid JSON with this structure:
       "type": "..."
     }}
   ],
-  "causality_notes": "..."
+  "causality_notes": "Chapter 1 leads to Chapter 2 because... (therefore/but chains, never 'and then')"
 }}
 
-Create a plot that is TIGHT, ESCALATING, and EMOTIONALLY SATISFYING.
-Make it impossible to put down."""
+**CRITICAL REQUIREMENTS**:
+✅ ALL {chapter_count} chapters must have detailed outlines
+✅ Each chapter has clear Goal→Conflict→Disaster OR Reaction→Dilemma→Decision
+✅ Every chapter has validated PURPOSE (advances plot OR develops character)
+✅ Causality chain is tight ("therefore/but", never "and then")
+✅ No filler chapters - each one is NECESSARY
+✅ Scene/Sequel alternation for pacing variety
+
+Create a plot that is TIGHT, ESCALATING, EMOTIONALLY SATISFYING, and IMPOSSIBLE TO PUT DOWN."""
 
         system_prompt = self._get_system_prompt()
 

@@ -354,7 +354,10 @@ Want: {protagonist['arc'].get('want_vs_need', {}).get('want', 'Unknown')}
             if conflicts.get('philosophical'):
                 prompt += f"- **Philosophical**: {conflicts['philosophical']}\n"
 
-        prompt += "\n## YOUR TASK\n\nCreate an antagonist who is a WORTHY OPPONENT.
+        prompt += """
+## YOUR TASK
+
+Create an antagonist who is a WORTHY OPPONENT.
 
 Great antagonists:
 - Believe they're the hero of their own story
@@ -375,7 +378,8 @@ Great antagonists:
 
 Make them COMPLEX, not a cartoon villain.
 
-Output JSON with same structure as protagonist."""
+Output JSON with same structure as protagonist.
+"""
 
         response = await self.ai_service.generate(
             prompt=prompt,

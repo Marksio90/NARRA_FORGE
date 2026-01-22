@@ -251,6 +251,10 @@ class ProseWriterAgent:
         emotional_core = semantic_title_analysis.get("emotional_core", "")
         metaphors = semantic_title_analysis.get("metaphors", [])
 
+        # Extract ADVANCED analysis
+        tone_and_maturity = semantic_title_analysis.get("tone_and_maturity", {})
+        reader_expectations = semantic_title_analysis.get("reader_expectations", {})
+
         # Build comprehensive prompt
         prompt = f"""Write CHAPTER {chapter_number} for a {genre} novel titled "{book_title}".
 
@@ -275,7 +279,25 @@ When writing this chapter, constantly ask yourself:
 
 If not, rewrite it until it does.
 
-## CHAPTER REQUIREMENTS
+## 🎭 TONE GUIDANCE (From Advanced Analysis)
+"""
+
+        if tone_and_maturity:
+            prompt += f"- **Tone**: {tone_and_maturity.get('tone', 'neutralny')}\n"
+            prompt += f"- **Maturity Level**: {tone_and_maturity.get('maturity_level', 'Adult')}\n"
+            prompt += f"- **Violence Level**: {tone_and_maturity.get('violence_level', 'średnia')}\n"
+            prompt += f"- **Moral Complexity**: {tone_and_maturity.get('moral_complexity', 'balanced')}\n"
+            prompt += f"- **Emotional Intensity**: {tone_and_maturity.get('emotional_intensity', 'średnia')}\n"
+            prompt += "\n"
+
+        if reader_expectations:
+            if reader_expectations.get('emotional_journey'):
+                prompt += f"**Reader's Emotional Journey**: {reader_expectations['emotional_journey']}\n"
+            if reader_expectations.get('expected_scenes'):
+                prompt += f"**Types of Scenes Readers Expect**: {', '.join(reader_expectations['expected_scenes'][:3])}\n"
+            prompt += "\n"
+
+        prompt += "## CHAPTER REQUIREMENTS
 
 **Target Length**: {target_word_count} words (CRITICAL: Must reach this target!)
 **POV Character**: {pov_character['name']} (Deep POV - we're IN their head)

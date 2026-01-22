@@ -87,7 +87,7 @@ class CharacterCreatorAgent:
 
         # Create antagonist
         antagonist = await self._create_antagonist(
-            genre, project_name, world_bible, protagonist, themes
+            genre, project_name, world_bible, protagonist, themes, title_analysis
         )
         characters.append(antagonist)
 
@@ -120,6 +120,11 @@ class CharacterCreatorAgent:
         core_meaning = semantic_analysis.get("core_meaning", project_name)
         reader_promise = semantic_analysis.get("reader_promise", "")
 
+        # Extract ADVANCED fields
+        character_arc = semantic_analysis.get("character_arc", {})
+        magic_system = semantic_analysis.get("magic_system", {})
+        tone_and_maturity = semantic_analysis.get("tone_and_maturity", {})
+
         # Check if title suggests a name (basic analysis)
         suggested_name = None
         char_names = title_analysis.get("character_names", [])
@@ -150,7 +155,29 @@ If the title asks a question, the protagonist's journey answers it.
 If the title is a metaphor, the protagonist embodies it.
 If the title is a promise, the protagonist fulfills it.
 
-## WORLD CONTEXT
+## 📈 CHARACTER ARC GUIDANCE (From Title Analysis)
+"""
+
+        if character_arc:
+            prompt += f"- **Starting Point**: {character_arc.get('starting_point', 'Unknown')}\n"
+            prompt += f"- **Midpoint Shift**: {character_arc.get('midpoint_shift', 'Unknown')}\n"
+            prompt += f"- **Climax Challenge**: {character_arc.get('climax_challenge', 'Unknown')}\n"
+            prompt += f"- **Transformation**: {character_arc.get('transformation', 'Unknown')}\n"
+            prompt += f"- **Arc Type**: {character_arc.get('arc_type', 'positive')}\n"
+
+        if magic_system and magic_system.get('present'):
+            prompt += "\n## 🔥 MAGIC/POWER CONTEXT\n"
+            prompt += f"- **Type**: {magic_system.get('type', 'unknown')}\n"
+            prompt += f"- **Power Dynamics**: {magic_system.get('power_dynamics', 'unknown')}\n"
+            if magic_system.get('elements'):
+                prompt += f"- **Elements**: {', '.join(magic_system['elements'])}\n"
+
+        if tone_and_maturity:
+            prompt += "\n## 🎭 TONE GUIDANCE\n"
+            prompt += f"- **Maturity Level**: {tone_and_maturity.get('maturity_level', 'Adult')}\n"
+            prompt += f"- **Moral Complexity**: {tone_and_maturity.get('moral_complexity', 'balanced')}\n"
+
+        prompt += "\n## WORLD CONTEXT
 {self._summarize_world(world_bible)}
 
 ## TITLE ANALYSIS (Basic)
@@ -293,9 +320,15 @@ Create a character readers will NEVER FORGET."""
         project_name: str,
         world_bible: Dict[str, Any],
         protagonist: Dict[str, Any],
-        themes: List[str]
+        themes: List[str],
+        title_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Create the antagonist as a mirror/foil to protagonist"""
+
+        # Extract antagonist predictions from advanced title analysis
+        semantic_analysis = title_analysis.get("semantic_title_analysis", {})
+        antagonist_predictions = semantic_analysis.get("antagonist_predictions", [])
+        conflicts = semantic_analysis.get("conflicts", {})
 
         prompt = f"""Create a COMPELLING ANTAGONIST for "{project_name}" ({genre}).
 
@@ -304,9 +337,23 @@ Name: {protagonist['name']}
 Key Traits: {protagonist['profile']['psychology'].get('traits', [])}
 Want: {protagonist['arc'].get('want_vs_need', {}).get('want', 'Unknown')}
 
-## YOUR TASK
+## 🎯 ANTAGONIST GUIDANCE (From Title Analysis)
+"""
 
-Create an antagonist who is a WORTHY OPPONENT.
+        if antagonist_predictions:
+            for i, pred in enumerate(antagonist_predictions[:3], 1):  # Top 3 predictions
+                prompt += f"\n**Option {i}**: {pred.get('type', 'Unknown')}\n"
+                prompt += f"- Motivation: {pred.get('motivation', 'Unknown')}\n"
+                prompt += f"- Opposition: {pred.get('opposition_nature', 'Unknown')}\n"
+
+        if conflicts:
+            prompt += "\n## ⚔️ CONFLICT DIMENSIONS TO EXPLORE\n"
+            if conflicts.get('external'):
+                prompt += f"- **External**: {conflicts['external']}\n"
+            if conflicts.get('philosophical'):
+                prompt += f"- **Philosophical**: {conflicts['philosophical']}\n"
+
+        prompt += "\n## YOUR TASK\n\nCreate an antagonist who is a WORTHY OPPONENT.
 
 Great antagonists:
 - Believe they're the hero of their own story

@@ -358,38 +358,242 @@ Create {subplot_count} INTEGRATED subplots:
 - Each subplot needs its own mini-arc
 - Subplots resolve before or during climax
 
-### 6. TENSION GRAPH
+### 6. TENSION & EMOTIONAL ARC GRAPH (READER EXPERIENCE!)
 
-For EACH chapter ({chapter_count} total), rate the tension level (1-10):
+For EACH chapter ({chapter_count} total), map the **READER'S** emotional journey:
 
-Consider:
-- Pacing (not every chapter at 10!)
-- Peaks and valleys (reader needs to breathe)
-- Escalation (overall upward trend)
-- Genre expectations (thrillers start higher than dramas)
+**Tension Level** (1-10 scale):
+- 1-3: Low tension (breather, world-building, character moments)
+- 4-6: Medium tension (complications, discoveries, conflicts)
+- 7-8: High tension (crises, confrontations, revelations)
+- 9-10: Maximum tension (climax, life-or-death, point of no return)
 
-Also assign emotional beat for each chapter:
-- Curious, anxious, hopeful, fearful, triumphant, devastated, etc.
+**Tension Pacing Rules**:
+✅ NOT every chapter at 10 (exhausting!)
+✅ Peaks and valleys (reader needs breathers)
+✅ Overall UPWARD trend (escalation to climax)
+✅ Genre-appropriate baseline:
+  - Thriller: Start ~6, climb to 10
+  - Romance: Start ~3, peaks at 7-8
+  - Horror: Start ~4, slow build to 9-10
+  - Drama: Start ~2, gradual to 7-8
 
-### 7. FORESHADOWING & PAYOFF
+**Emotional Beat** (Primary emotion reader feels):
 
-Plan 5-7 foreshadowing moments:
+Map to specific emotions (not vague!):
+- **Curiosity**: "What's happening? I need to know more."
+- **Anticipation**: "Something big is about to happen!"
+- **Anxiety**: "I'm worried for the character."
+- **Fear**: "This is dangerous, they're in trouble!"
+- **Hope**: "Maybe they can do this!"
+- **Triumph**: "Yes! They did it!"
+- **Devastation**: "Oh no... everything's falling apart."
+- **Anger**: "That's not fair! How dare they!"
+- **Grief**: "I'm sad for what they've lost."
+- **Relief**: "Thank god, they're safe now."
+- **Dread**: "Something terrible is coming..."
+- **Joy**: "This is wonderful!"
+- **Betrayal**: "They were deceived!"
+- **Resolve**: "They've made their choice."
 
-**For each:**
-- Planted in Chapter: X
-- Payoff in Chapter: Y
-- Description: What is hinted vs revealed
-- Type: Plot twist, character reveal, theme statement, etc.
+**Emotional Arc Pattern Examples**:
 
-Great stories make readers say "OH! That was set up in chapter 3!"
+**Thriller Arc**:
+```
+Ch1: Curiosity (3) → Ch5: Anxiety (6) → Ch10: Fear (8) →
+Ch15: Dread (9) → Ch18: Triumph (7) → Ch20: Devastation (10)
+```
 
-### 8. SCENE CAUSALITY
+**Romance Arc**:
+```
+Ch1: Curiosity (2) → Ch5: Hope (4) → Ch10: Joy (6) →
+Ch15: Betrayal (8) → Ch18: Grief (5) → Ch20: Triumph (9)
+```
+
+**Horror Arc**:
+```
+Ch1: Unease (3) → Ch5: Anxiety (5) → Ch10: Fear (7) →
+Ch15: Dread (8) → Ch18: Terror (10) → Ch20: Relief (4)
+```
+
+**Emotional Pacing Guidelines**:
+✅ Vary emotions (not all anxiety!)
+✅ Earn big emotions with setup (can't go 0→10 instantly)
+✅ Give breathers after intense chapters
+✅ Build to emotional peaks strategically
+✅ End acts on strong emotions (hooks!)
+✅ Climax = maximum emotional + tension convergence
+
+**Reader Investment Checkpoints**:
+
+Ask for each act:
+- **End of Act 1**: Does reader CARE about protagonist? (If NO, fix!)
+- **Midpoint**: Is reader INVESTED in outcome? (If NO, raise stakes!)
+- **End of Act 2**: Is reader DESPERATE to know what happens? (If NO, amp tension!)
+- **Climax**: Does reader FEEL the emotional weight? (If NO, earn it better!)
+- **Resolution**: Does reader feel SATISFIED? (If NO, deliver on promises!)
+
+**Emotional Variety Rule**:
+Within any 5-chapter span, use at LEAST 3 different emotions.
+(Prevents monotony, keeps reader engaged)
+
+### 7. FORESHADOWING & PAYOFF TRACKER (Chekhov's Gun Management!)
+
+**CRITICAL RULE**: If you show a gun in Act 1, it MUST fire by Act 3!
+
+Plan 5-10 foreshadowing moments with METICULOUS tracking:
+
+**Types of Foreshadowing**:
+
+1. **Direct Foreshadowing** - Obvious hint reader notices
+2. **Subtle Foreshadowing** - Easy to miss first read, "OH!" on reread
+3. **Red Herring** - False trail (Mystery/Thriller primarily)
+4. **Symbolic Foreshadowing** - Thematic objects/images
+5. **Chekhov's Gun** - Object mentioned early, crucial later
+6. **Prophecy/Promise** - Explicit prediction that comes true
+7. **Character Skill/Knowledge** - Ability shown early, used later
+
+**For EACH Foreshadowing Element, Provide**:
+
+- **Type**: (Direct/Subtle/Red Herring/Symbolic/Chekhov's Gun/Prophecy/Skill)
+- **Setup Chapter**: X (where planted)
+- **Setup Description**: What reader sees/hears (SPECIFIC!)
+- **Subtlety Level**: 1-10 (1=obvious, 10=nearly invisible)
+- **Payoff Chapter**: Y (where revealed/used)
+- **Payoff Description**: How it becomes significant
+- **Time Gap**: Y - X chapters (longer = more satisfying)
+- **Reader Impact**: Emotion created (satisfaction, shock, "I knew it!", etc.)
+- **Mandatory**: true/false (Mandatory MUST pay off!)
+
+**Foreshadowing Rules**:
+✅ Minimum 5, maximum 15 elements
+✅ EVERY Mandatory setup MUST have explicit payoff
+✅ Payoffs concentrated in last 25% (climax/resolution)
+✅ Red herrings: 1-3 for mystery/thriller, 0-1 others
+✅ Vary subtlety (some obvious=anticipation, some hidden=surprise)
+✅ Spread setups in Acts 1-2, payoffs in Acts 2-3
+✅ Bigger reveals need longer time gaps (minimum 5+ chapters)
+✅ NO deus ex machina - crucial items/skills must be seeded early!
+
+**Examples**:
+
+Strong Chekhov's Gun:
+```
+Type: Chekhov's Gun
+Setup Chapter: 3
+Setup: "Anna notices father's old revolver in drawer while searching for keys. 'Should get rid of that someday.' Closes drawer."
+Subtlety: 4/10
+Payoff Chapter: 18
+Payoff: "Intruder breaks in. Anna remembers gun, uses it in climactic self-defense."
+Time Gap: 15 chapters
+Impact: "Oh! The gun from chapter 3!" - earned, not deus ex machina
+Mandatory: true
+```
+
+Subtle Symbolic:
+```
+Type: Symbolic
+Setup Chapter: 1
+Setup: "Protagonist's watch broken, stopped at 3:47. She keeps wearing it."
+Subtlety: 8/10
+Payoff Chapter: 20
+Payoff: "At 3:47 PM, confronts past trauma. Removes watch, smashes it. 'Time to move forward.'"
+Time Gap: 19 chapters
+Impact: Thematic resonance - watch = stuck in past
+Mandatory: false
+```
+
+**Validation** (Answer for each):
+✅ All Mandatory setups have payoffs?
+✅ All payoffs later than setups?
+✅ Time gaps sufficient? (3-5+ chapters minimum)
+✅ No deus ex machina? (Crucial items seeded early)
+✅ Red herrings mislead fairly? (Real clues still exist)
+✅ Readers will feel SMART noticing connections?
+
+### 8. CHAPTER OUTLINES (CRITICAL - Scene Structure!)
+
+For EVERY chapter ({chapter_count} total), provide a detailed outline following the **SCENE/SEQUEL** structure:
+
+**Scene Structure (Action chapters)** - Goal → Conflict → Disaster:
+1. **Goal**: What does the POV character want in this chapter?
+2. **Conflict**: What obstacles prevent them from getting it?
+3. **Disaster**: They fail OR succeed with unexpected bad consequences
+
+**Sequel Structure (Reaction chapters)** - Reaction → Dilemma → Decision:
+1. **Reaction**: Emotional response to disaster (fear, anger, grief)
+2. **Dilemma**: What are their options now? (All bad!)
+3. **Decision**: What do they choose to do? (Leads to next Scene)
+
+**Alternate Scene/Sequel for pacing** - not every chapter same type!
+
+**For each chapter outline, include**:
+- **Chapter Number**: X
+- **Type**: Scene (action) or Sequel (reflection)
+- **POV Character**: Who's telling this chapter?
+- **Setting**: Where does it take place?
+- **Characters Present**: Who's in this chapter?
+- **Goal** (Scene) or **Reaction** (Sequel): What character wants/feels
+- **Conflict** (Scene) or **Dilemma** (Sequel): Obstacles/tough choices
+- **Disaster** (Scene) or **Decision** (Sequel): Outcome/choice
+- **Emotional Beat**: Primary emotion (curious, anxious, triumphant, devastated, etc.)
+- **Tension Level**: 1-10 scale
+- **Key Reveals**: What new information emerges?
+- **Cliffhanger**: Yes/No - does it end on unresolved tension?
+- **Purpose**: How does this chapter advance plot AND/OR develop character?
+
+**Scene Purpose Validation** - Every chapter must answer YES to:
+✅ Does this chapter advance the plot? (new information, events, decisions)
+OR
+✅ Does this chapter develop character? (reveal personality, growth, relationships)
+
+If answer is NO to both → DELETE THIS CHAPTER (it's filler!)
+
+**Example Strong Chapter Outline**:
+```
+Chapter 5:
+- Type: Scene
+- POV: Anna
+- Setting: Abandoned warehouse, night
+- Characters: Anna, Detective Kowalski, mysterious figure
+- Goal: Anna wants to find evidence that clears her brother
+- Conflict: Detective warns her off, warehouse is dangerous, figure attacks
+- Disaster: She finds evidence BUT it implicates HER, not clears her brother
+- Emotional Beat: Hope → Fear → Devastation
+- Tension: 8/10
+- Key Reveals: Anna's brother may have been framed, but Anna is now a suspect
+- Cliffhanger: YES - police sirens approaching, she's holding murder weapon
+- Purpose: Plot advancement (new suspect twist) + Character (Anna's loyalty tested)
+```
+
+**Example Strong Sequel Outline**:
+```
+Chapter 6:
+- Type: Sequel
+- POV: Anna
+- Setting: Her apartment, dawn
+- Characters: Anna alone
+- Reaction: Panic, betrayal, grief - brother lied to her for years
+- Dilemma: Turn herself in? Run? Confront brother? All options terrible.
+- Decision: She decides to find brother and force truth, whatever cost
+- Emotional Beat: Devastation → Resolve
+- Tension: 4/10 (calm before storm)
+- Key Reveals: Anna's internal strength, her wound (trust issues) triggered
+- Cliffhanger: NO - ends on decision, ready for next action
+- Purpose: Character development (shows her wound, choice reveals who she is)
+```
+
+### 9. SCENE CAUSALITY & NO FILLER
 
 Explain the CAUSE-AND-EFFECT chain:
-- How does Scene 1 cause Scene 2?
-- What would break if we removed Chapter X?
-- Are there any "and then" moments? (bad!)
-- Should be "therefore/but" connections (good!)
+- Chapter 1 leads to Chapter 2 because... (use "therefore" or "but", never "and then")
+- Every chapter must be NECESSARY - removing it breaks the story
+- No "and then" moments - each event CAUSES the next
+- No filler chapters - each earns its place through purpose
+
+**Test**: "Can I remove this chapter without breaking the story?"
+- If YES → Delete it or combine with another
+- If NO → It's necessary, keep it
 
 ## CRITICAL GUIDELINES
 
@@ -458,24 +662,101 @@ Return valid JSON with this structure:
       "intersection_points": [3, 7, 12, ...]
     }}
   ],
-  "tension_graph": [
-    {{"chapter": 1, "tension": 3, "emotion": "curious"}},
-    {{"chapter": 2, "tension": 5, "emotion": "anxious"}},
-    ...
+  "emotional_arc": {{
+    "tension_graph": [
+      {{
+        "chapter": 1,
+        "tension": 3,
+        "primary_emotion": "Curiosity",
+        "reader_feeling": "What's happening? Need to know more.",
+        "justification": "Opening hook with mysterious event"
+      }},
+      {{
+        "chapter": 2,
+        "tension": 5,
+        "primary_emotion": "Anxiety",
+        "reader_feeling": "Worried for protagonist's safety",
+        "justification": "First major obstacle, stakes established"
+      }},
+      ...for all {chapter_count} chapters
+    ],
+    "act_checkpoints": {{
+      "end_of_act_1": {{
+        "reader_cares": "YES - protagonist's vulnerability shown, relatable wound revealed",
+        "emotional_peak": "Hope mixed with anxiety"
+      }},
+      "midpoint": {{
+        "reader_invested": "YES - stakes raised dramatically, can't predict outcome",
+        "emotional_peak": "Triumph turning to dread"
+      }},
+      "end_of_act_2": {{
+        "reader_desperate": "YES - all is lost, protagonist at lowest point",
+        "emotional_peak": "Devastation, desperate to see resolution"
+      }},
+      "climax": {{
+        "reader_feels_weight": "YES - emotional journey earned this moment",
+        "emotional_peak": "Maximum tension + cathartic release"
+      }},
+      "resolution": {{
+        "reader_satisfied": "YES - promises fulfilled, arc complete",
+        "emotional_peak": "Bittersweet triumph, satisfying closure"
+      }}
+    }},
+    "emotional_variety_check": "Emotions used: Curiosity, Anxiety, Hope, Fear, Dread, Triumph, Devastation, Resolve, Joy (9 different - PASS)",
+    "genre_appropriateness": "Tension baseline and peaks match {genre} expectations"
+  }},
+  "chapter_outlines": [
+    {{
+      "chapter": 1,
+      "type": "Scene",
+      "pov_character": "Anna",
+      "setting": "...",
+      "characters_present": ["Anna", "..."],
+      "goal": "..." (for Scene) OR "reaction": "..." (for Sequel),
+      "conflict": "..." (for Scene) OR "dilemma": "..." (for Sequel),
+      "disaster": "..." (for Scene) OR "decision": "..." (for Sequel),
+      "emotional_beat": "curious",
+      "tension": 3,
+      "key_reveals": ["...", "..."],
+      "cliffhanger": true/false,
+      "purpose": "Advances plot by... AND develops character by..."
+    }},
+    ...for all {chapter_count} chapters
   ],
   "foreshadowing": [
     {{
-      "planted_in_chapter": X,
-      "payoff_in_chapter": Y,
-      "description": "...",
-      "type": "..."
-    }}
+      "type": "Chekhov's Gun|Direct|Subtle|Red Herring|Symbolic|Prophecy|Skill",
+      "setup_chapter": X,
+      "setup_description": "Specific description of what reader sees/hears...",
+      "subtlety_level": 1-10,
+      "payoff_chapter": Y,
+      "payoff_description": "How it becomes significant/pays off...",
+      "time_gap": Y-X,
+      "reader_impact": "Emotion/reaction created (satisfaction, shock, etc.)",
+      "mandatory": true/false
+    }},
+    ...minimum 5, maximum 15 elements
   ],
-  "causality_notes": "..."
+  "foreshadowing_validation": {{
+    "all_mandatory_have_payoffs": true,
+    "payoffs_after_setups": true,
+    "time_gaps_sufficient": "Minimum 3-5 chapters, longer for major reveals",
+    "no_deus_ex_machina": "All crucial items/skills seeded in Acts 1-2",
+    "red_herrings_fair": "Misleading but fair clues exist",
+    "reader_satisfaction": "Connections reward attentive readers"
+  }},
+  "causality_notes": "Chapter 1 leads to Chapter 2 because... (therefore/but chains, never 'and then')"
 }}
 
-Create a plot that is TIGHT, ESCALATING, and EMOTIONALLY SATISFYING.
-Make it impossible to put down."""
+**CRITICAL REQUIREMENTS**:
+✅ ALL {chapter_count} chapters must have detailed outlines
+✅ Each chapter has clear Goal→Conflict→Disaster OR Reaction→Dilemma→Decision
+✅ Every chapter has validated PURPOSE (advances plot OR develops character)
+✅ Causality chain is tight ("therefore/but", never "and then")
+✅ No filler chapters - each one is NECESSARY
+✅ Scene/Sequel alternation for pacing variety
+
+Create a plot that is TIGHT, ESCALATING, EMOTIONALLY SATISFYING, and IMPOSSIBLE TO PUT DOWN."""
 
         system_prompt = self._get_system_prompt()
 

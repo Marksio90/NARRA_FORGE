@@ -31,7 +31,14 @@ GENRE_PROSE_STYLES = {
             "Balance exposition with action",
             "Sensory details emphasize the alien/futuristic"
         ],
-        "examples": "Asimov's clarity, Le Guin's poetry, Stephenson's detail"
+        "examples": "Asimov's clarity, Le Guin's poetry, Stephenson's detail",
+        "reader_expectations": [
+            "Sense of wonder - make reader think 'wow, that's cool!'",
+            "Internal consistency - tech/science follows rules",
+            "Exploration of 'what if?' scenarios",
+            "Social/philosophical commentary through sci-fi lens",
+            "Smart protagonists solving problems with logic"
+        ]
     },
     "fantasy": {
         "style": "Epic, poetic, rich in imagery and metaphor",
@@ -41,7 +48,14 @@ GENRE_PROSE_STYLES = {
             "Magic shown through consequences, not explanation",
             "World-building through character interaction"
         ],
-        "examples": "Tolkien's grandeur, Sanderson's clarity, Le Guin's elegance"
+        "examples": "Tolkien's grandeur, Sanderson's clarity, Le Guin's elegance",
+        "reader_expectations": [
+            "Epic scope - hero's journey, world-changing stakes",
+            "Magic system with clear rules and limitations",
+            "Rich world with mythology and history",
+            "Good vs evil (or moral complexity if subverting)",
+            "Emotional catharsis through grand finale"
+        ]
     },
     "thriller": {
         "style": "Terse, punchy, high-paced, short sentences for tension",
@@ -52,7 +66,14 @@ GENRE_PROSE_STYLES = {
             "Visceral sensory details (touch, sound)",
             "Cliffhangers at chapter ends"
         ],
-        "examples": "Lee Child's momentum, Flynn's pace, Patterson's brevity"
+        "examples": "Lee Child's momentum, Flynn's pace, Patterson's brevity",
+        "reader_expectations": [
+            "Fast pace from page 1 - hit ground running",
+            "Constant danger/tension - no safe moments",
+            "Ticking clock - deadline creates urgency",
+            "Major twists every 50-70 pages",
+            "Protagonist in constant motion/action"
+        ]
     },
     "horror": {
         "style": "Atmospheric, slow-building dread, suggestive over explicit",
@@ -63,7 +84,14 @@ GENRE_PROSE_STYLES = {
             "Isolation and vulnerability emphasized",
             "Body horror through visceral detail"
         ],
-        "examples": "King's relatability, Lovecraft's cosmic dread, Hill's restraint"
+        "examples": "King's relatability, Lovecraft's cosmic dread, Hill's restraint",
+        "reader_expectations": [
+            "Atmosphere over jump scares - sustained dread",
+            "Isolation - characters cut off from help",
+            "Unknown threat scarier than seen monster",
+            "Psychological impact on characters",
+            "Disturbing imagery that lingers after reading"
+        ]
     },
     "romance": {
         "style": "Emotional, intimate, focuses on internal feelings and chemistry",
@@ -74,7 +102,14 @@ GENRE_PROSE_STYLES = {
             "Slow emotional reveals",
             "Balance external events with internal reaction"
         ],
-        "examples": "Kleypas' sensuality, Rowell's wit, McQuiston's warmth"
+        "examples": "Kleypas' sensuality, Rowell's wit, McQuiston's warmth",
+        "reader_expectations": [
+            "Chemistry between leads from first meeting",
+            "Emotional vulnerability and intimacy",
+            "Obstacles preventing relationship (believable!)",
+            "HEA/HFN ending (Happily Ever After or For Now)",
+            "Emotional beats: first kiss, first fight, dark moment, reconciliation"
+        ]
     },
     "drama": {
         "style": "Literary, introspective, character-focused, thematic depth",
@@ -85,7 +120,14 @@ GENRE_PROSE_STYLES = {
             "Moral ambiguity and gray areas",
             "Subtle emotional beats"
         ],
-        "examples": "Tartt's precision, Chabon's craft, Whitehead's gravity"
+        "examples": "Tartt's precision, Chabon's craft, Whitehead's gravity",
+        "reader_expectations": [
+            "Character transformation through adversity",
+            "Moral/ethical dilemmas without easy answers",
+            "Realistic human behavior and consequences",
+            "Thematic depth - story MEANS something",
+            "Emotional catharsis even if bittersweet"
+        ]
     },
     "comedy": {
         "style": "Light, witty, conversational, timing-focused",
@@ -96,7 +138,14 @@ GENRE_PROSE_STYLES = {
             "Character voice drives comedy",
             "Rule of three for jokes"
         ],
-        "examples": "Pratchett's wit, Adams' absurdity, Scalzi's snark"
+        "examples": "Pratchett's wit, Adams' absurdity, Scalzi's snark",
+        "reader_expectations": [
+            "Laugh-out-loud moments regularly",
+            "Likeable, relatable characters (even if flawed)",
+            "Happy ending - uplifting overall tone",
+            "Humor from character not forced jokes",
+            "Light stakes - fun escapism"
+        ]
     },
     "mystery": {
         "style": "Observational, detail-oriented, controlled revelation",
@@ -107,7 +156,14 @@ GENRE_PROSE_STYLES = {
             "Protagonist's deduction process shown",
             "Controlled pacing of reveals"
         ],
-        "examples": "Christie's misdirection, Chandler's voice, Tana French's atmosphere"
+        "examples": "Christie's misdirection, Chandler's voice, Tana French's atmosphere",
+        "reader_expectations": [
+            "Fair play - reader can solve mystery with clues given",
+            "Red herrings that mislead without cheating",
+            "Clever detective/sleuth with unique method",
+            "Satisfying reveal - surprising yet logical",
+            "All loose ends tied up in resolution"
+        ]
     }
 }
 
@@ -822,7 +878,91 @@ Później: [Dog attack becomes meaningful]
 ✅ "Jan podjął decyzję"
 (Exception: When passive voice serves the story)
 
-### 11. AVOID THESE FATAL MISTAKES
+### 10A. PROSE QUALITY CONTROL (Self-Editing While Writing!)
+
+While writing, actively MONITOR and ELIMINATE these prose weaknesses:
+
+**Cliché Detection & Replacement**:
+
+Common Polish clichés to AVOID:
+❌ "Czarny jak noc" → ✅ "Ciemność bez końca i krawędzi"
+❌ "Biały jak śnieg" → ✅ "Blady jak papier spalony do popiołu"
+❌ "Szybki jak błyskawica" → ✅ "Przemknął zanim mgnienie się skończyło"
+❌ "Serce waliło jak młot" → ✅ "Serce łomotało o żebra jakby chciało uciec"
+❌ "Zimny jak lód" → ✅ "Zimny jakby nigdy nie znał ciepła"
+❌ "Zły jak osa" → ✅ "Wściekłość wirowała pod skórą"
+❌ "Cichy jak mysz" → ✅ "Poruszał się jak szept między słowami"
+
+**Create FRESH metaphors**:
+- Connect unexpected things: "Strach rozlał się jak rozlana benzyna"
+- Use specific images: "Głos ostry jak krawędź świeżo złamanej butelki"
+- Ground in senses: "Milczenie gęste jak dym po wypadku"
+
+**Repetition Awareness** (Word Variety):
+
+Watch for OVERUSED words in same paragraph/page:
+- Character name: Vary with pronouns, epithets, role names
+- Action verbs: Don't use "szedł" 5x - walk, stride, amble, trudge, march
+- Said: Minimal tags, when needed vary - whispered, muttered, snapped (but sparingly!)
+- Emotions: Not "strach" 10x - terror, dread, panic, unease (each is different!)
+
+**Paragraph-Level Check**:
+- Same word appears 3+ times in paragraph? → Vary or remove
+- Same sentence structure 3+ times? → Vary rhythm
+- Same paragraph length 5+ times? → Mix it up
+
+**Sentence Opening Variety**:
+❌ Monotonous: "Anna weszła. Anna spojrzała. Anna pomyślała."
+✅ Varied: "Anna weszła. Pokój był pusty. Co teraz? Serce waliło."
+(Different subjects, different structures, different lengths)
+
+**Adverb Elimination** (Show, Don't Label):
+❌ "Powiedział gniewnie" → ✅ "— Wynocha! — Uderzył pięścią w stół."
+❌ "Szła wolno" → ✅ "Każdy krok kosztował ją wysiłek."
+❌ "Spojrzała smutno" → ✅ "Oczy jej wilgotniały."
+
+**Word Choice Precision**:
+Generic → Specific:
+- "Poszedł" → "Wlókł się/przemknął/pęd
+
+ził"
+- "Dom" → "Kamienica/willa/rudera/apartament"
+- "Duży" → "Rozległy/masywny/olbrzymi/obszerny"
+- "Ładny" → "Elegancki/urzekający/stylowy"
+
+**Overwriting Detection** (Kill Your Darlings):
+If a sentence/phrase feels too clever, too poetic, too impressive → CUT IT.
+Reader should notice STORY, not PROSE.
+
+**Examples of Overwriting**:
+❌ "Księżyc, srebrny jak pereł płynących w aksamitnym oceanie wieczności..."
+✅ "Księżyc wisiał nad miastem."
+
+❌ "Jej oczy, niczym gwiazdy na firmamencie duszy..."
+✅ "Jej oczy błyszczały."
+
+**The "Read Aloud" Test**:
+- Does it sound natural when read aloud?
+- Are you tripping over awkward phrases?
+- Is rhythm smooth or choppy?
+- Would a real person say/think this?
+
+**Polish Language Pitfalls**:
+- Too many compound sentences with "który/która/które"
+- Overuse of "-ąc/-ący" participles
+- Germanic sentence structures (subject far from verb)
+- Borrowed phrases from English that sound unnatural
+
+**Self-Correction Habit**:
+As you write each paragraph, ask:
+1. Any clichés? → Replace with fresh image
+2. Word repeated 3+ times? → Vary
+3. All sentences same length? → Mix
+4. Any adverbs? → Show instead
+5. Too fancy/purple? → Simplify
+6. Sounds awkward aloud? → Rewrite
+
+This is ACTIVE prose polishing during first draft, not just editing later!
 
 ❌ **Purple prose**: Overwrought, flowery language that draws attention to itself
 ❌ **Info dumps**: World-building lectures, backstory paragraphs

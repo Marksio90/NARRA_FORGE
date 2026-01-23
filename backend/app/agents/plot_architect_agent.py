@@ -437,17 +437,79 @@ Ask for each act:
 Within any 5-chapter span, use at LEAST 3 different emotions.
 (Prevents monotony, keeps reader engaged)
 
-### 7. FORESHADOWING & PAYOFF
+### 7. FORESHADOWING & PAYOFF TRACKER (Chekhov's Gun Management!)
 
-Plan 5-7 foreshadowing moments:
+**CRITICAL RULE**: If you show a gun in Act 1, it MUST fire by Act 3!
 
-**For each:**
-- Planted in Chapter: X
-- Payoff in Chapter: Y
-- Description: What is hinted vs revealed
-- Type: Plot twist, character reveal, theme statement, etc.
+Plan 5-10 foreshadowing moments with METICULOUS tracking:
 
-Great stories make readers say "OH! That was set up in chapter 3!"
+**Types of Foreshadowing**:
+
+1. **Direct Foreshadowing** - Obvious hint reader notices
+2. **Subtle Foreshadowing** - Easy to miss first read, "OH!" on reread
+3. **Red Herring** - False trail (Mystery/Thriller primarily)
+4. **Symbolic Foreshadowing** - Thematic objects/images
+5. **Chekhov's Gun** - Object mentioned early, crucial later
+6. **Prophecy/Promise** - Explicit prediction that comes true
+7. **Character Skill/Knowledge** - Ability shown early, used later
+
+**For EACH Foreshadowing Element, Provide**:
+
+- **Type**: (Direct/Subtle/Red Herring/Symbolic/Chekhov's Gun/Prophecy/Skill)
+- **Setup Chapter**: X (where planted)
+- **Setup Description**: What reader sees/hears (SPECIFIC!)
+- **Subtlety Level**: 1-10 (1=obvious, 10=nearly invisible)
+- **Payoff Chapter**: Y (where revealed/used)
+- **Payoff Description**: How it becomes significant
+- **Time Gap**: Y - X chapters (longer = more satisfying)
+- **Reader Impact**: Emotion created (satisfaction, shock, "I knew it!", etc.)
+- **Mandatory**: true/false (Mandatory MUST pay off!)
+
+**Foreshadowing Rules**:
+✅ Minimum 5, maximum 15 elements
+✅ EVERY Mandatory setup MUST have explicit payoff
+✅ Payoffs concentrated in last 25% (climax/resolution)
+✅ Red herrings: 1-3 for mystery/thriller, 0-1 others
+✅ Vary subtlety (some obvious=anticipation, some hidden=surprise)
+✅ Spread setups in Acts 1-2, payoffs in Acts 2-3
+✅ Bigger reveals need longer time gaps (minimum 5+ chapters)
+✅ NO deus ex machina - crucial items/skills must be seeded early!
+
+**Examples**:
+
+Strong Chekhov's Gun:
+```
+Type: Chekhov's Gun
+Setup Chapter: 3
+Setup: "Anna notices father's old revolver in drawer while searching for keys. 'Should get rid of that someday.' Closes drawer."
+Subtlety: 4/10
+Payoff Chapter: 18
+Payoff: "Intruder breaks in. Anna remembers gun, uses it in climactic self-defense."
+Time Gap: 15 chapters
+Impact: "Oh! The gun from chapter 3!" - earned, not deus ex machina
+Mandatory: true
+```
+
+Subtle Symbolic:
+```
+Type: Symbolic
+Setup Chapter: 1
+Setup: "Protagonist's watch broken, stopped at 3:47. She keeps wearing it."
+Subtlety: 8/10
+Payoff Chapter: 20
+Payoff: "At 3:47 PM, confronts past trauma. Removes watch, smashes it. 'Time to move forward.'"
+Time Gap: 19 chapters
+Impact: Thematic resonance - watch = stuck in past
+Mandatory: false
+```
+
+**Validation** (Answer for each):
+✅ All Mandatory setups have payoffs?
+✅ All payoffs later than setups?
+✅ Time gaps sufficient? (3-5+ chapters minimum)
+✅ No deus ex machina? (Crucial items seeded early)
+✅ Red herrings mislead fairly? (Real clues still exist)
+✅ Readers will feel SMART noticing connections?
 
 ### 8. CHAPTER OUTLINES (CRITICAL - Scene Structure!)
 
@@ -663,12 +725,26 @@ Return valid JSON with this structure:
   ],
   "foreshadowing": [
     {{
-      "planted_in_chapter": X,
-      "payoff_in_chapter": Y,
-      "description": "...",
-      "type": "..."
-    }}
+      "type": "Chekhov's Gun|Direct|Subtle|Red Herring|Symbolic|Prophecy|Skill",
+      "setup_chapter": X,
+      "setup_description": "Specific description of what reader sees/hears...",
+      "subtlety_level": 1-10,
+      "payoff_chapter": Y,
+      "payoff_description": "How it becomes significant/pays off...",
+      "time_gap": Y-X,
+      "reader_impact": "Emotion/reaction created (satisfaction, shock, etc.)",
+      "mandatory": true/false
+    }},
+    ...minimum 5, maximum 15 elements
   ],
+  "foreshadowing_validation": {{
+    "all_mandatory_have_payoffs": true,
+    "payoffs_after_setups": true,
+    "time_gaps_sufficient": "Minimum 3-5 chapters, longer for major reveals",
+    "no_deus_ex_machina": "All crucial items/skills seeded in Acts 1-2",
+    "red_herrings_fair": "Misleading but fair clues exist",
+    "reader_satisfaction": "Connections reward attentive readers"
+  }},
   "causality_notes": "Chapter 1 leads to Chapter 2 because... (therefore/but chains, never 'and then')"
 }}
 

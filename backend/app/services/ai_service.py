@@ -344,7 +344,7 @@ class AIService:
                     self.metrics.errors += 1
                     raise Exception(f"Rate limit exceeded after {retry_count} attempts: {e}")
 
-            except (openai.APIConnectionError, openai.Timeout, AnthropicAPIConnectionError, AnthropicAPITimeoutError) as e:
+            except (openai.APIConnectionError, AnthropicAPIConnectionError, AnthropicAPITimeoutError) as e:
                 # Network errors - retriable
                 self.metrics.errors += 1
                 logger.warning(f"Network error on attempt {attempt + 1}/{retry_count}: {str(e)}")

@@ -264,29 +264,13 @@ class ProseWriterAgent:
     def _determine_chapter_tier(self, chapter_num: int, plot_structure: Dict[str, Any]) -> ModelTier:
         """Determine which tier to use based on chapter importance
 
-        For ABSOLUTE HIGHEST QUALITY (10x cost), change return to ModelTier.TIER_3 for all chapters.
-        Current: TIER_2 (GPT-4o) for most, TIER_3 (GPT-4) for climax/critical scenes only.
+        SMART COST OPTIMIZATION:
+        - Always START with TIER_2 (GPT-4o - cheap)
+        - Fallback to TIER_3 (GPT-4 - expensive) only if GPT-4o refuses
+        - This gives BEST quality at LOWEST cost
         """
-        plot_points = plot_structure.get('plot_points', {})
-
-        # Extract chapter numbers of critical points
-        critical_chapters = []
-        for point_name, point_data in plot_points.items():
-            if isinstance(point_data, dict) and 'chapter' in point_data:
-                critical_chapters.append(point_data['chapter'])
-
-        # Use Tier 3 (GPT-4) for climax and major turning points
-        if chapter_num in critical_chapters:
-            if any(name in ['climax', 'midpoint'] for name, data in plot_points.items()
-                   if isinstance(data, dict) and data.get('chapter') == chapter_num):
-                logger.info(f"Using TIER 3 (GPT-4) for critical chapter {chapter_num}")
-                return ModelTier.TIER_3
-
-        # WORLD-CLASS QUALITY: Use TIER_3 (GPT-4) for ALL chapters
-        # GPT-4 is less restrictive than GPT-4o for creative content (no safety refusals)
-        # Cost: ~10x higher, but user demanded "ABSOLUTNIE NAJWYŻSZYM ŚWIATOWYM POZIOMIE"
-        logger.info(f"Using TIER 3 (GPT-4) for chapter {chapter_num} - WORLD-CLASS quality")
-        return ModelTier.TIER_3
+        # Start with cheap tier - fallback logic handles refusals
+        return ModelTier.TIER_2
 
     async def _generate_prose(
         self,
@@ -304,7 +288,13 @@ class ProseWriterAgent:
         book_title: str,
         semantic_title_analysis: Dict[str, Any]
     ) -> str:
-        """Generate the actual prose content"""
+        """Generate the actual prose content with smart fallback
+
+        SMART COST OPTIMIZATION:
+        1. Try with provided tier (usually TIER_2 = GPT-4o = cheap)
+        2. If AI refuses, automatically fallback to TIER_3 (GPT-4 = expensive but works)
+        3. Result: Pay for GPT-4 ONLY when GPT-4o refuses
+        """
 
         genre_style = GENRE_PROSE_STYLES.get(genre, GENRE_PROSE_STYLES['drama'])
 
@@ -430,59 +420,97 @@ Write the complete chapter now."""
 
         system_prompt = self._get_system_prompt(genre)
 
-        # Generate!
-        # Note: ai_service.generate() automatically calculates safe max_tokens
-        # to prevent context length errors based on model limits
-        response = await self.ai_service.generate(
-            prompt=prompt,
-            system_prompt=system_prompt,
-            tier=tier,
-            temperature=0.95,  # MAXIMUM creativity for world-class literary prose (0.95 = most creative)
-            max_tokens=target_word_count * 2,  # Rough estimate (will be adjusted to fit model context)
-            json_mode=False,  # Plain prose output
-            prefer_anthropic=False,  # Use OpenAI (user has no Anthropic key)
-            metadata={
-                "agent": self.name,
-                "task": "chapter_writing",
-                "chapter": chapter_number,
-                "genre": genre,
-                "pov": pov_character['name']
-            }
-        )
+        # SMART FALLBACK LOGIC: Try cheap tier first, upgrade to expensive only if refused
+        tiers_to_try = [tier]  # Start with provided tier (usually TIER_2 = GPT-4o)
+        if tier == ModelTier.TIER_2:
+            tiers_to_try.append(ModelTier.TIER_3)  # Fallback to GPT-4 if GPT-4o refuses
 
-        chapter_prose = response.content.strip()
+        last_error = None
+        for attempt_num, current_tier in enumerate(tiers_to_try, 1):
+            try:
+                tier_name = "TIER_2 (GPT-4o - cheap)" if current_tier == ModelTier.TIER_2 else "TIER_3 (GPT-4 - premium)"
+                if attempt_num > 1:
+                    logger.warning(
+                        f"💰 FALLBACK: GPT-4o refused, trying {tier_name} for chapter {chapter_number}"
+                    )
+                else:
+                    logger.info(f"✍️ Generating chapter {chapter_number} with {tier_name}")
 
-        # CRITICAL: Detect AI refusals (safety system blocking content generation)
-        # Check if AI refused to generate content
-        refusal_indicators = [
-            "i cannot", "i can't", "i'm sorry", "i apologize",
-            "nie mogę", "nie jestem w stanie", "przepraszam", "przykro mi",
-            "sorry, but", "sorry, i", "i'm unable",
-            "against my", "policy", "guidelines"
-        ]
+                # Generate!
+                # Note: ai_service.generate() automatically calculates safe max_tokens
+                # to prevent context length errors based on model limits
+                response = await self.ai_service.generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    tier=current_tier,
+                    temperature=0.95,  # MAXIMUM creativity for world-class literary prose
+                    max_tokens=target_word_count * 2,  # Rough estimate (adjusted to fit model context)
+                    json_mode=False,  # Plain prose output
+                    prefer_anthropic=False,  # Use OpenAI (user has no Anthropic key)
+                    metadata={
+                        "agent": self.name,
+                        "task": "chapter_writing",
+                        "chapter": chapter_number,
+                        "genre": genre,
+                        "pov": pov_character['name'],
+                        "tier": current_tier.value,
+                        "attempt": attempt_num
+                    }
+                )
 
-        # Check if response is suspiciously short or contains refusal language
-        is_too_short = len(chapter_prose) < 500  # Chapters should be 3000+ words
-        contains_refusal = any(indicator in chapter_prose.lower()[:200] for indicator in refusal_indicators)
+                chapter_prose = response.content.strip()
 
-        if is_too_short or contains_refusal:
-            logger.error(
-                f"❌ AI REFUSED to generate chapter {chapter_number}! "
-                f"Response: '{chapter_prose[:200]}...'"
-            )
-            raise Exception(
-                f"AI safety system blocked chapter generation. "
-                f"Response was too short ({len(chapter_prose)} chars) or contained refusal language. "
-                f"This is a creative fiction writing task - NOT harmful content. "
-                f"Consider adjusting prompt or using different model."
-            )
+                # CRITICAL: Detect AI refusals (safety system blocking content generation)
+                refusal_indicators = [
+                    "i cannot", "i can't", "i'm sorry", "i apologize",
+                    "nie mogę", "nie jestem w stanie", "przepraszam", "przykro mi",
+                    "sorry, but", "sorry, i", "i'm unable",
+                    "against my", "policy", "guidelines"
+                ]
 
-        logger.info(
-            f"Generated chapter {chapter_number} prose "
-            f"(cost: ${response.cost:.4f}, tokens: {response.tokens_used['total']})"
-        )
+                # Check if response is suspiciously short or contains refusal language
+                is_too_short = len(chapter_prose) < 500  # Chapters should be 3000+ words
+                contains_refusal = any(indicator in chapter_prose.lower()[:200] for indicator in refusal_indicators)
 
-        return chapter_prose
+                if is_too_short or contains_refusal:
+                    error_msg = (
+                        f"AI refused to generate chapter {chapter_number} with {tier_name}. "
+                        f"Response was too short ({len(chapter_prose)} chars) or contained refusal language."
+                    )
+                    logger.error(f"❌ {error_msg} Response: '{chapter_prose[:200]}...'")
+                    last_error = error_msg
+
+                    # If we have more tiers to try, continue to next tier
+                    if attempt_num < len(tiers_to_try):
+                        continue
+                    else:
+                        # No more tiers to try
+                        raise Exception(
+                            f"ALL models refused to generate chapter {chapter_number}. "
+                            f"Tried: {', '.join([str(t) for t in tiers_to_try])}. "
+                            f"Last response: '{chapter_prose[:200]}...'"
+                        )
+
+                # Success! Chapter generated without refusal
+                tier_cost_info = "CHEAP ✅" if current_tier == ModelTier.TIER_2 else "EXPENSIVE 💰"
+                logger.info(
+                    f"✅ Generated chapter {chapter_number} with {tier_name} ({tier_cost_info}) - "
+                    f"cost: ${response.cost:.4f}, tokens: {response.tokens_used['total']}"
+                )
+
+                return chapter_prose
+
+            except Exception as e:
+                # If this is the last tier, re-raise the exception
+                if attempt_num >= len(tiers_to_try):
+                    raise
+                # Otherwise, log and try next tier
+                logger.warning(f"⚠️ Attempt {attempt_num} failed: {str(e)}")
+                last_error = str(e)
+                continue
+
+        # Should never reach here, but just in case
+        raise Exception(f"Failed to generate chapter {chapter_number} after trying all tiers. Last error: {last_error}")
 
     def _get_system_prompt(self, genre: str) -> str:
         """WORLD-CLASS system prompt for MASTER-LEVEL prose"""

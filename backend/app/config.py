@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api"
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
-    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    SECRET_KEY: str  # REQUIRED - No default for security (set in .env)
 
     # Database
     POSTGRES_USER: str = "narraforge"
@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None
 
-    # OpenAI
-    OPENAI_API_KEY: str = "sk-placeholder-add-your-key"
+    # OpenAI (REQUIRED)
+    OPENAI_API_KEY: str  # REQUIRED - No default (set in .env)
     GPT_4O_MINI: str = "gpt-4o-mini"
     GPT_4O: str = "gpt-4o"
     GPT_4: str = "gpt-4"

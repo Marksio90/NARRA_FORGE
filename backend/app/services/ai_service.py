@@ -5,7 +5,9 @@ with cost tracking, retry logic, and tier management
 """
 
 import openai
+from openai import AsyncOpenAI
 import anthropic
+from anthropic import AsyncAnthropic
 from anthropic import (
     RateLimitError as AnthropicRateLimit,
     APIConnectionError as AnthropicAPIConnectionError,
@@ -96,22 +98,22 @@ class AIService:
                 "See backend/AI_SETUP.md for instructions."
             )
 
-        # Initialize OpenAI
-        logger.info("✅ Initializing OpenAI client")
-        self.openai_client = openai.OpenAI(
+        # Initialize OpenAI (Async client for non-blocking API calls)
+        logger.info("✅ Initializing AsyncOpenAI client")
+        self.openai_client = AsyncOpenAI(
             api_key=settings.OPENAI_API_KEY,
             timeout=600.0,  # 10 minute timeout for complex prompts (plot structure needs 5+ min)
             max_retries=0,  # We handle retries ourselves in generate()
         )
 
-        # Initialize Anthropic (if key is available)
+        # Initialize Anthropic (if key is available - Async client)
         self.anthropic_client = None
         anthropic_key = getattr(settings, 'ANTHROPIC_API_KEY', None)
         if anthropic_key and anthropic_key != "sk-placeholder-add-your-key":
-            logger.info("✅ Initializing Anthropic client")
-            self.anthropic_client = anthropic.Anthropic(
+            logger.info("✅ Initializing AsyncAnthropic client")
+            self.anthropic_client = AsyncAnthropic(
                 api_key=anthropic_key,
-                timeout=120.0,  # 2 minute timeout for API requests
+                timeout=600.0,  # 10 minute timeout for complex prompts
                 max_retries=0,  # We handle retries ourselves in generate()
             )
         else:
@@ -408,7 +410,7 @@ class AIService:
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 
-        response = self.openai_client.chat.completions.create(**kwargs)
+        response = await self.openai_client.chat.completions.create(**kwargs)
 
         # Validate response structure
         if not response.choices or len(response.choices) == 0:
@@ -445,7 +447,7 @@ class AIService:
         if system_prompt:
             kwargs["system"] = system_prompt
 
-        response = self.anthropic_client.messages.create(**kwargs)
+        response = await self.anthropic_client.messages.create(**kwargs)
 
         # Validate response structure
         if not response.content or len(response.content) == 0:

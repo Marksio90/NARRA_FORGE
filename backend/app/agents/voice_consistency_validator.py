@@ -312,12 +312,21 @@ Output JSON:
 
         try:
             comparison = json.loads(response.content)
-        except:
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse voice comparison JSON: {e}, using default fallback")
             comparison = {
                 "voice_consistent": True,
                 "differences_detected": [],
                 "severity": "none",
-                "recommendation": "Manual review recommended"
+                "recommendation": "Manual review recommended - JSON parse failed"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error parsing voice comparison: {e}", exc_info=True)
+            comparison = {
+                "voice_consistent": True,
+                "differences_detected": [],
+                "severity": "none",
+                "recommendation": "Manual review required - unexpected error"
             }
 
         return comparison

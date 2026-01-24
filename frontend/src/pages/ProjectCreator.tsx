@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import axios from 'axios';
 
 interface Genre {
@@ -77,7 +78,7 @@ const ProjectCreator: React.FC = () => {
 
   const handleCreateProject = async () => {
     if (!selectedGenre || !projectTitle.trim()) {
-      alert('Proszę wybrać gatunek i podać tytuł projektu');
+      toast.warning('Proszę wybrać gatunek i podać tytuł projektu');
       return;
     }
 
@@ -90,11 +91,12 @@ const ProjectCreator: React.FC = () => {
 
       const projectId = response.data.id;
 
+      toast.success('Projekt utworzony pomyślnie!');
       // Navigate to project view
       navigate(`/project/${projectId}`);
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Wystąpił błąd podczas tworzenia projektu');
+      toast.error('Wystąpił błąd podczas tworzenia projektu');
       setIsCreating(false);
     }
   };

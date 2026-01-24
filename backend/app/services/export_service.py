@@ -130,8 +130,10 @@ def _export_docx(project: Project, chapters: List[Chapter], file_path: Path):
         chapter_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         chapter_para.space_before = Pt(72)  # Space before chapter title
         chapter_para.space_after = Pt(24)
-    except:
-        pass
+    except KeyError:
+        logger.warning("Style 'Heading 1' not found in document, chapter titles will use default style")
+    except Exception as e:
+        logger.warning(f"Failed to apply chapter title style: {e}")
 
     # Add page numbers to footer
     section = doc.sections[0]

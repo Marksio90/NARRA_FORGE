@@ -36,6 +36,7 @@ from app.models.character import Character, CharacterRole
 from app.models.plot_structure import PlotStructure
 from app.models.chapter import Chapter
 from app.services.ai_service import get_ai_service
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -452,6 +453,57 @@ class AgentOrchestrator:
         logger.info(f"✅ Plot structure created and saved (ID: {plot_structure.id})")
         return plot_structure
 
+    def _check_cost_limit(self, chapter_num: int = None) -> None:
+        """
+        Check if cost is approaching or exceeded the project limit
+
+        Args:
+            chapter_num: Current chapter number for context in error messages
+
+        Raises:
+            Exception: If cost limit is exceeded (100%)
+        """
+        metrics = self.ai_service.get_metrics()
+        current_cost = metrics.total_cost
+        max_cost = settings.MAX_COST_PER_PROJECT
+        alert_threshold = settings.COST_ALERT_THRESHOLD
+
+        cost_percentage = (current_cost / max_cost) if max_cost > 0 else 0
+
+        # Update project's actual cost in real-time
+        self.project.actual_cost = current_cost
+
+        context = f" (po rozdziale {chapter_num})" if chapter_num else ""
+
+        # HARD STOP at 100% of limit
+        if cost_percentage >= 1.0:
+            error_msg = (
+                f"❌ LIMIT KOSZTÓW PRZEKROCZONY{context}!\n"
+                f"   Koszt aktualny: ${current_cost:.2f}\n"
+                f"   Maksymalny limit: ${max_cost:.2f}\n"
+                f"   Przekroczenie: {(cost_percentage - 1.0) * 100:.1f}%\n"
+                f"   Generowanie zatrzymane aby zapobiec dalszym kosztom."
+            )
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
+        # WARNING at 80% of limit
+        elif cost_percentage >= alert_threshold:
+            warning_msg = (
+                f"⚠️ OSTRZEŻENIE: Zbliżasz się do limitu kosztów{context}!\n"
+                f"   Koszt aktualny: ${current_cost:.2f} ({cost_percentage * 100:.1f}%)\n"
+                f"   Maksymalny limit: ${max_cost:.2f}\n"
+                f"   Pozostało: ${max_cost - current_cost:.2f}"
+            )
+            logger.warning(warning_msg)
+
+        # Regular cost tracking log
+        else:
+            logger.info(
+                f"💰 Koszt projektu{context}: ${current_cost:.2f} "
+                f"({cost_percentage * 100:.1f}% z ${max_cost:.2f} limitu)"
+            )
+
     async def _generate_all_chapters(
         self,
         world_bible: WorldBible,
@@ -465,6 +517,9 @@ class AgentOrchestrator:
         words_per_chapter = target_words // chapter_count
 
         logger.info(f"✍️ Writing {chapter_count} chapters with AI (~{words_per_chapter} words each)...")
+
+        # Check cost limit before starting chapter generation
+        self._check_cost_limit()
 
         chapters_data = []
         previous_summary = None
@@ -579,12 +634,18 @@ class AgentOrchestrator:
                 'quality_score': 85.0
             })
 
+            # Check cost limit after each chapter (enforce budget)
+            self._check_cost_limit(chapter_num)
+
             # Update progress
             progress_in_step = (chapter_num / chapter_count) * 0.5  # Chapters are 50% of this step
             await self._update_progress(
                 11,
                 f"Pisanie rozdziału {chapter_num}/{chapter_count} (AI)"
             )
+
+        # Final cost check
+        self._check_cost_limit()
 
         logger.info(f"✅ All {chapter_count} chapters written!")
         return chapters_data

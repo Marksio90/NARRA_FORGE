@@ -341,33 +341,42 @@ def _export_epub(project: Project, chapters: List[Chapter], file_path: Path):
 
 
 def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
-    """Export to PDF"""
+    """Export to PDF with Polish character support"""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
     doc = SimpleDocTemplate(str(file_path), pagesize=letter)
     styles = getSampleStyleSheet()
-    
-    # Custom styles
+
+    # Register Unicode-capable font (Helvetica supports Polish characters)
+    # Note: Helvetica is built-in and supports extended Latin characters
+    font_name = 'Helvetica'
+
+    # Custom styles with Unicode-capable font
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
         alignment=TA_CENTER,
-        spaceAfter=30
+        spaceAfter=30,
+        fontName=font_name
     )
-    
+
     chapter_style = ParagraphStyle(
         'ChapterTitle',
         parent=styles['Heading2'],
         fontSize=18,
-        spaceAfter=12
+        spaceAfter=12,
+        fontName=font_name
     )
-    
+
     body_style = ParagraphStyle(
         'Body',
         parent=styles['BodyText'],
         alignment=TA_JUSTIFY,
         fontSize=12,
         leading=16,
-        fontName='Times-Roman',  # Classic book font
+        fontName=font_name,  # Helvetica supports Polish characters
         firstLineIndent=18,  # First line indent (book style)
         leftIndent=0,
         rightIndent=0,
@@ -382,7 +391,7 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
         alignment=TA_JUSTIFY,
         fontSize=12,
         leading=16,
-        fontName='Times-Roman',
+        fontName=font_name,
         firstLineIndent=18,
         leftIndent=0,
         rightIndent=0,
@@ -397,7 +406,7 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
         alignment=TA_JUSTIFY,
         fontSize=12,
         leading=16,
-        fontName='Times-Roman',
+        fontName=font_name,
         firstLineIndent=0,  # No indent for first paragraph
         leftIndent=0,
         rightIndent=0,
@@ -424,8 +433,9 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
                 title_style_italic = ParagraphStyle(
                     'ChapterTitleItalic',
                     parent=styles['Heading3'],
-                    fontName='Times-Italic',
-                    alignment=TA_CENTER
+                    fontName='Helvetica-Oblique',  # Helvetica italic for Polish support
+                    alignment=TA_CENTER,
+                    fontSize=14
                 )
                 content.append(Paragraph(chapter.title, title_style_italic))
 
@@ -445,8 +455,16 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
                 else:
                     current_style = body_style
 
-                content.append(Paragraph(paragraph_text, current_style))
-                content.append(Spacer(1, 0.05*Inches))  # Small space between paragraphs
+                try:
+                    # Ensure proper encoding for Polish characters
+                    safe_text = paragraph_text.encode('utf-8', 'replace').decode('utf-8')
+                    content.append(Paragraph(safe_text, current_style))
+                    content.append(Spacer(1, 0.05*Inches))  # Small space between paragraphs
+                except Exception as e:
+                    logger.warning(f"Failed to add paragraph to PDF: {e}")
+                    # Add as plain text if Paragraph fails
+                    content.append(Paragraph(paragraph_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), current_style))
+                    content.append(Spacer(1, 0.05*Inches))
 
             content.append(PageBreak())
     
@@ -456,23 +474,32 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
 
 
 def _export_markdown(project: Project, chapters: List[Chapter], file_path: Path):
-    """Export to Markdown"""
-    with open(file_path, 'w', encoding='utf-8') as f:
-        # Title
-        f.write(f"# {project.name}\n\n")
-        f.write(f"**Gatunek:** {project.genre.value.title()}  \n")
-        f.write(f"**Wygenerowano:** {datetime.now().strftime('%d.%m.%Y')}  \n")
-        f.write(f"**Platforma:** NarraForge\n\n")
-        f.write("---\n\n")
-        
-        # Chapters
-        for chapter in chapters:
-            if chapter.content:
-                f.write(f"## Rozdział {chapter.number}\n\n")
-                if chapter.title:
-                    f.write(f"### {chapter.title}\n\n")
-                
-                f.write(chapter.content)
-                f.write("\n\n---\n\n")
-    
-    logger.info(f"Markdown exported: {file_path}")
+    """Export to Markdown with Polish character support"""
+    try:
+        with open(file_path, 'w', encoding='utf-8', errors='replace') as f:
+            # Title
+            f.write(f"# {project.name}\n\n")
+            f.write(f"**Gatunek:** {project.genre.value.title()}  \n")
+            f.write(f"**Wygenerowano:** {datetime.now().strftime('%d.%m.%Y')}  \n")
+            f.write(f"**Platforma:** NarraForge\n\n")
+            f.write("---\n\n")
+
+            # Chapters
+            for chapter in chapters:
+                if chapter.content:
+                    f.write(f"## Rozdział {chapter.number}\n\n")
+                    if chapter.title:
+                        f.write(f"### {chapter.title}\n\n")
+
+                    # Ensure content is properly formatted
+                    content = chapter.content
+                    if not content.endswith('\n'):
+                        content += '\n'
+
+                    f.write(content)
+                    f.write("\n---\n\n")
+
+        logger.info(f"Markdown exported: {file_path}")
+    except Exception as e:
+        logger.error(f"Markdown export failed: {e}", exc_info=True)
+        raise

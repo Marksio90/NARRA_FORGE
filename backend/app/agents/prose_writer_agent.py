@@ -282,9 +282,11 @@ class ProseWriterAgent:
                 logger.info(f"Using TIER 3 (GPT-4) for critical chapter {chapter_num}")
                 return ModelTier.TIER_3
 
-        # Use Tier 2 (GPT-4o) for most chapters - excellent quality, reasonable cost
-        # NOTE: For WORLD-CLASS quality at 10x cost, use: return ModelTier.TIER_3
-        return ModelTier.TIER_2
+        # WORLD-CLASS QUALITY: Use TIER_3 (GPT-4) for ALL chapters
+        # GPT-4 is less restrictive than GPT-4o for creative content (no safety refusals)
+        # Cost: ~10x higher, but user demanded "ABSOLUTNIE NAJWYŻSZYM ŚWIATOWYM POZIOMIE"
+        logger.info(f"Using TIER 3 (GPT-4) for chapter {chapter_num} - WORLD-CLASS quality")
+        return ModelTier.TIER_3
 
     async def _generate_prose(
         self,

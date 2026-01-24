@@ -90,14 +90,22 @@ class AIService:
 
         # Initialize OpenAI
         logger.info("✅ Initializing OpenAI client")
-        self.openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.openai_client = openai.OpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            timeout=120.0,  # 2 minute timeout for API requests
+            max_retries=0,  # We handle retries ourselves in generate()
+        )
 
         # Initialize Anthropic (if key is available)
         self.anthropic_client = None
         anthropic_key = getattr(settings, 'ANTHROPIC_API_KEY', None)
         if anthropic_key and anthropic_key != "sk-placeholder-add-your-key":
             logger.info("✅ Initializing Anthropic client")
-            self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+            self.anthropic_client = anthropic.Anthropic(
+                api_key=anthropic_key,
+                timeout=120.0,  # 2 minute timeout for API requests
+                max_retries=0,  # We handle retries ourselves in generate()
+            )
         else:
             logger.warning("⚠️ ANTHROPIC_API_KEY not set - Claude models will not be available")
 

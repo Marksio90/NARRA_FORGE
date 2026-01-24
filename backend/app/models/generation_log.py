@@ -2,7 +2,7 @@
 GenerationLog model - tracks all AI generation calls for cost and monitoring
 """
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Text, DateTime, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Text, DateTime, Enum, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -20,7 +20,7 @@ class GenerationLog(Base):
     __tablename__ = "generation_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     
     # Pipeline step (1-15)
     step = Column(Integer, nullable=False)
@@ -53,6 +53,12 @@ class GenerationLog(Base):
     
     # Relationship
     project = relationship("Project", back_populates="generation_logs")
-    
+
+    # Indexes for better query performance
+    __table_args__ = (
+        Index('idx_generation_logs_project_id', 'project_id'),
+        Index('idx_generation_logs_project_step', 'project_id', 'step'),
+    )
+
     def __repr__(self):
         return f"<GenerationLog(id={self.id}, step={self.step}, model='{self.model_name}', cost=${self.cost:.4f})>"

@@ -13,7 +13,7 @@ class WorldBible(Base):
     __tablename__ = "world_bibles"
     
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, unique=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, unique=True)
     
     # Geography and locations
     geography = Column(JSONB, default=dict)

@@ -652,10 +652,16 @@ class AgentOrchestrator:
 
     def _get_chapter_outline(self, plot_structure: PlotStructure, chapter_num: int) -> Dict[str, Any]:
         """Get outline for specific chapter from plot structure"""
-        tension_data = next(
-            (t for t in plot_structure.tension_graph if t.get('chapter') == chapter_num),
-            {'tension': 5, 'emotion': 'neutral'}
-        )
+        # Handle case where tension_graph might contain ints instead of dicts
+        tension_data = {'tension': 5, 'emotion': 'neutral'}  # Default
+
+        if plot_structure.tension_graph:
+            # Try to find matching chapter in tension_graph
+            for t in plot_structure.tension_graph:
+                # Check if t is a dict (expected format)
+                if isinstance(t, dict) and t.get('chapter') == chapter_num:
+                    tension_data = t
+                    break
 
         return {
             'setting': 'Dynamic based on chapter progression',

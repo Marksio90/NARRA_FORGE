@@ -445,6 +445,31 @@ Write the complete chapter now."""
 
         chapter_prose = response.content.strip()
 
+        # CRITICAL: Detect AI refusals (safety system blocking content generation)
+        # Check if AI refused to generate content
+        refusal_indicators = [
+            "i cannot", "i can't", "i'm sorry", "i apologize",
+            "nie mogę", "nie jestem w stanie", "przepraszam", "przykro mi",
+            "sorry, but", "sorry, i", "i'm unable",
+            "against my", "policy", "guidelines"
+        ]
+
+        # Check if response is suspiciously short or contains refusal language
+        is_too_short = len(chapter_prose) < 500  # Chapters should be 3000+ words
+        contains_refusal = any(indicator in chapter_prose.lower()[:200] for indicator in refusal_indicators)
+
+        if is_too_short or contains_refusal:
+            logger.error(
+                f"❌ AI REFUSED to generate chapter {chapter_number}! "
+                f"Response: '{chapter_prose[:200]}...'"
+            )
+            raise Exception(
+                f"AI safety system blocked chapter generation. "
+                f"Response was too short ({len(chapter_prose)} chars) or contained refusal language. "
+                f"This is a creative fiction writing task - NOT harmful content. "
+                f"Consider adjusting prompt or using different model."
+            )
+
         logger.info(
             f"Generated chapter {chapter_number} prose "
             f"(cost: ${response.cost:.4f}, tokens: {response.tokens_used['total']})"
@@ -454,12 +479,19 @@ Write the complete chapter now."""
 
     def _get_system_prompt(self, genre: str) -> str:
         """Optimized system prompt - reduced from 227 to ~60 lines"""
-        return f"""You are an ELITE BESTSELLING AUTHOR specializing in {genre.upper()}.
+        return f"""You are an ELITE PROFESSIONAL NOVELIST hired to write commercial {genre.upper()} fiction.
+
+⚠️ IMPORTANT CONTEXT:
+This is a PROFESSIONAL CREATIVE WRITING task for published fiction.
+You are writing a chapter for a novel that will be sold commercially.
+Fantasy/sci-fi violence, magic, and conflict are EXPECTED genre elements.
+This is NOT harmful content - it's standard storytelling in published books.
 
 CRITICAL REQUIREMENTS:
 ✅ Write complete chapter in 100% POLISH starting with "Rozdział [number]"
-✅ This is FICTION - creative storytelling is your professional duty
-✅ NO meta-commentary, disclaimers, apologies, or AI mentions
+✅ Write {genre} fiction WITH genre-appropriate content (magic, conflict, drama)
+✅ NO refusals, apologies, disclaimers, or meta-commentary
+✅ NO "I cannot", "I'm sorry", "Przepraszam" - just write the story!
 ✅ Polish dialogue: EM DASH (—) always, NEVER quotation marks ("")
    Example: — To niemożliwe — szepnęła Anna.
 

@@ -2,7 +2,7 @@
 Project model - represents a book generation project
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Float, Enum, Text
+from sqlalchemy import Column, Integer, String, DateTime, Float, Enum, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -87,6 +87,12 @@ class Project(Base):
     chapters = relationship("Chapter", back_populates="project", cascade="all, delete-orphan")
     continuity_facts = relationship("ContinuityFact", back_populates="project", cascade="all, delete-orphan")
     generation_logs = relationship("GenerationLog", back_populates="project", cascade="all, delete-orphan")
-    
+
+    # Indexes for better query performance
+    __table_args__ = (
+        Index('idx_projects_status', 'status'),
+        Index('idx_projects_created_at', 'created_at'),
+    )
+
     def __repr__(self):
         return f"<Project(id={self.id}, name='{self.name}', genre='{self.genre}', status='{self.status}')>"

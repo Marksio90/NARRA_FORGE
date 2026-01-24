@@ -2,7 +2,7 @@
 Scene model - detailed breakdown of scenes within chapters
 """
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import relationship
 
@@ -13,7 +13,7 @@ class Scene(Base):
     __tablename__ = "scenes"
     
     id = Column(Integer, primary_key=True, index=True)
-    chapter_id = Column(Integer, ForeignKey("chapters.id"), nullable=False)
+    chapter_id = Column(Integer, ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False)
     
     number = Column(Integer, nullable=False)  # Scene number within chapter
     description = Column(Text, nullable=True)  # What happens in this scene
@@ -43,6 +43,12 @@ class Scene(Base):
     
     # Relationship
     chapter = relationship("Chapter", back_populates="scenes")
-    
+
+    # Indexes and constraints for better performance
+    __table_args__ = (
+        Index('idx_scenes_chapter_id', 'chapter_id'),
+        UniqueConstraint('chapter_id', 'number', name='uq_scene_chapter_number'),
+    )
+
     def __repr__(self):
         return f"<Scene(id={self.id}, chapter_id={self.chapter_id}, number={self.number})>"

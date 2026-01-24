@@ -13,7 +13,7 @@ class PlotStructure(Base):
     __tablename__ = "plot_structures"
     
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, unique=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, unique=True)
     
     # Structure metadata
     structure_type = Column(Text, nullable=False)  # "Hero's Journey", "7-Point", etc.

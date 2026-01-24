@@ -2,7 +2,7 @@
 ContinuityFact model - tracks all facts for continuity checking
 """
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ARRAY
 from datetime import datetime
@@ -15,13 +15,13 @@ class ContinuityFact(Base):
     __tablename__ = "continuity_facts"
     
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+
     # The actual fact
     fact = Column(Text, nullable=False)
-    
+
     # Where this fact appears
-    chapter_id = Column(Integer, ForeignKey("chapters.id"), nullable=True)
+    chapter_id = Column(Integer, ForeignKey("chapters.id", ondelete="CASCADE"), nullable=True)
     source_location = Column(String(500), nullable=True)  # e.g., "Chapter 3, Scene 2"
     
     # Fact categorization
@@ -39,6 +39,12 @@ class ContinuityFact(Base):
     
     # Relationship
     project = relationship("Project", back_populates="continuity_facts")
-    
+
+    # Indexes for better query performance
+    __table_args__ = (
+        Index('idx_continuity_facts_project_id', 'project_id'),
+        Index('idx_continuity_facts_chapter_id', 'chapter_id'),
+    )
+
     def __repr__(self):
         return f"<ContinuityFact(id={self.id}, type='{self.fact_type}')>"

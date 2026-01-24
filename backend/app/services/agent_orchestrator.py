@@ -21,6 +21,7 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.agents import (
     WorldBuilderAgent,
@@ -151,7 +152,12 @@ class AgentOrchestrator:
             # Update project status
             self.project.status = ProjectStatus.GENERATING
             self.project.started_at = datetime.utcnow()
-            self.db.commit()
+            try:
+                self.db.commit()
+            except SQLAlchemyError as e:
+                self.db.rollback()
+                logger.error(f"Database commit failed: {e}", exc_info=True)
+                raise Exception(f"Nie udało się zaktualizować statusu projektu: {str(e)}")
 
             # Extract project parameters
             params = self.project.parameters or {}
@@ -227,7 +233,12 @@ class AgentOrchestrator:
             metrics = self.ai_service.get_metrics()
             self.project.actual_cost = metrics.total_cost
 
-            self.db.commit()
+            try:
+                self.db.commit()
+            except SQLAlchemyError as e:
+                self.db.rollback()
+                logger.error(f"Failed to commit completion status: {e}", exc_info=True)
+                raise Exception(f"Nie udało się zapisać statusu zakończenia: {str(e)}")
 
             # Generate report
             report = {
@@ -271,7 +282,12 @@ class AgentOrchestrator:
             self.project.status = ProjectStatus.FAILED
             self.project.current_activity = f"Błąd: {str(e)}"
             self.project.error_message = error_details
-            self.db.commit()
+            try:
+                self.db.commit()
+            except SQLAlchemyError as commit_error:
+                self.db.rollback()
+                logger.error(f"Failed to commit error status: {commit_error}", exc_info=True)
+                # Don't raise here - we're already handling an error
 
             return {
                 "success": False,
@@ -309,8 +325,13 @@ class AgentOrchestrator:
         )
 
         self.db.add(world_bible)
-        self.db.commit()
-        self.db.refresh(world_bible)
+        try:
+            self.db.commit()
+            self.db.refresh(world_bible)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Failed to save world bible: {e}", exc_info=True)
+            raise Exception(f"Nie udało się zapisać World Bible do bazy: {str(e)}")
 
         logger.info(f"✅ World bible created and saved (ID: {world_bible.id})")
         return world_bible
@@ -362,10 +383,14 @@ class AgentOrchestrator:
             self.db.add(character)
             characters.append(character)
 
-        self.db.commit()
-
-        for char in characters:
-            self.db.refresh(char)
+        try:
+            self.db.commit()
+            for char in characters:
+                self.db.refresh(char)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Failed to save characters: {e}", exc_info=True)
+            raise Exception(f"Nie udało się zapisać postaci do bazy: {str(e)}")
 
         logger.info(f"✅ {len(characters)} characters created and saved")
         return characters
@@ -416,8 +441,13 @@ class AgentOrchestrator:
         )
 
         self.db.add(plot_structure)
-        self.db.commit()
-        self.db.refresh(plot_structure)
+        try:
+            self.db.commit()
+            self.db.refresh(plot_structure)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Failed to save plot structure: {e}", exc_info=True)
+            raise Exception(f"Nie udało się zapisać struktury fabuły do bazy: {str(e)}")
 
         logger.info(f"✅ Plot structure created and saved (ID: {plot_structure.id})")
         return plot_structure
@@ -501,8 +531,13 @@ class AgentOrchestrator:
             )
 
             self.db.add(chapter)
-            self.db.commit()
-            self.db.refresh(chapter)
+            try:
+                self.db.commit()
+                self.db.refresh(chapter)
+            except SQLAlchemyError as e:
+                self.db.rollback()
+                logger.error(f"Failed to save chapter {chapter_num}: {e}", exc_info=True)
+                raise Exception(f"Nie udało się zapisać rozdziału {chapter_num} do bazy: {str(e)}")
 
             chapters_data.append({
                 'number': chapter_num,
@@ -578,7 +613,12 @@ class AgentOrchestrator:
         metrics = self.ai_service.get_metrics()
         self.project.actual_cost = metrics.total_cost
 
-        self.db.commit()
+        try:
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.warning(f"Failed to update progress (non-critical): {e}")
+            # Don't raise - progress updates are not critical
 
         logger.info(
             f"📊 Progress: Step {step}/15 ({self.progress.get_percentage():.1f}%) - {activity} "

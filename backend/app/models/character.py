@@ -2,7 +2,7 @@
 Character model - represents characters in the story
 """
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 import enum
@@ -22,7 +22,7 @@ class Character(Base):
     __tablename__ = "characters"
     
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     
     name = Column(String(255), nullable=False)
     role = Column(Enum(CharacterRole), nullable=False)
@@ -88,6 +88,11 @@ class Character(Base):
     # Relationships
     project = relationship("Project", back_populates="characters")
     pov_chapters = relationship("Chapter", back_populates="pov_character", foreign_keys="Chapter.pov_character_id")
-    
+
+    # Indexes for better query performance
+    __table_args__ = (
+        Index('idx_characters_project_id', 'project_id'),
+    )
+
     def __repr__(self):
         return f"<Character(id={self.id}, name='{self.name}', role='{self.role}')>"

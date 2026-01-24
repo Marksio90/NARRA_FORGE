@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -162,11 +162,22 @@ const ProjectView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchProject();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const fetchProject = async () => {
     try {
@@ -208,13 +219,26 @@ const ProjectView: React.FC = () => {
     setIsGenerating(true);
     try {
       await axios.post(`http://localhost:8000/api/projects/${id}/start`);
+
+      // Clear any existing polling interval
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+
       // Start polling for updates
-      const interval = setInterval(async () => {
-        const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
-        setProject(response.data);
-        if (response.data.status === 'completed' || response.data.status === 'failed') {
-          clearInterval(interval);
-          setIsGenerating(false);
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
+          setProject(response.data);
+          if (response.data.status === 'completed' || response.data.status === 'failed') {
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+            setIsGenerating(false);
+          }
+        } catch (error) {
+          console.error('Polling error:', error);
         }
       }, 3000);
     } catch (error) {

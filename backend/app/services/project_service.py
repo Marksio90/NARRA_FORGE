@@ -938,29 +938,29 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": 11,
             "name": "Prose Generation - Wszystkie Rozdziały",
             "task_type": "prose_writing",
-            "estimated_tokens_in": 2000 * ai_decisions.get("chapter_count", 25),  # Context per chapter
+            "estimated_tokens_in": 5000 * ai_decisions.get("chapter_count", 25),  # 500 system prompt + 4500 context per chapter
             "estimated_tokens_out": (ai_decisions.get("target_word_count", 90000) / 0.75),  # Words to tokens ~1.33
         },
         {
             "step": 12,
             "name": "Continuity Check (wszystkie rozdziały)",
             "task_type": "validation",
-            "estimated_tokens_in": 10000 * ai_decisions.get("chapter_count", 25) // 5,  # Sample checking
-            "estimated_tokens_out": 500 * ai_decisions.get("chapter_count", 25),
+            "estimated_tokens_in": 100,  # Placeholder - not currently implemented with AI
+            "estimated_tokens_out": 50,  # Placeholder - not currently implemented with AI
         },
         {
             "step": 13,
             "name": "Style Polishing (wszystkie rozdziały)",
             "task_type": "style_polish",
-            "estimated_tokens_in": (ai_decisions.get("target_word_count", 90000) / 0.75) * 1.1,
-            "estimated_tokens_out": (ai_decisions.get("target_word_count", 90000) / 0.75) * 0.3,
+            "estimated_tokens_in": 100,  # Placeholder - currently done during generation
+            "estimated_tokens_out": 50,  # Placeholder - currently done during generation
         },
         {
             "step": 14,
             "name": "Genre Compliance Audit",
             "task_type": "validation",
-            "estimated_tokens_in": 15000,
-            "estimated_tokens_out": 3000,
+            "estimated_tokens_in": 100,  # Placeholder - not currently implemented with AI
+            "estimated_tokens_out": 50,  # Placeholder - not currently implemented with AI
         },
         {
             "step": 15,

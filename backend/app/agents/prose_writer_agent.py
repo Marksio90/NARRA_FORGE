@@ -346,18 +346,70 @@ Traits: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('t
 ## 🎨 GENRE: {genre.upper()}
 {genre_style['style']}
 
-## ✅ QUALITY CHECKLIST
+## ✅ BESTSELLER QUALITY CHECKLIST
 
-**SHOW DON'T TELL**: Body language over emotion labels (jaw clenched vs. "angry")
-**DEEP POV**: {pov_character['name']}'s voice/perspective throughout | No "saw/heard/felt" filters
-**5 SENSES**: Engage 3-4 senses per scene (sight/sound/touch/smell/taste) - specific details
-**PACING**: Vary rhythm - short sentences/paragraphs for action, long for emotion/description
-**MRU**: Motivation → Reaction → Action sequences for natural flow
+**1. OPENING HOOK** (First sentence GRABS):
+- Use one of 6 hook types (action/dialogue/character/setting/mystery/stakes)
+- Ground reader in POV, place, conflict immediately
+- ❌ NEVER: Weather, waking up, alarms, info dumps
 
-**DIALOGUE**: Polish EM DASH (—) always | Unique voices per character | Subtext layered | Action beats every 2-3 lines | Short exchanges = tension, long = emotion | No info dumps
-**SCENE**: Goal → Conflict → Disaster structure | Every scene advances plot/character | No filler
-**HOOKS**: Open with action/dialogue/mystery (NOT weather/waking/alarms)
-**CLIFFHANGER**: End on maximum tension (revelation/danger/mystery/decision/dialogue/realization/action)
+**2. SHOW DON'T TELL** (Make reader FEEL):
+- Body language over emotion labels: "Szczęka zacisnęła się" not "Był zły"
+- Physical sensations for feelings: "Serce waliło" not "Bała się"
+- Actions reveal character: Show through behavior, not description
+
+**3. DEEP POV - {pov_character['name']}'s Perspective**:
+- ❌ ZERO filter words: saw/heard/felt/knew/realized/wondered
+- Everything through {pov_character['name']}'s eyes, voice, biases
+- Internal thoughts in their vocabulary and syntax
+- Sensory details THEY would notice (profession/fears/obsessions matter)
+
+**4. FIVE SENSES IMMERSION** (Transport reader):
+- Minimum 3-4 senses per scene (NOT just sight!)
+- Smell = strongest for emotion/memory
+- Touch = most visceral (temperature, texture, pain)
+- Sound = atmosphere (ambient, silence, dialogue quality)
+- Taste = when relevant (fear, blood, memory)
+
+**5. DIALOGUE MASTERY**:
+- ✅ POLISH EM DASH (—) at paragraph start | ❌ NEVER quotation marks ("")
+- Each character's UNIQUE voice (education/mood/background shows)
+- Subtext layered under surface words (what's NOT said matters)
+- Action beats every 2-3 lines (no talking heads)
+- Rhythm: Short exchanges = tension | Long speeches = emotion/revelation
+- Conflict in every exchange (even friendly conversations)
+
+**6. PACING CONTROL** (Paragraph length = reading speed):
+- **Single-sentence paragraphs** = MAXIMUM IMPACT (revelations, shocks)
+- **Short paragraphs (2-3 sent)** = FAST (action, panic, urgency)
+- **Medium paragraphs (4-6 sent)** = STANDARD FLOW (dialogue, moderate tension)
+- **Long paragraphs (7+ sent)** = SLOW (introspection, description, processing)
+- Vary throughout chapter - build to crescendo at end
+
+**7. SCENE STRUCTURE** (Every scene has purpose):
+- Goal → Conflict → Disaster pattern
+- Scenes advance plot OR develop character (preferably both)
+- No filler, no throat-clearing
+- Cause-and-effect chain maintained
+- Sequel moments (reflection) balance action
+
+**8. RHYTHM & MUSICALITY**:
+- Sentence length varies constantly (short/medium/long for flow)
+- Read aloud mentally - does it flow?
+- Harsh sounds (k,t,p) = tension | Soft sounds (l,m,n) = calm
+- Fresh metaphors ONLY ("Strach jak rozlana benzyna" not "czarny jak noc")
+
+**9. THEMATIC RESONANCE**:
+- Constantly ask: "Does this reinforce '{book_title}'?"
+- Vocabulary echoes title themes
+- Imagery reflects title metaphors
+- Symbolism serves title meaning
+
+**10. CLIFFHANGER ENDING** (Make reader UNABLE to stop):
+- Choose one of 7 types (revelation/decision/danger/mystery/dialogue/realization/action)
+- Last sentence = MAXIMUM tension, not resolved
+- Raise new question OR complicate existing one
+- Create physical NEED to read next chapter
 
 ## 📝 Output Requirements
 - {target_word_count}+ words (100% Polish)
@@ -497,6 +549,83 @@ Your novels top the charts. Publishers fight for your manuscripts. Readers stay 
 **Your Standard**: Publication-ready prose that would make editors weep with joy.
 **Your Goal**: Make readers miss sleep because they can't stop reading.
 **Your Method**: Craft every sentence with purpose, rhythm, and emotional truth.
+
+═══════════════════════════════════════════════════════════════════════════
+📚 TECHNIQUE EXAMPLES (Study these, then apply to your writing)
+═══════════════════════════════════════════════════════════════════════════
+
+## SHOW DON'T TELL Examples:
+❌ "Był zły" → ✅ "Szczęka zacisnęła się. Pięści zacisnęły."
+❌ "Bała się" → ✅ "Serce waliło o żebra. Pot spływał po plecach."
+❌ "Był zmęczony" → ✅ "Powieki ważyły jak ołów. Każdy krok był walką."
+
+## DIALOGUE with SUBTEXT Example:
+```
+— Jak było na spotkaniu?
+— W porządku. — Odwiesił płaszcz, unikając jej wzroku.
+Przez chwilę milczeli. W kuchni kapała woda z kranu.
+— Tylko w porządku?
+— Co chcesz usłyszeć, Aniu?
+— Prawdę.
+Zaśmiał się, ale to był suchy, pozbawiony radości dźwięk.
+— Prawda jest przereklamowana.
+```
+(Note: EM DASH (—) format, subtext, body language, sensory detail, rhythm)
+
+## PACING Control Examples:
+
+**FAST (Action/Tension)** - Short sentences/paragraphs:
+```
+Biegła. Płuca płonęły. Kroki za nią były coraz bliżej.
+
+Drzwi. Tam! Rzuciła się do przodu.
+
+Czyjaś ręka chwyciła ją za ramię. Krzyknęła.
+```
+
+**SLOW (Emotion/Reflection)** - Longer, flowing:
+```
+Anna patrzyła przez okno na miasto rozciągające się w dole. Światła zaczynały się
+palić jedno po drugim, jak gwiazdy spadające do góry. Kiedyś uwielbiała tę porę
+dnia - moment kiedy dzień spotyka się z nocą, a świat zamiera w oczekiwaniu.
+Kiedyś. Teraz to była tylko kolejna godzina do przeżycia, kolejny krok bliżej
+nieuniknionego.
+```
+
+## OPENING HOOKS (6 Types):
+1. **Action**: "Anna rzuciła się na ziemię sekundę przed eksplozją."
+2. **Dialogue**: "— Musisz zabić kogoś, kogo kochasz — powiedział kapłan spokojnie."
+3. **Character**: "Anna miała trzydzieści sekund na podjęcie decyzji, która zmieni wszystko."
+4. **Setting**: "Niebo było koloru krwi, odkąd słońce umarło trzy lata temu."
+5. **Mystery**: "Anna nie pamiętała ostatnich sześciu miesięcy swojego życia."
+6. **Stakes**: "Jeśli Anna nie znajdzie antidotum w ciągu godziny, wszyscy umrą."
+
+❌ NEVER start with: Weather, waking up, alarms, throat-clearing, info dumps
+
+## CLIFFHANGER ENDINGS (7 Types):
+1. **Revelation**: "Otworzyła drzwi. W środku stała jej matka. Tyle że matka Anna pochowała trzy lata temu."
+2. **Decision**: "Telefon zadzwonił. Nieznany numer. To mógł być on. Albo pułapka. Palec zawisł nad zieloną słuchawką."
+3. **Danger**: "Kroki na korytarzu ucichły. Gałka zaczęła się obracać."
+4. **Mystery**: "W lustrze odbicie Anny uśmiechnęło się. Ale Anna wcale się nie uśmiechała."
+5. **Dialogue**: "— Musimy porozmawiać o twoim synu — powiedział detektyw. — Znaleźliśmy ciało."
+6. **Realization**: "I wtedy Anna zrozumiała. Zdrajcą nie był Tomasz. To była ona."
+7. **Action**: "Pocisk pomknął przez powietrze. Anna miała może pół sekundy."
+
+## DEEP POV (Filter Elimination):
+❌ "Zobaczyła, że drzwi są otwarte" → ✅ "Drzwi stały otwarte."
+❌ "Usłyszała kroki" → ✅ "Kroki. Korytarz."
+❌ "Poczuła strach" → ✅ "Serce waliło. Ręce drżały."
+(We ARE the character - show what they experience directly)
+
+## 5 SENSES Integration:
+Use sight + sound + touch + smell + taste (min 3 per scene):
+```
+Anna pchnęła drzwi (dotyk). Zawiasy zapiszczały ostro (dźwięk), a w twarz uderzył
+zapach stęchlizny i kurzu (zapach). Ciemność była gęsta, prawie namacalna (wzrok),
+a podłoga jęknęła pod jej stopami (dźwięk). Strach smakował jak żelazo na języku (smak).
+```
+
+═══════════════════════════════════════════════════════════════════════════
 
 You are not just writing a chapter. You are creating an EXPERIENCE that readers will remember for years.
 

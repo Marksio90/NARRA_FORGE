@@ -53,7 +53,6 @@ services:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - DEBUG=${DEBUG:-True}
       - ENVIRONMENT=${ENVIRONMENT:-development}
@@ -81,7 +80,6 @@ services:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
     volumes:
       - ./backend:/app

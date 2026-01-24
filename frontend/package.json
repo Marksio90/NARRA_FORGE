@@ -4,16 +4,17 @@
   "description": "NarraForge Frontend - Autonomiczna Kuźnia Literacka",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.0",
-    "axios": "^1.6.2",
-    "tailwindcss": "^3.4.0",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.1.1",
-    "recharts": "^2.10.3",
+    "ajv": "^8.12.0",
+    "axios": "^1.6.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
-    "ajv": "^8.12.0"
+    "react-router-dom": "^6.21.0",
+    "react-toastify": "^11.0.5",
+    "recharts": "^2.10.3",
+    "tailwindcss": "^3.4.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -22,13 +23,13 @@
     "eject": "react-scripts eject"
   },
   "devDependencies": {
-    "react-scripts": "^5.0.1",
-    "typescript": "^4.9.5",
+    "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
-    "@types/node": "^20.10.5",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
+    "postcss": "^8.4.32",
+    "react-scripts": "^5.0.1",
+    "typescript": "^4.9.5"
   },
   "eslintConfig": {
     "extends": [

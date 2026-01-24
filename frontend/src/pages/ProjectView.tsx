@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import axios from 'axios';
 
 interface SimulationStep {
@@ -206,11 +207,12 @@ const ProjectView: React.FC = () => {
     try {
       const response = await axios.post(`http://localhost:8000/api/projects/${id}/simulate`);
       setSimulation(response.data);
+      toast.success('Symulacja zakończona pomyślnie!');
       // Refresh project to get updated status
       await fetchProject();
     } catch (error) {
       console.error('Error simulating:', error);
-      alert('Wystąpił błąd podczas symulacji');
+      toast.error('Wystąpił błąd podczas symulacji');
     }
     setIsSimulating(false);
   };
@@ -219,6 +221,7 @@ const ProjectView: React.FC = () => {
     setIsGenerating(true);
     try {
       await axios.post(`http://localhost:8000/api/projects/${id}/start`);
+      toast.info('Generowanie rozpoczęte...');
 
       // Clear any existing polling interval
       if (pollingIntervalRef.current) {
@@ -236,6 +239,13 @@ const ProjectView: React.FC = () => {
               pollingIntervalRef.current = null;
             }
             setIsGenerating(false);
+
+            // Show appropriate toast
+            if (response.data.status === 'completed') {
+              toast.success('Generowanie zakończone pomyślnie!');
+            } else {
+              toast.error('Generowanie nie powiodło się');
+            }
           }
         } catch (error) {
           console.error('Polling error:', error);
@@ -243,7 +253,7 @@ const ProjectView: React.FC = () => {
       }, 3000);
     } catch (error) {
       console.error('Error generating:', error);
-      alert('Wystąpił błąd podczas generowania');
+      toast.error('Wystąpił błąd podczas generowania');
       setIsGenerating(false);
     }
   };
@@ -263,7 +273,7 @@ const ProjectView: React.FC = () => {
       link.remove();
     } catch (error) {
       console.error('Error exporting:', error);
-      alert('Wystąpił błąd podczas eksportu');
+      toast.error('Wystąpił błąd podczas eksportu');
     }
   };
 

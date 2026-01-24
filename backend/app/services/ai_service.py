@@ -6,6 +6,14 @@ with cost tracking, retry logic, and tier management
 
 import openai
 import anthropic
+from anthropic import (
+    RateLimitError as AnthropicRateLimit,
+    APIConnectionError as AnthropicAPIConnectionError,
+    APITimeoutError as AnthropicAPITimeoutError,
+    AuthenticationError as AnthropicAuthenticationError,
+    PermissionDeniedError as AnthropicPermissionDeniedError,
+    BadRequestError as AnthropicBadRequestError,
+)
 import logging
 import time
 import asyncio
@@ -321,22 +329,59 @@ class AIService:
                     metadata=metadata or {}
                 )
 
+            except (openai.RateLimitError, AnthropicRateLimit) as e:
+                # Rate limit - check for Retry-After header
+                retry_after = None
+                if hasattr(e, 'response') and hasattr(e.response, 'headers'):
+                    retry_after = e.response.headers.get('retry-after') or e.response.headers.get('Retry-After')
+
+                wait_time = int(retry_after) if retry_after else (2 ** attempt)
+                logger.warning(f"Rate limit hit on attempt {attempt + 1}/{retry_count}, retrying after {wait_time}s")
+
+                if attempt < retry_count - 1:
+                    await asyncio.sleep(wait_time)
+                else:
+                    self.metrics.errors += 1
+                    raise Exception(f"Rate limit exceeded after {retry_count} attempts: {e}")
+
+            except (openai.APIConnectionError, openai.Timeout, AnthropicAPIConnectionError, AnthropicAPITimeoutError) as e:
+                # Network errors - retriable
+                self.metrics.errors += 1
+                logger.warning(f"Network error on attempt {attempt + 1}/{retry_count}: {str(e)}")
+
+                if attempt < retry_count - 1:
+                    wait_time = 2 ** attempt
+                    logger.info(f"Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    raise Exception(f"Network error after {retry_count} attempts: {e}")
+
+            except (openai.AuthenticationError, openai.PermissionDeniedError, AnthropicAuthenticationError, AnthropicPermissionDeniedError) as e:
+                # Auth/Permission errors - DO NOT retry (fail fast)
+                self.metrics.errors += 1
+                logger.error(f"Authentication/Permission error (non-retriable): {e}")
+                raise Exception(f"API authentication/permission error: {e}")
+
+            except (openai.BadRequestError, AnthropicBadRequestError) as e:
+                # Bad request errors - DO NOT retry (fail fast)
+                self.metrics.errors += 1
+                logger.error(f"Bad request error (non-retriable): {e}")
+                raise Exception(f"API bad request error: {e}")
+
             except Exception as e:
+                # Unknown errors - retry with caution
                 last_error = e
                 self.metrics.errors += 1
                 logger.warning(
-                    f"AI generation attempt {attempt + 1}/{retry_count} failed: {str(e)}"
+                    f"Unknown error on attempt {attempt + 1}/{retry_count}: {str(e)}"
                 )
 
                 if attempt < retry_count - 1:
-                    # Exponential backoff: 2^attempt seconds
                     wait_time = 2 ** attempt
                     logger.info(f"Retrying in {wait_time}s...")
-                    await asyncio.sleep(wait_time)  # ✅ FIXED: Non-blocking async sleep
-
-        # All retries failed
-        logger.error(f"AI generation failed after {retry_count} attempts: {last_error}")
-        raise Exception(f"AI generation failed: {last_error}")
+                    await asyncio.sleep(wait_time)
+                else:
+                    raise Exception(f"AI generation failed after {retry_count} attempts: {last_error}")
 
     async def _call_openai(
         self,

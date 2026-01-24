@@ -466,21 +466,54 @@ class AgentOrchestrator:
                 for c in characters
             ]
 
-            # Generate chapter
-            chapter_result = await self.prose_writer.write_chapter(
-                chapter_number=chapter_num,
-                chapter_outline=chapter_outline,
-                genre=self.project.genre.value,
-                pov_character=pov_char_dict,
-                world_bible=world_bible.__dict__,
-                plot_structure=plot_structure.__dict__,
-                all_characters=characters_dict,
-                previous_chapter_summary=previous_summary,
-                target_word_count=words_per_chapter,
-                style_complexity=params.get('style_complexity', 'medium'),
-                book_title=self.project.name,  # 🔥 CRITICAL: Pass title to prose writer!
-                semantic_title_analysis=params.get('semantic_title_analysis', {})  # 🎯 Deep meaning
-            )
+            # 🔥 RETRY LOGIC - Don't fail entire book if one chapter has issues
+            max_retries = 3
+            chapter_result = None
+            last_error = None
+
+            for attempt in range(1, max_retries + 1):
+                try:
+                    # Generate chapter
+                    chapter_result = await self.prose_writer.write_chapter(
+                        chapter_number=chapter_num,
+                        chapter_outline=chapter_outline,
+                        genre=self.project.genre.value,
+                        pov_character=pov_char_dict,
+                        world_bible=world_bible.__dict__,
+                        plot_structure=plot_structure.__dict__,
+                        all_characters=characters_dict,
+                        previous_chapter_summary=previous_summary,
+                        target_word_count=words_per_chapter,
+                        style_complexity=params.get('style_complexity', 'medium'),
+                        book_title=self.project.name,  # 🔥 CRITICAL: Pass title to prose writer!
+                        semantic_title_analysis=params.get('semantic_title_analysis', {})  # 🎯 Deep meaning
+                    )
+
+                    # Success! Break out of retry loop
+                    logger.info(f"✅ Chapter {chapter_num} generated successfully")
+                    break
+
+                except Exception as e:
+                    last_error = e
+                    logger.warning(
+                        f"⚠️ Chapter {chapter_num} generation attempt {attempt}/{max_retries} failed: {str(e)}"
+                    )
+
+                    if attempt < max_retries:
+                        # Wait before retry (exponential backoff)
+                        wait_time = 2 ** attempt  # 2s, 4s, 8s
+                        logger.info(f"⏳ Retrying chapter {chapter_num} in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        # All retries exhausted
+                        logger.error(
+                            f"❌ CRITICAL: Chapter {chapter_num} failed after {max_retries} attempts. "
+                            f"Last error: {str(e)}"
+                        )
+                        raise Exception(
+                            f"Failed to generate Chapter {chapter_num} after {max_retries} attempts. "
+                            f"Error: {str(e)}. This chapter is critical for story continuity."
+                        )
 
             # Create summary for next chapter
             previous_summary = await self.prose_writer.create_chapter_summary(

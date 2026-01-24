@@ -672,21 +672,78 @@ class AgentOrchestrator:
         characters: List[Character],
         plot_structure: PlotStructure
     ):
-        """Validate continuity across all chapters"""
+        """Validate continuity across all chapters (basic validation)"""
         logger.info("🔍 Validating continuity across manuscript...")
 
-        # Sample validation (full validation would be expensive)
-        # In production, could validate every chapter or key chapters
+        # Basic validation checks (full AI-powered validation would be expensive)
+        issues = []
 
-        await asyncio.sleep(1)  # Placeholder
-        logger.info("✅ Continuity check complete")
+        # Check 1: All chapters have content
+        for chapter in chapters_data:
+            if not chapter.get('content') or len(chapter['content'].strip()) < 100:
+                issues.append(f"Chapter {chapter['number']} has insufficient content")
+
+        # Check 2: Word count progression (chapters shouldn't vary too wildly)
+        word_counts = [ch['word_count'] for ch in chapters_data]
+        avg_words = sum(word_counts) / len(word_counts)
+        for i, count in enumerate(word_counts):
+            if count < avg_words * 0.3:  # Less than 30% of average
+                issues.append(f"Chapter {i+1} is suspiciously short ({count} words vs avg {avg_words:.0f})")
+
+        # Check 3: Character name consistency (basic check)
+        character_names = {c.name for c in characters}
+        # Sample first 3 chapters for character references
+        for i, chapter in enumerate(chapters_data[:3]):
+            content = chapter['content'].lower()
+            for char_name in character_names:
+                if char_name.lower() not in content:
+                    logger.warning(f"Chapter {i+1} doesn't mention character '{char_name}' (might be OK)")
+
+        if issues:
+            logger.warning(f"⚠️ Continuity issues found: {len(issues)}")
+            for issue in issues:
+                logger.warning(f"  - {issue}")
+        else:
+            logger.info("✅ Continuity check complete - no major issues")
 
     async def _validate_genre_compliance(self, chapters_data: List[Dict]):
-        """Validate genre compliance"""
+        """Validate genre compliance (basic checks)"""
         logger.info("🎭 Validating genre compliance...")
 
-        await asyncio.sleep(1)  # Placeholder
-        logger.info("✅ Genre compliance validated")
+        # Basic validation (full AI-powered genre analysis would be expensive)
+        genre = self.project.genre.value
+        total_words = sum(ch['word_count'] for ch in chapters_data)
+
+        # Genre-specific word count expectations
+        expected_ranges = {
+            "fantasy": (90000, 150000),
+            "sci-fi": (80000, 130000),
+            "thriller": (70000, 100000),
+            "horror": (70000, 100000),
+            "romance": (70000, 100000),
+            "mystery": (70000, 100000),
+            "drama": (80000, 110000),
+            "comedy": (70000, 95000),
+        }
+
+        min_words, max_words = expected_ranges.get(genre, (70000, 120000))
+
+        # Check word count range
+        if total_words < min_words * 0.8:
+            logger.warning(
+                f"⚠️ Book is shorter than typical {genre} "
+                f"({total_words:,} words vs expected {min_words:,}-{max_words:,})"
+            )
+        elif total_words > max_words * 1.2:
+            logger.warning(
+                f"⚠️ Book is longer than typical {genre} "
+                f"({total_words:,} words vs expected {min_words:,}-{max_words:,})"
+            )
+        else:
+            logger.info(
+                f"✅ Genre compliance validated - "
+                f"{total_words:,} words fits {genre} expectations ({min_words:,}-{max_words:,})"
+            )
 
     async def _update_progress(self, step: int, activity: str):
         """Update project progress in database"""

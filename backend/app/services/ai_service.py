@@ -100,7 +100,7 @@ class AIService:
         logger.info("✅ Initializing OpenAI client")
         self.openai_client = openai.OpenAI(
             api_key=settings.OPENAI_API_KEY,
-            timeout=120.0,  # 2 minute timeout for API requests
+            timeout=600.0,  # 10 minute timeout for complex prompts (plot structure needs 5+ min)
             max_retries=0,  # We handle retries ourselves in generate()
         )
 

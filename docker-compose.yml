@@ -106,6 +106,8 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
     depends_on:
       - narraforge-redis
       - narraforge-celery

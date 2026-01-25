@@ -36,11 +36,13 @@ from app.models.character import Character, CharacterRole
 from app.models.plot_structure import PlotStructure
 from app.models.chapter import Chapter, ChapterStatus
 from app.services.ai_service import get_ai_service
-from app.services.chapter_pipeline import ChapterPipeline, PipelineConfig, get_chapter_pipeline
-from app.services.context_pack_builder import get_context_pack_builder
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Import new pipeline components
+from app.services.chapter_pipeline import ChapterPipeline, PipelineConfig, get_chapter_pipeline
+from app.services.context_pack_builder import get_context_pack_builder
 
 
 # Estimated duration for each step (in minutes)
@@ -619,7 +621,11 @@ class AgentOrchestrator:
                 scene_progress = f"Rozdział {chapter_num}: scena {scene_num}/{total_scenes}"
                 await self._update_progress(11, scene_progress)
 
-            # Run chapter through pipeline
+            # Run chapter through pipeline with FALLBACK to ProseWriter
+            chapter_content = ""
+            chapter_word_count = 0
+            chapter_quality = 85.0
+
             try:
                 result = await chapter_pipeline.process_chapter(
                     chapter=chapter,
@@ -635,39 +641,66 @@ class AgentOrchestrator:
                     on_progress=on_scene_progress
                 )
 
-                # Store summary for continuity
-                if result.content:
-                    # Quick summary for next chapter context
-                    summary = result.content[:500] + "..." if len(result.content) > 500 else result.content
-                    chapter_summaries[chapter_num] = summary
-
-                chapters_data.append({
-                    'number': chapter_num,
-                    'content': result.content,
-                    'word_count': result.word_count,
-                    'quality_score': result.qa_scores.get('total', 85.0),
-                    'status': result.status.value,
-                    'cost': result.total_cost,
-                    'repairs': result.repairs,
-                    'tier_used': result.tier_used
-                })
+                chapter_content = result.content
+                chapter_word_count = result.word_count
+                chapter_quality = result.qa_scores.get('total', 85.0)
 
                 logger.info(
-                    f"{'✅' if result.success else '⚠️'} Chapter {chapter_num}: "
-                    f"{result.status.value} ({result.word_count} words, ${result.total_cost:.4f})"
+                    f"{'✅' if result.success else '⚠️'} Pipeline Chapter {chapter_num}: "
+                    f"{result.status.value} ({result.word_count} words)"
                 )
 
             except Exception as e:
-                logger.error(f"Pipeline failed for Chapter {chapter_num}: {e}")
-                # Continue with next chapter - pipeline already saved what it could
-                chapters_data.append({
-                    'number': chapter_num,
-                    'content': chapter.content or "",
-                    'word_count': chapter.word_count or 0,
-                    'quality_score': 50.0,
-                    'status': 'failed',
-                    'error': str(e)
-                })
+                logger.error(f"❌ Pipeline failed for Chapter {chapter_num}: {e}", exc_info=True)
+
+            # FALLBACK: If pipeline produced empty/short content, use ProseWriter
+            if not chapter_content or chapter_word_count < 500:
+                logger.warning(f"⚠️ Pipeline produced insufficient content ({chapter_word_count} words), using ProseWriter fallback...")
+
+                try:
+                    # Use the reliable ProseWriter as fallback
+                    prose_result = await self.prose_writer.write_chapter(
+                        chapter_number=chapter_num,
+                        chapter_outline=chapter_outline,
+                        genre=self.project.genre.value,
+                        pov_character=pov_char_dict,
+                        world_bible=world_bible_dict,
+                        plot_structure=plot_structure_dict,
+                        all_characters=characters_dict,
+                        previous_chapter_summary=chapter_summaries.get(chapter_num - 1, ""),
+                        target_word_count=words_per_chapter,
+                        style_complexity=params.get('style_complexity', 'medium'),
+                        book_title=self.project.name,
+                        semantic_title_analysis=params.get('semantic_title_analysis', {})
+                    )
+
+                    chapter_content = prose_result['content']
+                    chapter_word_count = prose_result['word_count']
+                    chapter_quality = 85.0
+
+                    # Update chapter in DB
+                    chapter.content = chapter_content
+                    chapter.word_count = chapter_word_count
+                    self.db.commit()
+
+                    logger.info(f"✅ ProseWriter fallback succeeded: {chapter_word_count} words")
+
+                except Exception as e2:
+                    logger.error(f"❌ ProseWriter fallback also failed: {e2}", exc_info=True)
+                    chapter_content = f"[Rozdział {chapter_num} - generacja nieudana]"
+                    chapter_word_count = 0
+
+            # Store summary for continuity
+            if chapter_content and len(chapter_content) > 100:
+                summary = chapter_content[:500] + "..." if len(chapter_content) > 500 else chapter_content
+                chapter_summaries[chapter_num] = summary
+
+            chapters_data.append({
+                'number': chapter_num,
+                'content': chapter_content,
+                'word_count': chapter_word_count,
+                'quality_score': chapter_quality,
+            })
 
             # Check cost limit
             self._check_cost_limit(chapter_num)
@@ -679,15 +712,13 @@ class AgentOrchestrator:
             )
 
         # Final stats
-        successful = sum(1 for ch in chapters_data if ch.get('status') in ['finalized', 'validated'])
+        successful = sum(1 for ch in chapters_data if ch.get('word_count', 0) > 500)
         total_words = sum(ch.get('word_count', 0) for ch in chapters_data)
-        total_cost = sum(ch.get('cost', 0) for ch in chapters_data)
 
         logger.info(
             f"✅ All {chapter_count} chapters processed!\n"
             f"   📊 Success: {successful}/{chapter_count}\n"
-            f"   📝 Total words: {total_words:,}\n"
-            f"   💰 Total cost: ${total_cost:.2f}"
+            f"   📝 Total words: {total_words:,}"
         )
 
         return chapters_data

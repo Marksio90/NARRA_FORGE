@@ -404,6 +404,8 @@ ZASADY:
 • Dialogi z podtekstem"""
 
         try:
+            logger.info(f"🎬 Generating scene {scene_number} ({scene_type}) with {tier.name}...")
+
             response = await self.ai_service.generate(
                 prompt=prompt,
                 system_prompt=system_prompt,
@@ -411,6 +413,7 @@ ZASADY:
                 temperature=0.8,
                 max_tokens=target_words * 2,
                 json_mode=False,
+                prefer_anthropic=False,  # Use OpenAI for scenes
                 metadata={
                     "agent": self.name,
                     "task": "scene_generation",
@@ -421,6 +424,8 @@ ZASADY:
 
             content = response.content.strip()
             word_count = len(content.split())
+
+            logger.info(f"✅ Scene {scene_number} generated: {word_count} words, ${response.cost:.4f}")
 
             return SceneResult(
                 scene_number=scene_number,
@@ -433,7 +438,7 @@ ZASADY:
             )
 
         except Exception as e:
-            logger.error(f"Scene generation failed: {e}")
+            logger.error(f"❌ Scene {scene_number} generation failed: {e}", exc_info=True)
             return SceneResult(
                 scene_number=scene_number,
                 content=f"[SCENE {scene_number} GENERATION FAILED: {e}]",

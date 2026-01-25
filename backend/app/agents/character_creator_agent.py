@@ -511,23 +511,54 @@ Output JSON with same structure as protagonist.
 
         existing_names = [c['name'] for c in existing_characters]
 
-        prompt = f"""Create a SUPPORTING CHARACTER ({role}) for "{project_name}".
+        prompt = f"""Create a SUPPORTING CHARACTER ({role}) for "{project_name}" ({genre}).
 
-## EXISTING CHARACTERS
+## EXISTING CHARACTERS (must be DIFFERENT from these!)
 {', '.join(existing_names)}
 
 ## ROLE: {role.replace('_', ' ').title()}
+{"Mentor: Wiser, experienced, guides protagonist but has own flaws/agenda" if role == "mentor" else ""}
+{"Ally: Loyal friend, complements protagonist's weaknesses, own goals" if role == "ally" else ""}
+{"Love Interest: Chemistry with protagonist, own arc, not just romantic prop" if role == "love_interest" else ""}
+{"Comic Relief: Lightens tension, but has depth and moments of seriousness" if role == "comic_relief" else ""}
+{"Wildcard: Unpredictable, own agenda, can help or hinder" if role == "wildcard" else ""}
 
-Create a character who:
-1. Complements the existing cast
-2. Serves a clear narrative function
-3. Has their own personality and goals
-4. Is distinct from other characters
-5. Adds depth to the story
+## THEMES TO REFLECT
+{', '.join(themes[:3]) if themes else 'Universal human themes'}
 
-Keep it focused - this is NOT the protagonist. But make them memorable!
+## REQUIRED JSON STRUCTURE (fill ALL fields!):
+{{
+  "name": "Unique Polish name fitting the world",
+  "profile": {{
+    "appearance": {{
+      "age": "specific age or range",
+      "physical": "distinctive physical traits",
+      "style": "clothing, presentation"
+    }},
+    "psychology": {{
+      "traits": ["3-5 key personality traits"],
+      "fears": ["1-2 core fears"],
+      "desires": ["1-2 core desires"],
+      "wound": "formative trauma or ghost",
+      "lie_believed": "false belief driving behavior"
+    }},
+    "background": "2-3 sentences on history"
+  }},
+  "arc": {{
+    "starting_state": "who they are at start",
+    "transformation": "how they change",
+    "ending_state": "who they become"
+  }},
+  "voice_guide": {{
+    "speechPatterns": "how they talk (formal/casual, long/short sentences)",
+    "vocabularyLevel": "education level reflected in word choice",
+    "verbalTics": "signature phrases or speech habits",
+    "signaturePhrases": ["2-3 phrases they often say"]
+  }},
+  "relationship_to_protagonist": "how they connect to main character"
+}}
 
-Output JSON matching character structure."""
+Create a MEMORABLE character - not a cardboard cutout!"""
 
         response = await self.ai_service.generate(
             prompt=prompt,

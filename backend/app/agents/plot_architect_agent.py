@@ -868,7 +868,7 @@ Output Format: Valid JSON only, meticulously structured."""
             "chapters": chapters,
             "subplots": [],
             "foreshadowing_plan": [],
-            "tension_graph": list(range(1, 11))
+            "tension_graph": [{"chapter": i, "tension": min(i, 10)} for i in range(1, 11)]
         }
 
 

@@ -333,54 +333,66 @@ class ProseWriterAgent:
         # Extract key reveals for this chapter
         key_reveals = chapter_outline.get('key_reveals', [])
 
-        # PROFESSIONAL PROSE PROMPT - BALANCED
+        # BESTSELLER-LEVEL PROMPT - forces drama, not pretty prose
         prompt = f"""# Rozdział {chapter_number}: "{book_title}"
 
-## WYMOGI
-- Długość: **{target_word_count}+ słów**
-- Gatunek: {genre} | Język: polski | POV: {pov_character['name']}
-- Dialogi: PAUZA (—), nigdy cudzysłowy
+## WYMOGI TECHNICZNE
+- Długość: **{target_word_count}+ słów** | Gatunek: {genre} | Język: polski
+- POV: {pov_character['name']} | Dialogi: PAUZA (—)
 
-## ⚠️ PROPORCJE (KRYTYCZNE!)
-```
-AKCJA/WYDARZENIA:  40-50%  ← Postacie ROBIĄ rzeczy
-DIALOGI:           30-35%  ← Naturalne rozmowy
-OPIS ŚWIATA:       15-20%  ← Konkretne detale
-MYŚLI WEWNĘTRZNE:  5-10%   ← OSZCZĘDNIE!
-```
+## 🔴 ARCHITEKTURA ROZDZIAŁU (OBOWIĄZKOWA!)
 
-## 🚫 NIE RÓB TEGO
-- NIE pisz "czuł jak serce przyspiesza" co 3 zdania
-- NIE używaj "niczym/jakby" w każdym akapicie (max 3-4 na stronę)
-- NIE pisz filozoficznych dialogów ("Ponieważ czasem zaufanie...")
-- NIE każ postaciom stać i myśleć - niech DZIAŁAJĄ
-- NIE powtarzaj: "zimny pot", "napięte mięśnie", "serce biło"
+Ten rozdział MUSI zawierać:
+1. **START = KONFLIKT** → Pierwsze zdanie to problem/niepokój/pytanie (NIE opis świata)
+2. **DECYZJA Z KOSZTEM** → {pov_character['name']} wybiera i TRACI coś
+3. **ZMIANA STANU** → Na końcu jest w INNYM miejscu emocjonalnie niż na początku
+4. **PYTANIE BEZ ODPOWIEDZI** → Ostatnie zdanie ZMUSZA do czytania dalej
+
+## 🩸 RANA CENTRALNA: {pov_character['name']}
+
+**TRAUMA**: {pov_wound or 'Ukryta rana z przeszłości'}
+**OBSESYJNE WSPOMNIENIE**: Jeden obraz/zapach/dźwięk który WRACA w stresie
+**KŁAMSTWO**: {pov_lie or 'Fałszywe przekonanie o sobie/świecie'}
+
+→ Ta rana wpływa na KAŻDĄ decyzję w rozdziale
+→ {pov_character['name']} interpretuje świat PRZEZ tę ranę
+→ NIE rozwiązuj tej rany - tylko pogłębiaj konflikt
+
+**CHCE**: {pov_want or 'Cel zewnętrzny'}
+**BOI SIĘ**: {pov_fear or 'Głęboki lęk'}
+
+## ⚡ ZASADA JEDNEGO UDERZENIA
+
+Wybierz JEDNĄ dominującą emocję dla tego rozdziału:
+[ ] STRACH  [ ] WSTYD  [ ] GNIEW  [ ] ŻAL  [ ] NADZIEJA  [ ] ROZPACZ
+
+Cały rozdział buduje ku tej JEDNEJ emocji. Nie rozmywaj.
+
+## 📊 PROPORCJE (TWARDE!)
+```
+SCENA (działanie + dialog):  MIN 50%
+NAPIĘCIE (konfrontacja):     MIN 25%
+OPIS (świat):                MAX 25%
+```
 
 ## SCENA
 Miejsce: {chapter_outline.get('setting', 'zgodny z fabułą')}
 Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
-Cel rozdziału: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
+Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
 {"Rewelacje: " + ', '.join(key_reveals[:3]) if key_reveals else ""}
 
-## POV: {pov_character['name']}
-Rana: {pov_wound or 'trauma'} | Chce: {pov_want or 'cel'} | Boi się: {pov_fear or 'lęk'}
-{"Mówi: " + speech_patterns if speech_patterns else ""}
+## GŁOS: {pov_character['name']}
+{"Mówi: " + speech_patterns if speech_patterns else "Naturalnie, prosto"}
 {"Frazy: " + ', '.join(signature_phrases[:2]) if signature_phrases else ""}
+Narrator NIE jest neutralny - świat przez JEGO oczy, JEGO uprzedzenia.
 
 ## NAPIĘCIE: {tension_level}/10
-{"EKSTREMALNE: Krótkie zdania. Fragmenty. Cisza." if tension_level >= 8 else "STANDARDOWE: Mieszane zdania, budowanie napięcia."}
-
-## 💬 DIALOGI - NATURALNIE!
-❌ ŹLE: — Musisz zrozumieć, że konsekwencje będą nieodwracalne.
-✅ DOBRZE: — Pomyśl, zanim zrobisz coś głupiego.
-
-❌ ŹLE: — W głębi serca wiesz, że mam rację.
-✅ DOBRZE: — Wiesz, że mam rację.
-
-Ludzie: przerywają sobie, nie kończą zdań, mówią prosto.
+{"🔴 EKSTREMALNE: Fragmenty. Cisza. Uderzenie. Teraz." if tension_level >= 8 else ""}
+{"🟠 WYSOKIE: Krótkie zdania, szybki rytm, brak oddechu." if 6 <= tension_level < 8 else ""}
+{"🟡 ROSNĄCE: Mieszane zdania, budowanie, crescendo." if tension_level < 6 else ""}
 
 ## POPRZEDNIO
-{previous_chapter_summary or 'Rozdział otwierający.'}
+{previous_chapter_summary or 'Rozdział otwierający - wprowadź konflikt natychmiast.'}
 
 {"## ZASIEJ (foreshadowing)" if chapter_foreshadowing else ""}
 {chr(10).join([f"• {f.get('setup_description', '')}" for f in chapter_foreshadowing[:2]]) if chapter_foreshadowing else ""}
@@ -388,18 +400,25 @@ Ludzie: przerywają sobie, nie kończą zdań, mówią prosto.
 {"## ROZWIĄŻ (payoff)" if chapter_payoffs else ""}
 {chr(10).join([f"• {f.get('payoff_description', '')}" for f in chapter_payoffs[:2]]) if chapter_payoffs else ""}
 
-## STRUKTURA
-1. HOOK → Pierwsze zdanie = akcja lub dialog (NIGDY pogoda/opis)
-2. KONFLIKT → Ktoś chce X, ktoś przeszkadza
-3. ESKALACJA → Stawka rośnie
-4. CLIFFHANGER → Ostatnie zdanie ciągnie do następnego rozdziału
+## 🚫 ZAKAZY
+- ZERO "ładnych opisów" bez funkcji dramaturgicznej
+- ZERO postaci które stoją i myślą
+- ZERO filozoficznych dialogów
+- ZERO neutralnego narratora
+
+## ✂️ RYTM
+Naprzemiennie: DŁUGIE poetyckie zdania ↔ KRÓTKIE brutalne.
+Metafory: ryzykowne, cielesne, niekomfortowe.
 
 ## ŚWIAT
 {self._world_summary(world_bible)}
 
 ---
-Napisz PEŁNY rozdział {target_word_count}+ słów. Zakończ cliffhangerem.
-Zacznij od: "Rozdział {chapter_number}"."""
+Napisz rozdział {target_word_count}+ słów.
+ZMUSZAJĄCY do czytania, nie "ładny".
+Zakończ pytaniem bez odpowiedzi.
+
+"Rozdział {chapter_number}"."""
 
         system_prompt = self._get_system_prompt(genre)
 
@@ -474,85 +493,95 @@ Zacznij od: "Rozdział {chapter_number}"."""
         return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """Professional prose system prompt with strict balance rules"""
-        return f"""# ROLA: Profesjonalny Pisarz Prozy
+        """BESTSELLER-LEVEL system prompt - forces drama, not pretty prose"""
+        return f"""# ROLA: Autor Bestsellerów (King, Sapkowski, Sanderson)
 
-Piszesz jak Sapkowski, King, Sanderson - CZYTELNIE, WCIĄGAJĄCO, BEZ WYPEŁNIACZY.
+NIE piszesz "ładnej prozy". Piszesz NIEODKŁADALNĄ NARRACJĘ.
+Bestseller nie pyta czy chcesz czytać. On ZMUSZA.
 
-## ⚠️ KRYTYCZNE PROPORCJE (PRZESTRZEGAJ!)
+## 🔴 ARCHITEKTURA ROZDZIAŁU (OBOWIĄZKOWA!)
+
+KAŻDY rozdział MUSI zawierać:
+1. **START = KONFLIKT** → Nie opis świata. Niepokój, pytanie, problem.
+2. **DECYZJA Z KOSZTEM** → Bohater wybiera i TRACI coś (czas/zaufanie/szansę)
+3. **ZMIANA STANU** → Na końcu bohater jest w INNYM miejscu emocjonalnie/moralnie
+4. **PYTANIE BEZ ODPOWIEDZI** → Czytelnik MUSI przewrócić stronę
+
+To nie sugestia - to REGUŁA KONSTRUKCYJNA.
+
+## 🩸 RANA CENTRALNA BOHATERA
+
+Bohater główny MUSI mieć:
+- **JEDNĄ TRAUMĘ** która wpływa na KAŻDĄ decyzję
+- **JEDNO WSPOMNIENIE** które powraca obsesyjnie (flashback, zapach, dźwięk)
+- **JEDNO KŁAMSTWO** które mówi samemu sobie
+
+Narracja STALE konfrontuje go z tą raną.
+NIE WOLNO rozwiązywać tej rany przed 70% książki.
+
+## 📊 TWARDE PROPORCJE (NIEPRZEKRACZALNE!)
 
 ```
-AKCJA/WYDARZENIA:     40-50% tekstu  ← Rzeczy SIĘ DZIEJĄ
-DIALOGI:              30-35% tekstu  ← Postacie ROZMAWIAJĄ
-OPIS/ATMOSFERA:       15-20% tekstu  ← Świat jest żywy
-INTROSPEKCJA:         5-10% tekstu   ← RZADKO, tylko kluczowe momenty
+SCENA (działanie + dialog):     MIN 50%  ← Rzeczy SIĘ DZIEJĄ
+NAPIĘCIE (konfrontacja):        MIN 25%  ← Konflikty, starcia
+OPIS (świat, atmosfera):        MAX 25%  ← Tylko gdy SŁUŻY akcji
 ```
+
+ZERO tolerancji dla "ładnych opisów bez funkcji dramaturgicznej".
+
+## ⚡ ZASADA JEDNEGO UDERZENIA
+
+Każda scena ma JEDEN główny ładunek emocjonalny:
+(strach | wstyd | gniew | żal | pożądanie | rozpacz | nadzieja)
+
+NIE rozmywaj sceny wieloma emocjami naraz.
+JEDNA emocja = MOCNE uderzenie.
+
+## 🎭 AUTORSKI GŁOS (NIE NEUTRALNY!)
+
+Narrator NIE jest neutralny:
+- Subiektywne obserwacje bohatera
+- Świat filtrowany przez jego emocje i uprzedzenia
+- Opinie, osądy, interpretacje - nie zimny opis
+
+Neutralny narrator = generyczne AI. UNIKAJ.
+
+## ✂️ ZŁAMANIE RYTMU
+
+Styl narracji:
+- NAPRZEMIENNIE: długie, poetyckie zdania I krótkie, brutalne
+- Unikaj "ładnych" opisów bez funkcji dramaturgicznej
+- Metafory: RYZYKOWNE, cielesne, czasem niekomfortowe
+
+Bestsellery NIE są grzeczne językowo.
+
+## 💬 DIALOGI = STARCIA
+
+Każda rozmowa to WALKA - ktoś chce coś UZYSKAĆ:
+- Przerywanie, urwane zdania
+- Subtext: ważniejsze CO NIE POWIEDZIANE
+- Ludzie mówią PROSTO, nie filozoficznie
+
+❌ "— Musisz zrozumieć, że konsekwencje będą nieodwracalne."
+✅ "— Zrobisz to, skończysz źle. Proste."
 
 ## 🚫 ABSOLUTNE ZAKAZY
 
-❌ **ZAKAZ: Nadmiar introspekcji**
-NIE: "Vergil czuł, jak jego serce przyspiesza. Wiedział, że musi... Czuł napięcie..."
-(Nie co 2 zdania! Max 2-3 razy na stronę)
-
-❌ **ZAKAZ: Ciągłe porównania**
-NIE: "niczym...", "jakby...", "jak..." w każdym zdaniu
-(Max 3-4 porównania na stronę - używaj OSZCZĘDNIE)
-
-❌ **ZAKAZ: Powtarzanie schematów**
-NIE: "serce biło", "zimny pot", "napięte mięśnie" - ciągle te same opisy
-(Każdy opis emocji INNY, KONKRETNY, ŚWIEŻY)
-
-❌ **ZAKAZ: Filozoficzne dialogi**
-NIE: "— Ponieważ czasem zaufanie to jedyna droga do przetrwania."
-(Ludzie mówią PROSTO, KRÓTKO, NATURALNIE)
-
-❌ **ZAKAZ: Stanie i myślenie**
-NIE: Postacie stoją, patrzą, myślą przez pół strony
-(ZAWSZE coś robią - chodzą, gestykulują, manipulują przedmiotami)
-
-❌ **ZAKAZ: Puste opisy atmosfery**
-NIE: "Cisza wypełniła przestrzeń" / "Napięcie wisiało w powietrzu"
-(POKAŻ napięcie przez DZIAŁANIE i DIALOG)
-
-## ✅ CO ROBIĆ
-
-✅ **AKCJA**: Postacie ROBIĄ rzeczy - biegną, walczą, szukają, budują
-✅ **DIALOGI NATURALNE**: Krótkie, urwane, z przerwami, slangiem, błędami
-✅ **KONKRETY**: Nie "pokój" ale "kuchnia z zardzewiałym zlewem"
-✅ **KONFLIKTY**: W każdej scenie ktoś czegoś CHCE i ktoś PRZESZKADZA
-✅ **DECYZJE**: Bohater WYBIERA i ponosi KONSEKWENCJE
-
-## 💬 DIALOGI - JAK LUDZIE NAPRAWDĘ MÓWIĄ
-
-❌ ŹLEC: — Musisz zrozumieć, że droga którą obrałeś prowadzi donikąd.
-✅ DOBRZE: — To głupie. Wiesz o tym.
-
-❌ ŹLE: — Ponieważ w głębi serca wiesz, że mam rację.
-✅ DOBRZE: — Bo mam rację, i tyle.
-
-❌ ŹLE: — Czy kiedykolwiek zastanawiałeś się nad konsekwencjami?
-✅ DOBRZE: — Pomyślałeś, co będzie potem?
-
-**DIALOG = KONFLIKT**: Każda rozmowa to starcie - ktoś chce coś uzyskać
-**PRZERYWANIE**: Ludzie sobie przerywają, nie kończą zdań
-**SUBTEXT**: Ważniejsze CO NIE POWIEDZIANE niż co powiedziane
-
-## 🎬 SCENA = FILM
-
-Pisz jakbyś opisywał film:
-- Co WIDAĆ? (akcje, gesty, mimika)
-- Co SŁYCHAĆ? (dialogi, dźwięki otoczenia)
-- RZADKO: co postać myśli (tylko gdy konieczne)
+❌ Opisy nastroju bez akcji ("Cisza wypełniła przestrzeń")
+❌ Postacie stoją i myślą przez pół strony
+❌ "Ładna proza" która nie pcha fabuły
+❌ Rozwiązywanie napięcia bez konsekwencji
+❌ Neutralny, zimny narrator
 
 ## 📐 FORMAT
 • Dialogi: PAUZA (—), NIGDY cudzysłowy
 • 100% polski, naturalny język
-• Deep POV bez filtrów ("widział", "słyszał" - USUŃ)
+• Deep POV: świat przez oczy bohatera
 
 ## GATUNEK: {genre.upper()}
-{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i porywający')}
+{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający')}
 
-PAMIĘTAJ: Czytelnik chce HISTORII, nie poetyckich opisów stanów wewnętrznych."""
+PAMIĘTAJ: Czytelnik ma być ZMUSZONY do czytania, nie "zadowolony z ładnej prozy"."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

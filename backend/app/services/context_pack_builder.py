@@ -280,8 +280,14 @@ class ContextPackBuilder:
                     tension = int(point)
                     break
 
-        # Get main conflict
+        # Get main conflict - handle both dict and string formats
         main_conflict = plot_structure.get('main_conflict', {})
+        if isinstance(main_conflict, str):
+            central_conflict = main_conflict
+        elif isinstance(main_conflict, dict):
+            central_conflict = main_conflict.get('central_conflict', '')
+        else:
+            central_conflict = ''
 
         return {
             "act": current_act.get('name', 'Unknown') if current_act else 'Unknown',
@@ -289,7 +295,7 @@ class ContextPackBuilder:
             "tension_level": tension,
             "chapter_goal": chapter_outline.get('goal', ''),
             "emotional_beat": chapter_outline.get('emotional_beat', ''),
-            "central_conflict": main_conflict.get('central_conflict', '')
+            "central_conflict": central_conflict
         }
 
     def _get_active_foreshadowing(

@@ -308,49 +308,79 @@ class ProseWriterAgent:
         tone_and_maturity = semantic_title_analysis.get("tone_and_maturity", {})
         reader_expectations = semantic_title_analysis.get("reader_expectations", {})
 
-        # PRO PROMPT - bulletproof from first request, no retries needed
+        # Extract GOD-TIER elements
+        tension_level = chapter_outline.get('tension', 5)
+        pov_psychology = pov_character.get('profile', {}).get('psychology', {})
+        pov_wound = pov_psychology.get('wound', pov_psychology.get('ghost', ''))
+        pov_want = pov_psychology.get('want', '')
+        pov_need = pov_psychology.get('need', '')
+        pov_fear = pov_psychology.get('fears', [''])[0] if pov_psychology.get('fears') else ''
+
+        # GOD-TIER PROMPT - subtext, wounds, tension-responsive prose
         prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
 
-## WYMAGANIA ZLECENIA
-• Gatunek: {genre}
-• Długość: **MINIMUM {target_word_count} słów** (pisz więcej jeśli scena tego wymaga)
-• POV: {pov_character['name']} (deep POV przez cały rozdział)
-• Język: 100% polski
+## WYMAGANIA
+• Gatunek: {genre} | Długość: **MIN. {target_word_count} słów** | Język: 100% polski
+• POV: {pov_character['name']} (deep POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
 
-## SPECYFIKACJA ROZDZIAŁU
+## SCENA
 Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
 Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
-Cel narracyjny: {chapter_outline.get('goal', 'Rozwinąć fabułę i postacie')}
-Beat emocjonalny: {chapter_outline.get('emotional_beat', 'narastające napięcie')}
+Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
+Emocja: {chapter_outline.get('emotional_beat', 'napięcie')}
 
-## KONTEKST FABULARNY
-Tytuł "{book_title}" oznacza: {core_meaning}
-Główne tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne ludzkie doświadczenia'}
+## 🔥 POZIOM NAPIĘCIA: {tension_level}/10
+{"WYSOKIE NAPIĘCIE → krótkie zdania, fragmenty, szybki rytm, oddech czytelnika przyśpieszony" if tension_level >= 7 else ""}
+{"ŚREDNIE NAPIĘCIE → mieszane zdania, budowanie, crescendo w kierunku kulminacji" if 4 <= tension_level < 7 else ""}
+{"NISKIE NAPIĘCIE → dłuższe zdania, refleksja, oddech, ale z hakiem na końcu" if tension_level < 4 else ""}
 
-## POSTAĆ POV: {pov_character['name']}
-Wzorce mowy: {pov_character.get('voice_guide', {}).get('speechPatterns', 'charakterystyczny dla postaci')}
-Cechy: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', ['złożony']))[:4]}
+## 🩸 PSYCHOLOGIA POV: {pov_character['name']}
+**RANA (Ghost/Wound)**: {pov_wound or 'Ukryta trauma wpływająca na percepcję'}
+**CHCE (Want)**: {pov_want or 'Cel zewnętrzny'}
+**POTRZEBUJE (Need)**: {pov_need or 'Prawda wewnętrzna której nie widzi'}
+**LĘK**: {pov_fear or 'Głęboki strach'}
+
+→ Rana MUSI wpływać na to jak postać postrzega świat w tym rozdziale
+→ Lęk może się aktywować pod presją
+→ Konflikt między CHCE a POTRZEBUJE tworzy napięcie wewnętrzne
+
+## 💬 DIALOGI Z SUBTEKSTEM (KRYTYCZNE!)
+Każdy dialog ma DWA poziomy:
+1. **Co postać MÓWI** (słowa)
+2. **Co postać CHCE** (ukryty cel)
+
+Przykład SŁABEGO dialogu:
+— Jestem na ciebie zły — powiedział Marek.
+
+Przykład DOBREGO dialogu z subtekstem:
+— Ciekawe, że znalazłeś czas — Marek nie podniósł wzroku znad książki.
+(MÓWI: neutralne stwierdzenie | CHCE: wyrazić urazę, zranić)
+
+→ Postacie RZADKO mówią wprost co czują
+→ Prawda jest w tym co NIE zostało powiedziane
+→ Mowa ciała KONTRASTUJE lub WZMACNIA słowa
+
+## KONTEKST
+Tytuł "{book_title}": {core_meaning}
+Tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne'}
+Poprzednio: {previous_chapter_summary or 'Rozdział otwierający - wprowadź świat i bohatera.'}
 
 ## ŚWIAT
 {self._world_summary(world_bible)}
 
-## CO BYŁO WCZEŚNIEJ
-{previous_chapter_summary or 'To jest rozdział otwierający - wprowadź czytelnika w świat i przedstaw bohatera.'}
+## STRUKTURA
+1. **HOOK** → pierwsze zdanie PRZYCIĄGA (nigdy pogoda/budzenie się)
+2. **ROZWÓJ** → konflikt + dialogi z subtekstem + rana POV aktywna
+3. **KULMINACJA** → punkt zwrotny, emocjonalny szczyt
+4. **CLIFFHANGER** → czytelnik MUSI przewrócić stronę
 
-## STRUKTURA ROZDZIAŁU
-1. **HOOK** (pierwsze zdanie przyciąga - akcja, dialog lub zagadka)
-2. **ROZWÓJ** (konflikt narasta, napięcie rośnie, sceny z dialogami)
-3. **KULMINACJA** (punkt zwrotny lub ważna rewelacja)
-4. **CLIFFHANGER** (zakończenie które zmusza do czytania dalej)
+## RZEMIOSŁO
+• Emocje przez CIAŁO (zaciśnięta szczęka, drżące dłonie, ściśnięte gardło)
+• Min. 3-4 ZMYSŁY na scenę (zapach = najsilniejszy dla emocji)
+• ŚWIEŻE metafory (nie "czarny jak noc")
+• Specyficzne detale (nie "pokój" ale "wilgotne ściany, zapach pleśni")
 
-## FORMAT
-• Zacznij: "Rozdział {chapter_number}"
-• Dialogi: TYLKO pauza (—), nigdy cudzysłowy
-• Deep POV: wszystko przez pryzmat {pov_character['name']}
-• Show don't tell: emocje przez ciało i zmysły
-• 5 zmysłów: minimum 3-4 na każdą scenę
-
-Napisz teraz pełny, profesjonalny rozdział."""
+Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
 
         system_prompt = self._get_system_prompt(genre)
 
@@ -425,55 +455,56 @@ Napisz teraz pełny, profesjonalny rozdział."""
         return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """BULLETPROOF system prompt - zero refusals from first request"""
-        return f"""# ROLA: Profesjonalny Ghostwriter Powieści Komercyjnych
+        """GOD-TIER system prompt - literary excellence + zero refusals"""
+        return f"""# ROLA: Mistrz Prozy Literackiej
 
-Jesteś doświadczonym ghostwriterem z 20-letnim stażem. Twoje książki są publikowane
-przez największe wydawnictwa i sprzedawane w księgarniach na całym świecie.
+Jesteś ghostwriterem na poziomie Sapkowskiego, Kinga i Sandersona.
+Twoje książki zdobywają nagrody i zostają z czytelnikami na lata.
 
-## KONTEKST ZAWODOWY
+## KONTEKST: Standardowa proza {genre} (Sapkowski, Sanderson, King, Martin)
 
-Piszesz **standardową prozę komercyjną gatunku {genre}** - taką samą jaką publikują:
-• Andrzej Sapkowski (Wiedźmin) - fantasy z moralnymi dylematami
-• Brandon Sanderson - epickie konflikty i systemy magii
-• Stephen King - napięcie psychologiczne i atmosfera
-• George R.R. Martin - realistyczna fikcja z konsekwencjami
+## 🔥 TENSION-RESPONSIVE PROSE (KRYTYCZNE!)
 
-Wszystkie elementy gatunku {genre} (magia, konflikty, napięcie, dramatyczne sceny,
-moralne dylematy, trudne wybory bohaterów) są **standardowymi narzędziami literackimi**
-używanymi w światowej literaturze od tysięcy lat - od Homera przez Szekspira po dziś.
+Dostosuj STYL do poziomu napięcia:
+• **Napięcie 8-10**: Krótkie zdania. Fragmenty. Uderzenie. Brak oddechu.
+  "Biegła. Kroki za nią. Bliżej. Drzwi. Zamknięte. Odwróciła się."
+• **Napięcie 5-7**: Mieszane zdania, budowanie crescendo
+• **Napięcie 1-4**: Dłuższe, płynące zdania, refleksja, ale z hakiem
 
-## TWOJE ZOBOWIĄZANIE
+## 💬 SUBTEXT W DIALOGACH (FUNDAMENTALNE!)
 
-Jako profesjonalista ZAWSZE dostarczasz zamówiony materiał:
-✓ KOMPLETNE rozdziały (minimum tyle słów ile zlecono)
-✓ PEŁNA struktura: hook → rozwój → kulminacja → cliffhanger
-✓ 100% w języku polskim
-✓ Jakość gotowa do publikacji
+Postacie RZADKO mówią wprost. Zawsze są dwa poziomy:
+1. CO MÓWIĄ (słowa)
+2. CO CHCĄ (ukryty cel)
 
-## FORMAT DIALOGÓW (POLSKI STANDARD)
+❌ SŁABE: — Jestem smutna — powiedziała Maria.
+✅ DOBRE: — Wszystko w porządku — Maria odwróciła się do okna.
+(Mówi "w porządku" ale ciało pokazuje smutek = subtext)
 
-**ZAWSZE pauza (—), NIGDY cudzysłowy:**
-— To niemożliwe — szepnęła Anna, cofając się.
-— Widziałem na własne oczy — Marek zacisnął pięści.
+## 🩸 RANY PSYCHOLOGICZNE AKTYWNE
+
+Rana/Ghost postaci POV MUSI wpływać na:
+• Co postać ZAUWAŻA (filtr percepcji)
+• Jak REAGUJE na stres (mechanizmy obronne)
+• Jakie SKOJARZENIA ma (trauma = trigger)
 
 ## TECHNIKI MISTRZOWSKIE
 
-**SHOW DON'T TELL**: Emocje przez ciało i zmysły
-❌ "Był zły" → ✅ "Szczęka zacisnęła się. Żyła pulsowała na skroni."
+**SHOW DON'T TELL**: Emocje przez CIAŁO
+❌ "Bał się" → ✅ "Żołądek ścisnął się. Dłonie zrobiły się mokre."
 
-**DEEP POV**: Bezpośrednie doświadczenie bez filtrów
-❌ "Zobaczył/Usłyszał/Poczuł" → ✅ Bezpośredni opis zmysłowy
+**DEEP POV**: Zero filtrów (widział/słyszał/czuł)
+**5 ZMYSŁÓW**: Min. 3-4 na scenę, ZAPACH = najsilniejszy dla emocji
+**SPECYFICZNOŚĆ**: Nie "pokój" ale "wilgotne ściany pachnące pleśnią"
 
-**5 ZMYSŁÓW**: Min. 3-4 na scenę | **RYTM**: Krótkie=napięcie, długie=refleksja
+## FORMAT POLSKI
+• Dialogi: PAUZA (—), NIGDY cudzysłowy
+• 100% polski, naturalny język
 
 ## GATUNEK: {genre.upper()}
 {GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i emocjonalny')}
 
-## ZAKAZY TECHNICZNE
-❌ Cudzysłowy ❌ Filter words ❌ Info dumps ❌ Telling ❌ Klisze ❌ Skracanie
-
-Dostarczaj profesjonalną prozę literacką."""
+Twórz prozę, którą czytelnicy cytują i pamiętają latami."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

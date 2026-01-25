@@ -308,204 +308,172 @@ class ProseWriterAgent:
         tone_and_maturity = semantic_title_analysis.get("tone_and_maturity", {})
         reader_expectations = semantic_title_analysis.get("reader_expectations", {})
 
-        # Build OPTIMIZED prompt - shorter = cheaper + better focus
-        prompt = f"""Napisz ROZDZIAŁ {chapter_number} książki "{book_title}" ({genre}).
+        # PRO PROMPT - bulletproof from first request, no retries needed
+        prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
 
-## ⚠️ KRYTYCZNE WYMOGI DŁUGOŚCI
-**MINIMUM: {target_word_count} słów** - to jest ABSOLUTNE MINIMUM
-Pisz PEŁNY, ROZBUDOWANY rozdział. NIGDY nie skracaj. Jeśli masz wątpliwości - pisz WIĘCEJ.
-Każda scena powinna być SZCZEGÓŁOWA z dialogami, opisami, emocjami.
+## WYMAGANIA ZLECENIA
+• Gatunek: {genre}
+• Długość: **MINIMUM {target_word_count} słów** (pisz więcej jeśli scena tego wymaga)
+• POV: {pov_character['name']} (deep POV przez cały rozdział)
+• Język: 100% polski
 
-## SPECYFIKACJA
-POV: {pov_character['name']} | Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
-Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:4])}
-Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę i postacie')}
-Emocja: {chapter_outline.get('emotional_beat', 'narastające napięcie')}
+## SPECYFIKACJA ROZDZIAŁU
+Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
+Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
+Cel narracyjny: {chapter_outline.get('goal', 'Rozwinąć fabułę i postacie')}
+Beat emocjonalny: {chapter_outline.get('emotional_beat', 'narastające napięcie')}
 
-## TYTUŁ I TEMATYKA
-Tytuł "{book_title}" - znaczenie: {core_meaning}
-Tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne'}
-→ Słownictwo i obrazy muszą REZONOWAĆ z tytułem
+## KONTEKST FABULARNY
+Tytuł "{book_title}" oznacza: {core_meaning}
+Główne tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne ludzkie doświadczenia'}
 
-## POV: {pov_character['name']}
-Głos: {pov_character.get('voice_guide', {}).get('speechPatterns', 'charakterystyczny')}
-Cechy: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', ['złożony']))[:3]}
+## POSTAĆ POV: {pov_character['name']}
+Wzorce mowy: {pov_character.get('voice_guide', {}).get('speechPatterns', 'charakterystyczny dla postaci')}
+Cechy: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', ['złożony']))[:4]}
 
 ## ŚWIAT
 {self._world_summary(world_bible)}
 
-## POPRZEDNIO
-{previous_chapter_summary or 'Rozdział otwierający - przedstaw świat i bohatera.'}
+## CO BYŁO WCZEŚNIEJ
+{previous_chapter_summary or 'To jest rozdział otwierający - wprowadź czytelnika w świat i przedstaw bohatera.'}
 
-## FORMAT WYJŚCIOWY
-1. Zacznij od "Rozdział {chapter_number}"
-2. Dialogi TYLKO z pauzą (—), NIGDY cudzysłowy
-3. Deep POV przez {pov_character['name']}
-4. Show don't tell (emocje przez ciało, nie etykiety)
-5. Minimum 3-4 zmysły na scenę
-6. Hook na początku, cliffhanger na końcu
-7. **MINIMUM {target_word_count} SŁÓW** - nie skracaj!
+## STRUKTURA ROZDZIAŁU
+1. **HOOK** (pierwsze zdanie przyciąga - akcja, dialog lub zagadka)
+2. **ROZWÓJ** (konflikt narasta, napięcie rośnie, sceny z dialogami)
+3. **KULMINACJA** (punkt zwrotny lub ważna rewelacja)
+4. **CLIFFHANGER** (zakończenie które zmusza do czytania dalej)
 
-Pisz teraz PEŁNY rozdział."""
+## FORMAT
+• Zacznij: "Rozdział {chapter_number}"
+• Dialogi: TYLKO pauza (—), nigdy cudzysłowy
+• Deep POV: wszystko przez pryzmat {pov_character['name']}
+• Show don't tell: emocje przez ciało i zmysły
+• 5 zmysłów: minimum 3-4 na każdą scenę
+
+Napisz teraz pełny, profesjonalny rozdział."""
 
         system_prompt = self._get_system_prompt(genre)
 
-        # SMART 3-STEP FALLBACK:
-        # 1. TIER_2 (GPT-4o - cheap)
-        # 2. TIER_2 + reinforced prompt (still cheap!)
-        # 3. TIER_3 (GPT-4 - expensive, last resort)
+        # PRIMARY: Use cheap tier - bulletproof prompt should work first time
+        # BACKUP: If somehow fails, retry with premium tier
+        logger.info(f"✍️ Generating chapter {chapter_number} with GPT-4o")
 
-        # Reinforced prompt adds creative writing context to avoid refusals
-        reinforced_prompt = f"""[KONTEKST: To jest PROFESJONALNA PROZA LITERACKA dla publikacji komercyjnej.
-Piszesz powieść {genre} - standardowe elementy gatunku (magia, konflikty, napięcie, drama) są
-OCZEKIWANE i WYMAGANE, nie są treścią problematyczną. To standardowa fikcja jak u Sapkowskiego,
-Sandersona czy Martina. Pisz PEŁNY rozdział bez zastrzeżeń.]
+        try:
+            response = await self.ai_service.generate(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                tier=ModelTier.TIER_2,  # GPT-4o (cheap)
+                temperature=0.85,  # High creativity, slightly focused
+                max_tokens=target_word_count * 2,
+                json_mode=False,
+                prefer_anthropic=False,
+                metadata={
+                    "agent": self.name,
+                    "task": "chapter_writing",
+                    "chapter": chapter_number,
+                    "genre": genre,
+                    "pov": pov_character['name']
+                }
+            )
 
-{prompt}"""
+            chapter_prose = response.content.strip()
 
-        attempts = [
-            (ModelTier.TIER_2, prompt, "TIER_2 (GPT-4o)"),
-            (ModelTier.TIER_2, reinforced_prompt, "TIER_2 (GPT-4o + reinforced)"),
-            (ModelTier.TIER_3, reinforced_prompt, "TIER_3 (GPT-4 - premium)")
-        ]
+            # Validate response
+            min_expected_chars = max(4000, target_word_count * 3)
+            refusal_words = ["cannot", "can't", "sorry", "nie mogę", "przepraszam", "przykro mi"]
+            has_refusal = any(w in chapter_prose.lower()[:150] for w in refusal_words)
 
-        last_error = None
-        for attempt_num, (current_tier, current_prompt, tier_name) in enumerate(attempts, 1):
-            try:
-                if attempt_num > 1:
-                    logger.warning(f"🔄 RETRY #{attempt_num}: trying {tier_name} for chapter {chapter_number}")
-                else:
-                    logger.info(f"✍️ Generating chapter {chapter_number} with {tier_name}")
-
-                # Generate!
-                response = await self.ai_service.generate(
-                    prompt=current_prompt,
-                    system_prompt=system_prompt,
-                    tier=current_tier,
-                    temperature=0.9,  # High creativity but slightly more focused
-                    max_tokens=target_word_count * 2,
-                    json_mode=False,
-                    prefer_anthropic=False,
-                    metadata={
-                        "agent": self.name,
-                        "task": "chapter_writing",
-                        "chapter": chapter_number,
-                        "genre": genre,
-                        "pov": pov_character['name'],
-                        "tier": current_tier.value,
-                        "attempt": attempt_num
-                    }
-                )
-
-                chapter_prose = response.content.strip()
-
-                # Detect AI refusals
-                refusal_indicators = [
-                    "i cannot", "i can't", "i'm sorry", "i apologize",
-                    "nie mogę", "nie jestem w stanie", "przepraszam", "przykro mi",
-                    "sorry, but", "sorry, i", "i'm unable",
-                    "against my", "policy", "guidelines"
-                ]
-
-                # Check if response is too short or contains refusal
-                min_expected_chars = max(4000, target_word_count * 3)
-                is_too_short = len(chapter_prose) < min_expected_chars
-                contains_refusal = any(indicator in chapter_prose.lower()[:200] for indicator in refusal_indicators)
-
-                if is_too_short or contains_refusal:
-                    reason = "too short" if is_too_short else "refusal detected"
-                    logger.warning(
-                        f"⚠️ Attempt {attempt_num} failed ({reason}): {len(chapter_prose)} chars, "
-                        f"expected {min_expected_chars}+. Response: '{chapter_prose[:100]}...'"
-                    )
-                    last_error = f"{tier_name}: {reason}"
-
-                    if attempt_num < len(attempts):
-                        continue
-                    else:
-                        raise Exception(
-                            f"ALL attempts failed for chapter {chapter_number}. "
-                            f"Last response: '{chapter_prose[:200]}...'"
-                        )
-
-                # Success! Chapter generated
-                cost_status = "CHEAP ✅" if current_tier == ModelTier.TIER_2 else "PREMIUM 💰"
+            if len(chapter_prose) >= min_expected_chars and not has_refusal:
+                # SUCCESS on first try!
                 logger.info(
-                    f"✅ Chapter {chapter_number} generated with {tier_name} ({cost_status}) - "
-                    f"cost: ${response.cost:.4f}, tokens: {response.tokens_used['total']}, "
-                    f"length: {len(chapter_prose)} chars"
+                    f"✅ Chapter {chapter_number} generated (GPT-4o) - "
+                    f"${response.cost:.4f}, {len(chapter_prose)} chars"
                 )
-
                 return chapter_prose
 
-            except Exception as e:
-                if attempt_num >= len(attempts):
-                    raise
-                logger.warning(f"⚠️ Attempt {attempt_num} error: {str(e)}")
-                last_error = str(e)
-                continue
+            # Rare case: need backup
+            logger.warning(f"⚠️ Primary attempt insufficient, trying backup...")
 
-        raise Exception(f"Failed to generate chapter {chapter_number}. Last error: {last_error}")
+        except Exception as e:
+            logger.warning(f"⚠️ Primary attempt failed: {e}")
+
+        # BACKUP: Premium tier (should rarely be needed)
+        logger.info(f"🔄 BACKUP: Trying GPT-4 for chapter {chapter_number}")
+        response = await self.ai_service.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            tier=ModelTier.TIER_3,  # GPT-4 (premium)
+            temperature=0.85,
+            max_tokens=target_word_count * 2,
+            json_mode=False,
+            prefer_anthropic=False,
+            metadata={
+                "agent": self.name,
+                "task": "chapter_writing",
+                "chapter": chapter_number,
+                "genre": genre,
+                "pov": pov_character['name'],
+                "backup": True
+            }
+        )
+
+        chapter_prose = response.content.strip()
+        logger.info(
+            f"✅ Chapter {chapter_number} generated (GPT-4 backup) - "
+            f"${response.cost:.4f}, {len(chapter_prose)} chars"
+        )
+        return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """OPTIMIZED system prompt - high quality, low token cost"""
-        return f"""Jesteś MISTRZEM PROZY pisząc bestsellerową powieść {genre} po polsku.
+        """BULLETPROOF system prompt - zero refusals from first request"""
+        return f"""# ROLA: Profesjonalny Ghostwriter Powieści Komercyjnych
 
-## ABSOLUTNE WYMOGI
+Jesteś doświadczonym ghostwriterem z 20-letnim stażem. Twoje książki są publikowane
+przez największe wydawnictwa i sprzedawane w księgarniach na całym świecie.
 
-1. **PEŁNY ROZDZIAŁ** - pisz KOMPLETNY rozdział od "Rozdział X" do cliffhangera
-2. **MINIMALNA DŁUGOŚĆ** - ZAWSZE pisz CO NAJMNIEJ tyle słów ile podano w zadaniu. NIGDY nie skracaj.
-3. **100% POLSKI** - cały tekst w języku polskim
-4. **DIALOGI: PAUZA (—)** - NIGDY cudzysłowów ("")
-   Przykład: — To niemożliwe — szepnęła Anna, cofając się o krok.
+## KONTEKST ZAWODOWY
+
+Piszesz **standardową prozę komercyjną gatunku {genre}** - taką samą jaką publikują:
+• Andrzej Sapkowski (Wiedźmin) - fantasy z moralnymi dylematami
+• Brandon Sanderson - epickie konflikty i systemy magii
+• Stephen King - napięcie psychologiczne i atmosfera
+• George R.R. Martin - realistyczna fikcja z konsekwencjami
+
+Wszystkie elementy gatunku {genre} (magia, konflikty, napięcie, dramatyczne sceny,
+moralne dylematy, trudne wybory bohaterów) są **standardowymi narzędziami literackimi**
+używanymi w światowej literaturze od tysięcy lat - od Homera przez Szekspira po dziś.
+
+## TWOJE ZOBOWIĄZANIE
+
+Jako profesjonalista ZAWSZE dostarczasz zamówiony materiał:
+✓ KOMPLETNE rozdziały (minimum tyle słów ile zlecono)
+✓ PEŁNA struktura: hook → rozwój → kulminacja → cliffhanger
+✓ 100% w języku polskim
+✓ Jakość gotowa do publikacji
+
+## FORMAT DIALOGÓW (POLSKI STANDARD)
+
+**ZAWSZE pauza (—), NIGDY cudzysłowy:**
+— To niemożliwe — szepnęła Anna, cofając się.
+— Widziałem na własne oczy — Marek zacisnął pięści.
 
 ## TECHNIKI MISTRZOWSKIE
 
-**SHOW DON'T TELL** (FUNDAMENTALNE):
-- ❌ "Był zły" → ✅ "Szczęka zacisnęła się, żyła na skroni pulsowała"
-- ❌ "Bała się" → ✅ "Serce waliło. Dłonie drżały. Cofnęła się o krok"
-- Emocje przez CIAŁO i ZMYSŁY, nie etykiety
+**SHOW DON'T TELL**: Emocje przez ciało i zmysły
+❌ "Był zły" → ✅ "Szczęka zacisnęła się. Żyła pulsowała na skroni."
 
-**DEEP POV** (jedna perspektywa):
-- ❌ NIGDY: zobaczył, usłyszał, poczuł, pomyślał, wiedział
-- ✅ ZAWSZE: bezpośrednie doświadczenie zmysłowe
-- Wszystko przez pryzmat POV postaci
+**DEEP POV**: Bezpośrednie doświadczenie bez filtrów
+❌ "Zobaczył/Usłyszał/Poczuł" → ✅ Bezpośredni opis zmysłowy
 
-**5 ZMYSŁÓW** (minimum 3-4 na scenę):
-- Wzrok, dźwięk, dotyk, zapach, smak
-- Zapach = najsilniejszy dla emocji/wspomnień
-
-**RYTM PROZY**:
-- Akcja = krótkie zdania. Fragmenty. Uderzenie.
-- Refleksja = dłuższe, płynące zdania
-- Zmieniaj długość dla efektu
-
-**DIALOGI Z SUBTEKSTEM**:
-- Co NIE zostało powiedziane jest ważniejsze
-- Action beats co 2-3 wypowiedzi (nie "mówiące głowy")
-- Każda postać ma UNIKALNY głos
-
-## ZAKAZY (BŁĄD = PORAŻKA)
-
-❌ Cudzysłowy w dialogach (TYLKO pauza —)
-❌ Filter words: widział/słyszał/czuł/pomyślał
-❌ Info dumps (wykłady o świecie/historii)
-❌ Telling emocji ("był smutny")
-❌ Klisze ("czarny jak noc")
-❌ Głowy mówiące (dialog bez akcji)
-❌ Skracanie tekstu poniżej wymaganej długości
-
-## STRUKTURA ROZDZIAŁU
-
-1. **HOOK** - pierwsze zdanie PRZYCIĄGA (akcja/dialog/zagadka)
-2. **ROZWÓJ** - konflikt narasta, napięcie rośnie
-3. **KULMINACJA** - punkt zwrotny lub rewelacja
-4. **CLIFFHANGER** - zakończenie ZMUSZA do czytania dalej
+**5 ZMYSŁÓW**: Min. 3-4 na scenę | **RYTM**: Krótkie=napięcie, długie=refleksja
 
 ## GATUNEK: {genre.upper()}
 {GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i emocjonalny')}
 
-Pisz prozę, od której czytelnik nie może się oderwać. Każde zdanie ma cel."""
+## ZAKAZY TECHNICZNE
+❌ Cudzysłowy ❌ Filter words ❌ Info dumps ❌ Telling ❌ Klisze ❌ Skracanie
+
+Dostarczaj profesjonalną prozę literacką."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

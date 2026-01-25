@@ -63,7 +63,8 @@ def run_full_pipeline(self, project_id: int):
         # Create orchestrator
         orchestrator = AgentOrchestrator(db, project)
 
-        # Run async generation with timeout (2 hours max)
+        # Run async generation with timeout (6 hours max for Beat Sheet Architecture)
+        # ~33 chapters × 5 scenes × ~2 min = ~5.5 hours max
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -72,16 +73,16 @@ def run_full_pipeline(self, project_id: int):
             report = loop.run_until_complete(
                 asyncio.wait_for(
                     orchestrator.generate_complete_book(),
-                    timeout=7200  # 2 hours = 7200 seconds
+                    timeout=21600  # 6 hours = 21600 seconds
                 )
             )
         except asyncio.TimeoutError:
-            logger.error(f"❌ Generation timed out for project {project_id} (exceeded 2 hours)")
+            logger.error(f"❌ Generation timed out for project {project_id} (exceeded 6 hours)")
             project.status = ProjectStatus.FAILED
-            project.current_activity = "Przekroczono limit czasu (2 godziny)"
-            project.error_message = "TimeoutError: Generation exceeded 2 hour time limit"
+            project.current_activity = "Przekroczono limit czasu (6 godzin)"
+            project.error_message = "TimeoutError: Generation exceeded 6 hour time limit"
             db.commit()
-            raise Exception("Generation timed out after 2 hours")
+            raise Exception("Generation timed out after 6 hours")
         finally:
             loop.close()
 

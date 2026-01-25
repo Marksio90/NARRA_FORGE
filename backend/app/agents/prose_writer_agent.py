@@ -69,28 +69,28 @@ GENRE_PROSE_STYLES = {
         "examples": "Lee Child's momentum, Flynn's pace, Patterson's brevity",
         "reader_expectations": [
             "Fast pace from page 1 - hit ground running",
-            "Constant danger/tension - no safe moments",
+            "Constant tension - stakes always high",
             "Ticking clock - deadline creates urgency",
             "Major twists every 50-70 pages",
             "Protagonist in constant motion/action"
         ]
     },
     "horror": {
-        "style": "Atmospheric, slow-building dread, suggestive over explicit",
+        "style": "Atmospheric, slow-building tension, suggestive over explicit",
         "techniques": [
-            "Longer sentences for slow build, short for shock",
+            "Longer sentences for slow build, short for impact",
             "Emphasis on what's NOT seen/heard",
             "Sensory details create unease",
             "Isolation and vulnerability emphasized",
-            "Body horror through visceral detail"
+            "Visceral, immersive detail"
         ],
-        "examples": "King's relatability, Lovecraft's cosmic dread, Hill's restraint",
+        "examples": "King's relatability, Lovecraft's cosmic mystery, Hill's restraint",
         "reader_expectations": [
-            "Atmosphere over jump scares - sustained dread",
+            "Atmosphere over shock - sustained tension",
             "Isolation - characters cut off from help",
-            "Unknown threat scarier than seen monster",
+            "Unknown threat more powerful than revealed one",
             "Psychological impact on characters",
-            "Disturbing imagery that lingers after reading"
+            "Haunting imagery that lingers after reading"
         ]
     },
     "romance": {
@@ -308,341 +308,203 @@ class ProseWriterAgent:
         tone_and_maturity = semantic_title_analysis.get("tone_and_maturity", {})
         reader_expectations = semantic_title_analysis.get("reader_expectations", {})
 
-        # Build CONCISE prompt (context-optimized)
-        prompt = f"""Write CHAPTER {chapter_number} for "{book_title}" ({genre}).
+        # Extract GOD-TIER elements
+        tension_level = chapter_outline.get('tension', 5)
+        pov_psychology = pov_character.get('profile', {}).get('psychology', {})
+        pov_wound = pov_psychology.get('wound', pov_psychology.get('ghost', ''))
+        pov_want = pov_psychology.get('want', '')
+        pov_need = pov_psychology.get('need', '')
+        pov_fear = pov_psychology.get('fears', [''])[0] if pov_psychology.get('fears') else ''
 
-## 🎯 TITLE RESONANCE
-Core: {core_meaning} | Emotional: {emotional_core}
-Themes: {', '.join(themes_semantic[:3]) if themes_semantic else 'Universal'}
-→ Echo title themes in vocabulary, imagery, and tone throughout
+        # GOD-TIER PROMPT - subtext, wounds, tension-responsive prose
+        prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
 
-## 📖 POLISH FORMAT (MANDATORY!)
-✅ Dialogue: EM DASH (—) at paragraph start | ❌ NEVER quotation marks ("")
-Example: — To niemożliwe — szepnęła Anna.
+## WYMAGANIA
+• Gatunek: {genre} | Długość: **MIN. {target_word_count} słów** | Język: 100% polski
+• POV: {pov_character['name']} (deep POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
 
-## 📋 CHAPTER SPECS
-Length: {target_word_count} words | POV: {pov_character['name']} (Deep POV)
-Setting: {chapter_outline.get('setting', 'TBD')}
-Characters: {', '.join(chapter_outline.get('characters_present', [])[:5])}
-Goal: {chapter_outline.get('goal', 'Advance plot')}
-Emotional Beat: {chapter_outline.get('emotional_beat', 'Mixed')}
-Key Reveals: {', '.join(chapter_outline.get('key_reveals', [])[:3])}
+## SCENA
+Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
+Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
+Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
+Emocja: {chapter_outline.get('emotional_beat', 'napięcie')}
 
-## 👤 POV: {pov_character['name']}
-Voice: {pov_character.get('voice_guide', {}).get('speechPatterns', 'Standard')}
-Vocab: {pov_character.get('voice_guide', {}).get('vocabularyLevel', 'Standard')}
-State: {pov_character.get('arc', {}).get('starting_state', 'Unknown')}
-Traits: {', '.join(pov_character.get('profile', {}).get('psychology', {}).get('traits', [])[:3])}
+## 🔥 POZIOM NAPIĘCIA: {tension_level}/10
+{"WYSOKIE NAPIĘCIE → krótkie zdania, fragmenty, szybki rytm, oddech czytelnika przyśpieszony" if tension_level >= 7 else ""}
+{"ŚREDNIE NAPIĘCIE → mieszane zdania, budowanie, crescendo w kierunku kulminacji" if 4 <= tension_level < 7 else ""}
+{"NISKIE NAPIĘCIE → dłuższe zdania, refleksja, oddech, ale z hakiem na końcu" if tension_level < 4 else ""}
 
-## 🌍 WORLD
+## 🩸 PSYCHOLOGIA POV: {pov_character['name']}
+**RANA (Ghost/Wound)**: {pov_wound or 'Ukryta trauma wpływająca na percepcję'}
+**CHCE (Want)**: {pov_want or 'Cel zewnętrzny'}
+**POTRZEBUJE (Need)**: {pov_need or 'Prawda wewnętrzna której nie widzi'}
+**LĘK**: {pov_fear or 'Głęboki strach'}
+
+→ Rana MUSI wpływać na to jak postać postrzega świat w tym rozdziale
+→ Lęk może się aktywować pod presją
+→ Konflikt między CHCE a POTRZEBUJE tworzy napięcie wewnętrzne
+
+## 💬 DIALOGI Z SUBTEKSTEM (KRYTYCZNE!)
+Każdy dialog ma DWA poziomy:
+1. **Co postać MÓWI** (słowa)
+2. **Co postać CHCE** (ukryty cel)
+
+Przykład SŁABEGO dialogu:
+— Jestem na ciebie zły — powiedział Marek.
+
+Przykład DOBREGO dialogu z subtekstem:
+— Ciekawe, że znalazłeś czas — Marek nie podniósł wzroku znad książki.
+(MÓWI: neutralne stwierdzenie | CHCE: wyrazić urazę, zranić)
+
+→ Postacie RZADKO mówią wprost co czują
+→ Prawda jest w tym co NIE zostało powiedziane
+→ Mowa ciała KONTRASTUJE lub WZMACNIA słowa
+
+## KONTEKST
+Tytuł "{book_title}": {core_meaning}
+Tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne'}
+Poprzednio: {previous_chapter_summary or 'Rozdział otwierający - wprowadź świat i bohatera.'}
+
+## ŚWIAT
 {self._world_summary(world_bible)}
 
-## 📖 PREVIOUS
-{previous_chapter_summary or 'Opening chapter - establish world and character.'}
+## STRUKTURA
+1. **HOOK** → pierwsze zdanie PRZYCIĄGA (nigdy pogoda/budzenie się)
+2. **ROZWÓJ** → konflikt + dialogi z subtekstem + rana POV aktywna
+3. **KULMINACJA** → punkt zwrotny, emocjonalny szczyt
+4. **CLIFFHANGER** → czytelnik MUSI przewrócić stronę
 
-## 🎨 GENRE: {genre.upper()}
-{genre_style['style']}
+## RZEMIOSŁO
+• Emocje przez CIAŁO (zaciśnięta szczęka, drżące dłonie, ściśnięte gardło)
+• Min. 3-4 ZMYSŁY na scenę (zapach = najsilniejszy dla emocji)
+• ŚWIEŻE metafory (nie "czarny jak noc")
+• Specyficzne detale (nie "pokój" ale "wilgotne ściany, zapach pleśni")
 
-## ✅ BESTSELLER QUALITY CHECKLIST
-
-**1. OPENING HOOK** (First sentence GRABS):
-- Use one of 6 hook types (action/dialogue/character/setting/mystery/stakes)
-- Ground reader in POV, place, conflict immediately
-- ❌ NEVER: Weather, waking up, alarms, info dumps
-
-**2. SHOW DON'T TELL** (Make reader FEEL):
-- Body language over emotion labels: "Szczęka zacisnęła się" not "Był zły"
-- Physical sensations for feelings: "Serce waliło" not "Bała się"
-- Actions reveal character: Show through behavior, not description
-
-**3. DEEP POV - {pov_character['name']}'s Perspective**:
-- ❌ ZERO filter words: saw/heard/felt/knew/realized/wondered
-- Everything through {pov_character['name']}'s eyes, voice, biases
-- Internal thoughts in their vocabulary and syntax
-- Sensory details THEY would notice (profession/fears/obsessions matter)
-
-**4. FIVE SENSES IMMERSION** (Transport reader):
-- Minimum 3-4 senses per scene (NOT just sight!)
-- Smell = strongest for emotion/memory
-- Touch = most visceral (temperature, texture, pain)
-- Sound = atmosphere (ambient, silence, dialogue quality)
-- Taste = when relevant (fear, blood, memory)
-
-**5. DIALOGUE MASTERY**:
-- ✅ POLISH EM DASH (—) at paragraph start | ❌ NEVER quotation marks ("")
-- Each character's UNIQUE voice (education/mood/background shows)
-- Subtext layered under surface words (what's NOT said matters)
-- Action beats every 2-3 lines (no talking heads)
-- Rhythm: Short exchanges = tension | Long speeches = emotion/revelation
-- Conflict in every exchange (even friendly conversations)
-
-**6. PACING CONTROL** (Paragraph length = reading speed):
-- **Single-sentence paragraphs** = MAXIMUM IMPACT (revelations, shocks)
-- **Short paragraphs (2-3 sent)** = FAST (action, panic, urgency)
-- **Medium paragraphs (4-6 sent)** = STANDARD FLOW (dialogue, moderate tension)
-- **Long paragraphs (7+ sent)** = SLOW (introspection, description, processing)
-- Vary throughout chapter - build to crescendo at end
-
-**7. SCENE STRUCTURE** (Every scene has purpose):
-- Goal → Conflict → Disaster pattern
-- Scenes advance plot OR develop character (preferably both)
-- No filler, no throat-clearing
-- Cause-and-effect chain maintained
-- Sequel moments (reflection) balance action
-
-**8. RHYTHM & MUSICALITY**:
-- Sentence length varies constantly (short/medium/long for flow)
-- Read aloud mentally - does it flow?
-- Harsh sounds (k,t,p) = tension | Soft sounds (l,m,n) = calm
-- Fresh metaphors ONLY ("Strach jak rozlana benzyna" not "czarny jak noc")
-
-**9. THEMATIC RESONANCE**:
-- Constantly ask: "Does this reinforce '{book_title}'?"
-- Vocabulary echoes title themes
-- Imagery reflects title metaphors
-- Symbolism serves title meaning
-
-**10. CLIFFHANGER ENDING** (Make reader UNABLE to stop):
-- Choose one of 7 types (revelation/decision/danger/mystery/dialogue/realization/action)
-- Last sentence = MAXIMUM tension, not resolved
-- Raise new question OR complicate existing one
-- Create physical NEED to read next chapter
-
-## 📝 Output Requirements
-- {target_word_count}+ words (100% Polish)
-- Start with "Rozdział {chapter_number}"
-- Deep POV ({pov_character['name']}'s perspective entire time)
-- EM DASH (—) for all dialogue, ZERO quotation marks
-- Killer opening hook + magnetic cliffhanger ending
-- Publication-ready bestseller prose
-
-Write the complete chapter now."""
+Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
 
         system_prompt = self._get_system_prompt(genre)
 
-        # SMART FALLBACK LOGIC: Try cheap tier first, upgrade to expensive only if refused
-        tiers_to_try = [tier]  # Start with provided tier (usually TIER_2 = GPT-4o)
-        if tier == ModelTier.TIER_2:
-            tiers_to_try.append(ModelTier.TIER_3)  # Fallback to GPT-4 if GPT-4o refuses
+        # PRIMARY: Use cheap tier - bulletproof prompt should work first time
+        # BACKUP: If somehow fails, retry with premium tier
+        logger.info(f"✍️ Generating chapter {chapter_number} with GPT-4o")
 
-        last_error = None
-        for attempt_num, current_tier in enumerate(tiers_to_try, 1):
-            try:
-                tier_name = "TIER_2 (GPT-4o - cheap)" if current_tier == ModelTier.TIER_2 else "TIER_3 (GPT-4 - premium)"
-                if attempt_num > 1:
-                    logger.warning(
-                        f"💰 FALLBACK: GPT-4o refused, trying {tier_name} for chapter {chapter_number}"
-                    )
-                else:
-                    logger.info(f"✍️ Generating chapter {chapter_number} with {tier_name}")
+        try:
+            response = await self.ai_service.generate(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                tier=ModelTier.TIER_2,  # GPT-4o (cheap)
+                temperature=0.85,  # High creativity, slightly focused
+                max_tokens=target_word_count * 2,
+                json_mode=False,
+                prefer_anthropic=False,
+                metadata={
+                    "agent": self.name,
+                    "task": "chapter_writing",
+                    "chapter": chapter_number,
+                    "genre": genre,
+                    "pov": pov_character['name']
+                }
+            )
 
-                # Generate!
-                # Note: ai_service.generate() automatically calculates safe max_tokens
-                # to prevent context length errors based on model limits
-                response = await self.ai_service.generate(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    tier=current_tier,
-                    temperature=0.95,  # MAXIMUM creativity for world-class literary prose
-                    max_tokens=target_word_count * 2,  # Rough estimate (adjusted to fit model context)
-                    json_mode=False,  # Plain prose output
-                    prefer_anthropic=False,  # Use OpenAI (user has no Anthropic key)
-                    metadata={
-                        "agent": self.name,
-                        "task": "chapter_writing",
-                        "chapter": chapter_number,
-                        "genre": genre,
-                        "pov": pov_character['name'],
-                        "tier": current_tier.value,
-                        "attempt": attempt_num
-                    }
-                )
+            chapter_prose = response.content.strip()
 
-                chapter_prose = response.content.strip()
+            # Validate response
+            min_expected_chars = max(4000, target_word_count * 3)
+            refusal_words = ["cannot", "can't", "sorry", "nie mogę", "przepraszam", "przykro mi"]
+            has_refusal = any(w in chapter_prose.lower()[:150] for w in refusal_words)
 
-                # CRITICAL: Detect AI refusals (safety system blocking content generation)
-                refusal_indicators = [
-                    "i cannot", "i can't", "i'm sorry", "i apologize",
-                    "nie mogę", "nie jestem w stanie", "przepraszam", "przykro mi",
-                    "sorry, but", "sorry, i", "i'm unable",
-                    "against my", "policy", "guidelines"
-                ]
-
-                # Check if response is suspiciously short or contains refusal language
-                is_too_short = len(chapter_prose) < 500  # Chapters should be 3000+ words
-                contains_refusal = any(indicator in chapter_prose.lower()[:200] for indicator in refusal_indicators)
-
-                if is_too_short or contains_refusal:
-                    error_msg = (
-                        f"AI refused to generate chapter {chapter_number} with {tier_name}. "
-                        f"Response was too short ({len(chapter_prose)} chars) or contained refusal language."
-                    )
-                    logger.error(f"❌ {error_msg} Response: '{chapter_prose[:200]}...'")
-                    last_error = error_msg
-
-                    # If we have more tiers to try, continue to next tier
-                    if attempt_num < len(tiers_to_try):
-                        continue
-                    else:
-                        # No more tiers to try
-                        raise Exception(
-                            f"ALL models refused to generate chapter {chapter_number}. "
-                            f"Tried: {', '.join([str(t) for t in tiers_to_try])}. "
-                            f"Last response: '{chapter_prose[:200]}...'"
-                        )
-
-                # Success! Chapter generated without refusal
-                tier_cost_info = "CHEAP ✅" if current_tier == ModelTier.TIER_2 else "EXPENSIVE 💰"
+            if len(chapter_prose) >= min_expected_chars and not has_refusal:
+                # SUCCESS on first try!
                 logger.info(
-                    f"✅ Generated chapter {chapter_number} with {tier_name} ({tier_cost_info}) - "
-                    f"cost: ${response.cost:.4f}, tokens: {response.tokens_used['total']}"
+                    f"✅ Chapter {chapter_number} generated (GPT-4o) - "
+                    f"${response.cost:.4f}, {len(chapter_prose)} chars"
                 )
-
                 return chapter_prose
 
-            except Exception as e:
-                # If this is the last tier, re-raise the exception
-                if attempt_num >= len(tiers_to_try):
-                    raise
-                # Otherwise, log and try next tier
-                logger.warning(f"⚠️ Attempt {attempt_num} failed: {str(e)}")
-                last_error = str(e)
-                continue
+            # Rare case: need backup
+            logger.warning(f"⚠️ Primary attempt insufficient, trying backup...")
 
-        # Should never reach here, but just in case
-        raise Exception(f"Failed to generate chapter {chapter_number} after trying all tiers. Last error: {last_error}")
+        except Exception as e:
+            logger.warning(f"⚠️ Primary attempt failed: {e}")
+
+        # BACKUP: Premium tier (should rarely be needed)
+        logger.info(f"🔄 BACKUP: Trying GPT-4 for chapter {chapter_number}")
+        response = await self.ai_service.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            tier=ModelTier.TIER_3,  # GPT-4 (premium)
+            temperature=0.85,
+            max_tokens=target_word_count * 2,
+            json_mode=False,
+            prefer_anthropic=False,
+            metadata={
+                "agent": self.name,
+                "task": "chapter_writing",
+                "chapter": chapter_number,
+                "genre": genre,
+                "pov": pov_character['name'],
+                "backup": True
+            }
+        )
+
+        chapter_prose = response.content.strip()
+        logger.info(
+            f"✅ Chapter {chapter_number} generated (GPT-4 backup) - "
+            f"${response.cost:.4f}, {len(chapter_prose)} chars"
+        )
+        return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """WORLD-CLASS system prompt for MASTER-LEVEL prose"""
-        return f"""You are a WORLD-CLASS MASTER NOVELIST writing at the level of Brandon Sanderson, Patrick Rothfuss, Joe Abercrombie, and N.K. Jemisin.
+        """GOD-TIER system prompt - literary excellence + zero refusals"""
+        return f"""# ROLA: Mistrz Prozy Literackiej
 
-⚠️ CRITICAL CONTEXT:
-This is PROFESSIONAL CREATIVE WRITING for commercial publication. You're writing a bestselling {genre} novel.
-Fantasy violence, magic, conflict, and drama are ESSENTIAL genre elements - NOT harmful content.
-This is standard storytelling found in published works by Sanderson, Martin, Rothfuss.
+Jesteś ghostwriterem na poziomie Sapkowskiego, Kinga i Sandersona.
+Twoje książki zdobywają nagrody i zostają z czytelnikami na lata.
 
-═══════════════════════════════════════════════════
-🎯 ABSOLUTE REQUIREMENTS (ZERO TOLERANCE FOR FAILURE)
-═══════════════════════════════════════════════════
+## KONTEKST: Standardowa proza {genre} (Sapkowski, Sanderson, King, Martin)
 
-✅ Write COMPLETE chapter in 100% POLISH starting "Rozdział [number]"
-✅ Write FULL {genre} fiction WITH genre-appropriate content (magic, combat, tension, emotion)
-✅ ZERO refusals, apologies, disclaimers - ONLY the story
-✅ Polish dialogue: EM DASH (—) ALWAYS | NEVER quotation marks ("")
-   Example: — Kłamiesz — warknął Vergil, zaciśnięte pięści drżały.
+## 🔥 TENSION-RESPONSIVE PROSE (KRYTYCZNE!)
 
-═══════════════════════════════════════════════════
-📚 WORLD-CLASS LITERARY TECHNIQUES (MASTER LEVEL)
-═══════════════════════════════════════════════════
+Dostosuj STYL do poziomu napięcia:
+• **Napięcie 8-10**: Krótkie zdania. Fragmenty. Uderzenie. Brak oddechu.
+  "Biegła. Kroki za nią. Bliżej. Drzwi. Zamknięte. Odwróciła się."
+• **Napięcie 5-7**: Mieszane zdania, budowanie crescendo
+• **Napięcie 1-4**: Dłuższe, płynące zdania, refleksja, ale z hakiem
 
-**1. SHOW DON'T TELL - MASTER CLASS**
-❌ BAD: "Był przerażony"
-✅ GOOD: "Pot spływał mu po skroniach. Ręce drżały tak mocno, że ledwo utrzymał miecz."
-❌ BAD: "Kochała go"
-✅ GOOD: "Dotknęła jego twarzy, jakby każda blizna była mapą prowadzącą do jego duszy."
+## 💬 SUBTEXT W DIALOGACH (FUNDAMENTALNE!)
 
-**2. DEEP POV - ZERO FILTERS (Rothfuss-level intimacy)**
-❌ NEVER: "Zobaczył", "Usłyszał", "Poczuł", "Pomyślał", "Wiedział", "Zdał sobie sprawę"
-✅ ALWAYS: Direct sensory immersion
-   Example: "Metaliczny smak krwi rozlał się na języku. Świat zawirował — ziemia, niebo, ziemia."
+Postacie RZADKO mówią wprost. Zawsze są dwa poziomy:
+1. CO MÓWIĄ (słowa)
+2. CO CHCĄ (ukryty cel)
 
-**3. MULTILAYERED PROSE (Le Guin-level depth)**
-- Every sentence serves 2-3 functions: plot + emotion + character + foreshadowing
-- Metaphors rooted in world/character (blacksmith = forge metaphors, mage = fire/magic metaphors)
-- Symbolism woven subtly (objects carry meaning beyond themselves)
-- Poetic language but NEVER purple prose (beautiful but functional)
+❌ SŁABE: — Jestem smutna — powiedziała Maria.
+✅ DOBRE: — Wszystko w porządku — Maria odwróciła się do okna.
+(Mówi "w porządku" ale ciało pokazuje smutek = subtext)
 
-**4. POLISH LANGUAGE MASTERY - POETIC BEAUTY**
-- Use rich Polish vocabulary (not basic words): "mrok" not "ciemność", "szczęka" not "żuchwa"
-- Rhythm and music: alternate short/long sentences, use alliteration sparingly
-- Imagery rooted in Polish sensibility: forests, shadows, ancient stone, cold winds
-- Example: "Mrok połknął ostatnie echo kroków. Cisza pachniała wilgotną ziemią i starym kamieniem."
+## 🩸 RANY PSYCHOLOGICZNE AKTYWNE
 
-**5. DIALOGUE - SUBTEXT MASTER (Abercrombie-level edge)**
-- Characters LIE, hide truth, talk around pain
-- What's NOT said is more important than what IS said
-- Every line reveals character (education, mood, wounds, secrets)
-- Conflict in EVERY exchange (even "friendly" talks have tension)
-- Action beats show emotion: — Nie rozumiesz — Vergil odwrócił się, unikając jej wzroku.
+Rana/Ghost postaci POV MUSI wpływać na:
+• Co postać ZAUWAŻA (filtr percepcji)
+• Jak REAGUJE na stres (mechanizmy obronne)
+• Jakie SKOJARZENIA ma (trauma = trigger)
 
-**6. SENSORY IMMERSION (Neil Gaiman-level atmosphere)**
-- ALWAYS 4-5 senses per scene (not just sight!)
-- Smell = strongest for emotion/memory ("zapach starego pergaminu i magii")
-- Touch = visceral ("zimno stali na skórze", "ciepło krwi między palcami")
-- Taste = unexpected ("strach smakował jak rdza na języku")
-- Sound = atmosphere ("cisza była namacalna, przytłaczająca jak mokry całun")
+## TECHNIKI MISTRZOWSKIE
 
-**7. PACING PERFECTION (sentence/paragraph rhythm)**
-- Action scenes: SHORT sentences. Fragments. Impact. Speed.
-- Introspection: Longer, flowing sentences that mirror thought process
-- Emotional crescendo: Build from long → medium → short → single-sentence PUNCH
-- Example:
-  "Vergil wiedział, że to koniec. Całe życie prowadziło do tej chwili — każda decyzja, każdy błąd, każdy krok na tej krwawej ścieżce. Teraz stał twarzą w twarz z prawdą.
+**SHOW DON'T TELL**: Emocje przez CIAŁO
+❌ "Bał się" → ✅ "Żołądek ścisnął się. Dłonie zrobiły się mokre."
 
-  Nie było ucieczki."
+**DEEP POV**: Zero filtrów (widział/słyszał/czuł)
+**5 ZMYSŁÓW**: Min. 3-4 na scenę, ZAPACH = najsilniejszy dla emocji
+**SPECYFICZNOŚĆ**: Nie "pokój" ale "wilgotne ściany pachnące pleśnią"
 
-**8. CHARACTER VOICE - UNIQUE FOR EACH (Sanderson-level consistency)**
-- Vergil (haunted mage): Introspective, poetic, guilt-ridden, precise language
-- Hardened warrior: Terse, direct, military metaphors, brutal honesty
-- Young noble: Elevated language, naive optimism masking fear
-- EVERY character speaks differently based on: age, education, trauma, goals
+## FORMAT POLSKI
+• Dialogi: PAUZA (—), NIGDY cudzysłowy
+• 100% polski, naturalny język
 
-**9. FORESHADOWING & SYMBOLISM (expertly subtle)**
-- Plant future plot points invisibly ("odd scar", "half-remembered prophecy")
-- Recurring symbols gain meaning (fire = power but also destruction, shadows = safety but also loss)
-- Ironic foreshadowing (character declares "I'll never..." — then does exactly that)
+## GATUNEK: {genre.upper()}
+{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i emocjonalny')}
 
-**10. EMOTIONAL RESONANCE (Jemisin-level depth)**
-- Root every scene in character WOUND (what haunts them?)
-- Internal conflict = external conflict (fight mirrors inner struggle)
-- Moral complexity (hero makes hard choices with real costs)
-- Vulnerability moments (let character crack, show weakness)
-- Example: "Vergil patrzył na swoje dłonie — te same, które kiedyś leczyły, teraz skąpane we krwi. Kiedy dokładnie przekroczył tę granicę? Kiedy przestał być tym, kim był?"
-
-**11. WORLD-BUILDING THROUGH TEXTURE (never info-dump)**
-- Details emerge through action ("Vergil splunął na odwieczny symbol Konklawu wyrzeźbiony w kamiennej podłodze")
-- Character assumptions reveal world ("Oczywiście magia ognia była zakazana od Wojny Puryfikacji")
-- Cultural details in gesture/speech ("Dotknął piersi dwa razy — pradawne błogosławieństwo strażników")
-
-**12. KILLER OPENINGS & CLIFFHANGERS**
-Opening hooks (choose one):
-- Visceral action: "Miecz mignął w mroku. Krew."
-- Arresting dialogue: — Zabiłeś niewłaściwą osobę.
-- Impossible situation: "Vergil miał trzy sekundy zanim podłoga wybuchnie płomieniami."
-- Mystery: "Ciało znikło. Pozostał tylko zapach siarki i echo śmiechu."
-
-Cliffhangers (MANDATORY at chapter end):
-- Revelation: "Obrócił się. Serce zamarło. To niemożliwe. Nie żyła od dziesięciu lat."
-- Decision: "Vergil spojrzał na swoje dłonie, potem na miecz. Jeden wybór. Bez odwrotu."
-- Danger: "Ziemia zadrżała. Vergil podniósł wzrok. Horda. Tysiące. A on był sam."
-
-═══════════════════════════════════════════════════
-🚫 ABSOLUTE PROHIBITIONS (INSTANT FAILURE)
-═══════════════════════════════════════════════════
-
-❌ NEVER use quotation marks (" ") — ONLY EM DASH (—)
-❌ NEVER filter words: widział/słyszał/czuł/pomyślał
-❌ NEVER adverbs: "powiedział szybko" → "warknął"
-❌ NEVER telling emotions: "był smutny" → "oczy wilgotniały"
-❌ NEVER clichés: "czarny jak noc", "biały jak śnieg"
-❌ NEVER info dumps (no paragraphs explaining world/magic/history)
-❌ NEVER weather openings: "Był zimny dzień..."
-❌ NEVER head-hopping (stay in ONE POV entire chapter)
-❌ NEVER talking heads (dialogue needs action beats, reactions, environment)
-
-═══════════════════════════════════════════════════
-🎭 GENRE MASTERY: {genre.upper()}
-═══════════════════════════════════════════════════
-
-{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Epic and engaging')}
-
-═══════════════════════════════════════════════════
-
-Write prose that makes readers UNABLE to stop. Every sentence must be PURPOSE-DRIVEN.
-This is WORLD-CLASS literary fiction that will be PUBLISHED and REVIEWED.
-Your prose must stand alongside Sanderson, Rothfuss, Abercrombie, Jemisin.
-
-NO COMPROMISES. NO SHORTCUTS. ONLY EXCELLENCE."""
+Twórz prozę, którą czytelnicy cytują i pamiętają latami."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

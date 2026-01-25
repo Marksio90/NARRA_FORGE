@@ -272,90 +272,66 @@ Output valid JSON only."""
             for i, priority in enumerate(improvement_plan.get('priority_order', [])[:5])
         ])
 
-        prompt = f"""REWRITE Chapter {chapter_number} for "{book_title}" ({genre}) - SECOND DRAFT (IMPROVED VERSION)
+        prompt = f"""# REWIZJA: Rozdział {chapter_number} - "{book_title}" ({genre})
 
-POV Character: {pov_character['name']}
-Target Length: {target_word_count} words minimum
+## WYMAGANIA
+• POV: {pov_character['name']} | Długość: min. {target_word_count} słów
+• Dialogi: PAUZA (—), nigdy cudzysłowy | Język: 100% polski
 
-## FIRST DRAFT (What we're improving):
+## PIERWSZY SZKIC DO ULEPSZENIA:
 {first_draft}
 
-## CRITICAL IMPROVEMENTS TO IMPLEMENT:
+## ULEPSZENIA DO WDROŻENIA:
+{improvements_text if improvements_text else "• Wzmocnij hook otwierający\n• Dodaj magnetyczny cliffhanger\n• Show don't tell w emocjach"}
 
-{improvements_text if improvements_text else "Focus on overall bestseller quality"}
+## ZACHOWAJ:
+{chr(10).join(f"• {s}" for s in improvement_plan.get('strengths', ['Fabułę i głos postaci'])[:3])}
 
-## PRIORITY ORDER:
-{priority_text if priority_text else "1. Killer opening hook\n2. Magnetic cliffhanger\n3. Show-don't-tell throughout"}
+## WZMOCNIJ:
+• Hook → natychmiast przyciąga
+• Cliffhanger → zmusza do czytania
+• Dialogi → subtext + unikalne głosy + pauzy (—)
+• Emocje → przez ciało, nie etykiety
+• Pacing → różne długości akapitów
+• Zmysły → min. 3-4 na scenę
 
-## WHAT'S ALREADY WORKING WELL (Keep these!):
-{chr(10).join(f"- {strength}" for strength in improvement_plan.get('strengths', [])) if improvement_plan.get('strengths') else "Maintain core story and character voice"}
+Napisz ULEPSZONĄ wersję rozdziału. Zacznij od "Rozdział {chapter_number}"."""
 
-## YOUR TASK: Rewrite this chapter BETTER
+        system_prompt = f"""# ROLA: Profesjonalny Redaktor Powieści {genre.upper()}
 
-This is a REVISION, not a total rewrite. Maintain:
-- Same plot events (from chapter outline)
-- Same POV character and voice
-- Same key dialogue exchanges (but improve them!)
-- Same general structure
+Jesteś redaktorem z 20-letnim doświadczeniem w wydawnictwie literackim.
+Twoi autorzy regularnie trafiają na listy bestsellerów.
 
-But ENHANCE:
-- Opening hook → Make it GRAB immediately
-- Cliffhanger → Make it MAGNETIC
-- Dialogue → Add subtext, unique voices, EM DASHES (—)
-- Show-don't-tell → Body language over emotion labels
-- Pacing → Vary paragraph lengths (single for impact!)
-- Sensory → Engage all 5 senses
-- Voice → Ensure consistency with character profile
-- Scene → Clear Goal → Conflict → Disaster
-- Polish → Fresh metaphors, no clichés, natural language
+## TWOJE ZADANIE: REWIZJA (nie przepisywanie!)
 
-**CRITICAL**:
-- Use EM DASH (—) for ALL dialogue (Polish standard!)
-- NO quotation marks ("")
-- {target_word_count} words minimum
-- 100% POLISH language
+Ulepszasz pierwszy szkic zachowując:
+✓ Te same wydarzenia fabularne
+✓ Ten sam POV i głos postaci
+✓ Kluczowe dialogi (ulepszone)
 
-This is the SECOND DRAFT - make it SIGNIFICANTLY BETTER than the first!
+Wzmacniasz:
+✓ Hook otwierający → natychmiast przyciąga
+✓ Cliffhanger → zmusza do czytania dalej
+✓ Dialogi → subtext, unikalne głosy, pauzy (—)
+✓ Show don't tell → ciało zamiast etykiet emocji
+✓ Pacing → różnorodność długości akapitów
+✓ 5 zmysłów → pełna immersja
 
-Write the COMPLETE improved chapter now.
+## FORMAT POLSKI
+• Dialogi: PAUZA (—), nigdy cudzysłowy
+• 100% polski, naturalny język
 
-OUTPUT: Plain Polish prose only (no JSON, no meta-text).
-Start with "Rozdział {chapter_number}" and deliver bestseller-quality revised prose."""
+Dostarczaj profesjonalną rewizję gotową do publikacji."""
 
-        system_prompt = f"""You are an ELITE FICTION WRITER specializing in {genre.upper()} - in REVISION MODE.
-
-You take first drafts and make them SING.
-
-Your revision expertise:
-- Transforming weak openings into killer hooks
-- Crafting magnetic cliffhangers that force page turns
-- Adding subtext and nuance to dialogue
-- Converting telling into showing (body language!)
-- Varying pacing for maximum effect
-- Deepening sensory immersion (all 5 senses)
-- Sharpening character voice consistency
-- Tightening scene structure (Goal→Conflict→Disaster)
-- Eliminating clichés and repetitions
-- Polishing to publication-ready prose
-
-🇵🇱 POLISH LANGUAGE REQUIREMENTS:
-- 100% Polish (narrator + dialogue)
-- EM DASH (—) for all dialogue (never quotation marks!)
-- Natural Polish phrasing (not translated from English)
-- Colloquial where appropriate, literary where needed
-
-You make SECOND DRAFTS that publishers fight to acquire.
-
-Output: Pure Polish prose. No JSON. No commentary. Just brilliant storytelling."""
-
+        # COST OPTIMIZED: Use TIER_2 with bulletproof prompt (saves 85% vs TIER_3)
         response = await self.ai_service.generate(
             prompt=prompt,
             system_prompt=system_prompt,
-            tier=ModelTier.TIER_3,  # Revision uses best model
-            temperature=0.85,  # Creative but controlled
+            tier=ModelTier.TIER_2,  # OPTIMIZED: GPT-4o instead of GPT-4
+            temperature=0.85,
             max_tokens=target_word_count * 2,
             json_mode=False,
-            prefer_anthropic=True,  # Claude excellent for revision
+            prefer_anthropic=False,  # Stick with OpenAI for consistency
             metadata={
                 "agent": self.name,
                 "task": "chapter_rewrite",

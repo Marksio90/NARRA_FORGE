@@ -35,6 +35,72 @@ class BeatType(Enum):
     TURNING_POINT = "turning_point"         # Punkt zwrotny - zmiana kierunku
     CLIMAX = "climax"                       # Kulminacja sceny
     CLIFFHANGER = "cliffhanger"             # Hak na następną scenę
+    # Additional types AI might return
+    INCITING_INCIDENT = "inciting_incident" # Zdarzenie inicjujące
+    RISING_ACTION = "rising_action"         # Wzrost napięcia
+    FALLING_ACTION = "falling_action"       # Spadek napięcia
+    RESOLUTION = "resolution"               # Rozwiązanie
+    SETUP = "setup"                         # Wprowadzenie/setup
+    REVELATION = "revelation"               # Odkrycie/rewelacja
+    CONFRONTATION = "confrontation"         # Konfrontacja
+    DECISION = "decision"                   # Decyzja
+    CONSEQUENCE = "consequence"             # Konsekwencja
+
+
+# Mapping of common AI responses to valid BeatTypes
+BEAT_TYPE_ALIASES = {
+    "opening": BeatType.OPENING_HOOK,
+    "hook": BeatType.OPENING_HOOK,
+    "intro": BeatType.CONFLICT_INTRO,
+    "conflict": BeatType.CONFLICT_INTRO,
+    "obstacle": BeatType.COMPLICATION,
+    "twist": BeatType.TURNING_POINT,
+    "midpoint": BeatType.TURNING_POINT,
+    "peak": BeatType.CLIMAX,
+    "crisis": BeatType.CLIMAX,
+    "ending": BeatType.CLIFFHANGER,
+    "suspense": BeatType.CLIFFHANGER,
+}
+
+
+def parse_beat_type(value: str) -> BeatType:
+    """
+    Safely parse beat_type from AI response, handling unknown values.
+    """
+    if not value:
+        return BeatType.COMPLICATION
+
+    value_lower = value.lower().strip()
+
+    # Try direct enum match first
+    try:
+        return BeatType(value_lower)
+    except ValueError:
+        pass
+
+    # Try aliases
+    if value_lower in BEAT_TYPE_ALIASES:
+        return BEAT_TYPE_ALIASES[value_lower]
+
+    # Try partial match
+    for beat_type in BeatType:
+        if value_lower in beat_type.value or beat_type.value in value_lower:
+            return beat_type
+
+    # Default fallback based on position hints in the name
+    if "open" in value_lower or "start" in value_lower or "begin" in value_lower:
+        return BeatType.OPENING_HOOK
+    if "conflict" in value_lower or "problem" in value_lower:
+        return BeatType.CONFLICT_INTRO
+    if "turn" in value_lower or "change" in value_lower or "shift" in value_lower:
+        return BeatType.TURNING_POINT
+    if "climax" in value_lower or "peak" in value_lower or "high" in value_lower:
+        return BeatType.CLIMAX
+    if "end" in value_lower or "cliff" in value_lower or "hook" in value_lower:
+        return BeatType.CLIFFHANGER
+
+    # Ultimate fallback
+    return BeatType.COMPLICATION
 
 
 @dataclass
@@ -341,7 +407,7 @@ Odpowiedz w formacie JSON zgodnym z systemem."""
         for beat_data in data.get('beats', []):
             beat = Beat(
                 beat_number=beat_data.get('beat_number', len(beats) + 1),
-                beat_type=BeatType(beat_data.get('beat_type', 'complication')),
+                beat_type=parse_beat_type(beat_data.get('beat_type', 'complication')),
                 description=beat_data.get('description', ''),
                 characters_involved=beat_data.get('characters_involved', [pov_name]),
                 goal=beat_data.get('goal', ''),

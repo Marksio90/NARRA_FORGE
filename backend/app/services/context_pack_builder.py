@@ -268,10 +268,17 @@ class ContextPackBuilder:
         # Get tension level
         tension_graph = plot_structure.get('tension_graph', [])
         tension = 5  # default
-        for point in tension_graph:
-            if point.get('chapter') == chapter_number:
-                tension = point.get('tension', 5)
-                break
+        for idx, point in enumerate(tension_graph):
+            # Handle both dict format {"chapter": 1, "tension": 5} and plain int format
+            if isinstance(point, dict):
+                if point.get('chapter') == chapter_number:
+                    tension = point.get('tension', 5)
+                    break
+            elif isinstance(point, (int, float)):
+                # If it's a list of ints, treat index+1 as chapter and value as tension
+                if idx + 1 == chapter_number:
+                    tension = int(point)
+                    break
 
         # Get main conflict
         main_conflict = plot_structure.get('main_conflict', {})

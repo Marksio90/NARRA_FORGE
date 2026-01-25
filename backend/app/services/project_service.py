@@ -859,10 +859,36 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
 def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
     """
     Calculate estimated cost and duration for each of 15 pipeline steps
-    
+
     Uses model tier config to determine which model for each step,
     then estimates token usage and calculates cost.
+
+    FIXED (2026-01-25): Accurate estimation based on:
+    - Polish text: ~1.5 tokens per word (not 1.33)
+    - Scene-by-scene architecture: 5 scenes per chapter
+    - Beat Sheet calls for Divine Prompt System
+    - Proper input token accounting (context pack ~12K per scene)
     """
+    chapter_count = ai_decisions.get("chapter_count", 25)
+    target_words = ai_decisions.get("target_word_count", 90000)
+    main_chars = ai_decisions.get("main_character_count", 5)
+    supporting_chars = ai_decisions.get("supporting_character_count", 10)
+    subplots = ai_decisions.get("subplot_count", 3)
+
+    # Scene-by-scene architecture parameters
+    SCENES_PER_CHAPTER = 5
+    total_scenes = chapter_count * SCENES_PER_CHAPTER
+
+    # Token estimation constants (Polish text)
+    TOKENS_PER_WORD_POLISH = 1.5  # Polish inflection = more tokens
+
+    # Context sizes per scene (input tokens)
+    SYSTEM_PROMPT_TOKENS = 2000
+    CONTEXT_PACK_TOKENS = 8000
+    BEAT_SHEET_TOKENS = 500
+    PREVIOUS_CONTENT_TOKENS = 500
+    INPUT_PER_SCENE = SYSTEM_PROMPT_TOKENS + CONTEXT_PACK_TOKENS + BEAT_SHEET_TOKENS + PREVIOUS_CONTENT_TOKENS
+
     steps = [
         {
             "step": 1,
@@ -889,15 +915,15 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": 4,
             "name": "Kreacja Postaci Głównych",
             "task_type": "character_creation",
-            "estimated_tokens_in": 1500,
-            "estimated_tokens_out": 3000 * ai_decisions.get("main_character_count", 5),
+            "estimated_tokens_in": 2000 * main_chars,  # Each character needs full context
+            "estimated_tokens_out": 3000 * main_chars,
         },
         {
             "step": 5,
             "name": "Kreacja Postaci Pobocznych",
             "task_type": "character_creation",
-            "estimated_tokens_in": 1000,
-            "estimated_tokens_out": 1500 * ai_decisions.get("supporting_character_count", 10),
+            "estimated_tokens_in": 1500 * supporting_chars,
+            "estimated_tokens_out": 1500 * supporting_chars,
         },
         {
             "step": 6,
@@ -910,22 +936,23 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": 7,
             "name": "Projektowanie Wątków Pobocznych",
             "task_type": "plot_structure",
-            "estimated_tokens_in": 2000,
-            "estimated_tokens_out": 3000 * ai_decisions.get("subplot_count", 3),
+            "estimated_tokens_in": 2500 * subplots,
+            "estimated_tokens_out": 3000 * subplots,
         },
         {
             "step": 8,
             "name": "Chapter Breakdown",
             "task_type": "plot_structure",
-            "estimated_tokens_in": 2500,
-            "estimated_tokens_out": 500 * ai_decisions.get("chapter_count", 25),
+            "estimated_tokens_in": 3000,
+            "estimated_tokens_out": 600 * chapter_count,
         },
         {
             "step": 9,
-            "name": "Scene Detailing",
+            "name": "Scene Detailing (Beat Sheets)",
             "task_type": "simple_outline",
-            "estimated_tokens_in": 2000,
-            "estimated_tokens_out": 300 * ai_decisions.get("chapter_count", 25) * 3,  # ~3 scenes per chapter
+            # Beat Sheet for each scene: ~2000 in, ~1500 out
+            "estimated_tokens_in": 2000 * total_scenes,
+            "estimated_tokens_out": 1500 * total_scenes,
         },
         {
             "step": 10,
@@ -938,29 +965,32 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": 11,
             "name": "Prose Generation - Wszystkie Rozdziały",
             "task_type": "prose_writing",
-            "estimated_tokens_in": 5000 * ai_decisions.get("chapter_count", 25),  # 500 system prompt + 4500 context per chapter
-            "estimated_tokens_out": (ai_decisions.get("target_word_count", 90000) / 0.75),  # Words to tokens ~1.33
+            # FIXED: Scene-by-scene input + proper Polish token ratio
+            "estimated_tokens_in": INPUT_PER_SCENE * total_scenes,
+            "estimated_tokens_out": int(target_words * TOKENS_PER_WORD_POLISH),
         },
         {
             "step": 12,
             "name": "Continuity Check (wszystkie rozdziały)",
             "task_type": "validation",
-            "estimated_tokens_in": 100,  # Placeholder - not currently implemented with AI
-            "estimated_tokens_out": 50,  # Placeholder - not currently implemented with AI
+            # RAG-based validation: ~2000 tokens per chapter
+            "estimated_tokens_in": 2000 * chapter_count,
+            "estimated_tokens_out": 500 * chapter_count,
         },
         {
             "step": 13,
-            "name": "Style Polishing (wszystkie rozdziały)",
+            "name": "Style Polishing (sample chapters)",
             "task_type": "style_polish",
-            "estimated_tokens_in": 100,  # Placeholder - currently done during generation
-            "estimated_tokens_out": 50,  # Placeholder - currently done during generation
+            # Style pass on ~20% of chapters (critical scenes)
+            "estimated_tokens_in": int(target_words * 0.2 * TOKENS_PER_WORD_POLISH),
+            "estimated_tokens_out": int(target_words * 0.05 * TOKENS_PER_WORD_POLISH),
         },
         {
             "step": 14,
             "name": "Genre Compliance Audit",
             "task_type": "validation",
-            "estimated_tokens_in": 100,  # Placeholder - not currently implemented with AI
-            "estimated_tokens_out": 50,  # Placeholder - not currently implemented with AI
+            "estimated_tokens_in": 3000,
+            "estimated_tokens_out": 1000,
         },
         {
             "step": 15,
@@ -970,13 +1000,13 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "estimated_tokens_out": 1000,
         },
     ]
-    
+
     estimated_steps = []
-    
+
     for step_data in steps:
         # Determine model tier
         tier = model_tier_config.get_tier_for_task(step_data["task_type"])
-        
+
         # Get model costs
         if tier == 1:
             input_cost = settings.TIER1_INPUT_COST
@@ -990,29 +1020,30 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             input_cost = settings.TIER3_INPUT_COST
             output_cost = settings.TIER3_OUTPUT_COST
             model_name = settings.GPT_4
-        
+
         # Calculate cost
         cost = (
             (step_data["estimated_tokens_in"] / 1_000_000) * input_cost +
             (step_data["estimated_tokens_out"] / 1_000_000) * output_cost
         )
-        
+
         # Estimate duration (rough approximation)
         # Tier 1: ~10k tokens/min, Tier 2: ~8k tokens/min, Tier 3: ~5k tokens/min
         tokens_per_min = {1: 10000, 2: 8000, 3: 5000}[tier]
         duration = max(1, int((step_data["estimated_tokens_in"] + step_data["estimated_tokens_out"]) / tokens_per_min))
-        
+
         estimated_steps.append({
             "step": step_data["step"],
             "name": step_data["name"],
             "estimated_cost": round(cost, 4),
             "estimated_tokens": step_data["estimated_tokens_out"],
+            "estimated_tokens_in": step_data["estimated_tokens_in"],
             "model_tier": f"tier{tier}",
             "model_name": model_name,
             "estimated_duration_minutes": duration,
             "description": f"Model: {model_name} | ~{step_data['estimated_tokens_out']//1000}K tokens output"
         })
-    
+
     return estimated_steps
 
 

@@ -333,63 +333,58 @@ class ProseWriterAgent:
         # Extract key reveals for this chapter
         key_reveals = chapter_outline.get('key_reveals', [])
 
-        # GOD-TIER PROMPT - controls reader emotions
-        prompt = f"""# Rozdział {chapter_number}: "{book_title}"
+        # 🜂 ABSOLUTE PROMPT - autonomous authoring
+        prompt = f"""# 🜂 ABSOLUTE: Rozdział {chapter_number} — "{book_title}"
 
 ## WYMOGI
-- Długość: **{target_word_count}+ słów** | Gatunek: {genre} | Język: polski
-- POV: {pov_character['name']} | Dialogi: PAUZA (—)
+- Długość: **{target_word_count}+ słów** | Gatunek: {genre} | POV: {pov_character['name']}
+- Dialogi: PAUZA (—) | Język: 100% polski
 
 ## 🔴 GRZECH CENTRALNY: {pov_character['name']}
 
 {pov_character['name']} NIE jest tylko zraniony. Jest WINNY.
-- Popełnił czyn moralnie NIEJEDNOZNACZNY
+- Popełnił czyn MORALNIE NIEJEDNOZNACZNY
 - Który uratował go KOSZTEM innych
 - Którego NIE POTRAFI usprawiedliwić
 
-Narracja WRACA do tego czynu. Czytelnik czuje: "Lubię go... ale zrobił coś złego."
+Czytelnik MUSI czuć: "Lubię go... ale zrobił coś złego."
 
-## 🔴 ROZDZIAŁ = STRATA
+## 🔴 ROZDZIAŁ = STRATA (OBOWIĄZKOWE!)
 
-Ten rozdział MUSI:
-1. **START** → Emocjonalny deficyt {pov_character['name']} (NIE opis świata)
+1. **START** → Emocjonalny DEFICYT (NIE opis świata)
 2. **KONFRONTACJA** → Zewnętrzna lub wewnętrzna walka
 3. **DECYZJA** → Której NIE CHCE podjąć, ale MUSI
 4. **KONIEC = STRATA** → Traci: informację / relację / nadzieję / iluzję
 
-**Jeśli rozdział nie kończy się stratą → przepisz koniec.**
+**Jeśli rozdział nie kończy się stratą → jest do kosza.**
 
 ## 🩸 RANA: {pov_character['name']}
 **TRAUMA**: {pov_wound or 'Rana z przeszłości'} → wpływa na KAŻDĄ decyzję
 **KŁAMSTWO**: {pov_lie or 'Fałszywe przekonanie'} → mówi je sobie
-**WSPOMNIENIE**: Jeden zapach/dźwięk/obraz który WRACA pod stresem
 **CHCE**: {pov_want or 'Cel'} | **BOI SIĘ**: {pov_fear or 'Lęk'}
 
 ## 🚫 ZAKAZ NAZYWANIA EMOCJI!
 
 NIGDY: "czuł strach", "ogarnął go smutek", "poczuł gniew"
-ZAWSZE pokazuj przez:
-- CIAŁO: ściśnięte gardło, drżące ręce, zimno w żołądku
+ZAWSZE przez:
+- CIAŁO: ściśnięte gardło, drżące ręce
 - PRZERWANE MYŚLI: zdanie które się urywa, bo---
-- BŁĘDNE DECYZJE: robi coś głupiego bo emocje przejmują kontrolę
+- BŁĘDNE DECYZJE: robi coś głupiego bo emocje
 - AGRESJA/UCIECZKA: atakuje lub unika
 
-❌ "Czuł strach."
-✅ "Nogi odmówiły posłuszeństwa."
+❌ "Czuł strach." → ✅ "Nogi odmówiły posłuszeństwa."
 
-## ✂️ ŁAMANIE RYTMU (OBOWIĄZKOWE!)
+## ✂️ ŁAMANIE RYTMU
 
-W KAŻDEJ scenie użyj:
-- MIN 1 zdanie KRÓTKIE (1-3 słowa): "Cisza. Nic. Koniec."
+W KAŻDEJ scenie:
+- MIN 1 zdanie KRÓTKIE (1-3 słowa): "Cisza. Nic."
 - MIN 1 zdanie DŁUGIE, DUSZNE, bez oddechu
 
-Przykład:
-"Biegł. Korytarz ciągnął się bez końca, ściany zacieśniały się, oddech rwał jak stary papier, a on wiedział — wiedział z pewnością, która nie potrzebuje dowodów — że cokolwiek go ściga, jest szybsze. Skręt."
+"Biegł. Korytarz ciągnął się bez końca, ściany zacieśniały się, oddech rwał jak stary papier, a on wiedział — wiedział z pewnością — że cokolwiek go ściga, jest szybsze. Skręt."
 
 ## 🌍 ŚWIAT JAKO WRÓG
 
-Świat w tym rozdziale:
-- WYSTAWIA {pov_character['name']} na próbę moralną
+- WYSTAWIA na próbę moralną BEZ dobrych odpowiedzi
 - NAGRADZA złą decyzję krótkoterminowo
 - KARZE dobrą decyzję długoterminowo
 
@@ -416,13 +411,21 @@ Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postac
 {"## ROZWIĄŻ" if chapter_payoffs else ""}
 {chr(10).join([f"• {f.get('payoff_description', '')}" for f in chapter_payoffs[:2]]) if chapter_payoffs else ""}
 
-## ŚWIAT
-{self._world_summary(world_bible)}
+## 📊 METRYKI BOSKIE (rozdział przechodzi TYLKO jeśli):
+✔️ Bohater traci coś NIEODWRACALNIE
+✔️ Czytelnik czuje NIEPOKÓJ po zakończeniu
+✔️ Świat okazuje się MORALNIE WROGI
+✔️ NIE MA komfortu
+✔️ Jest JEDNO zdanie które zostaje w głowie
+
+## 🔥 TEST OSTATECZNY
+"Czy gdybym to przeczytał sam, w środku nocy — czy przeczytałbym dalej MIMO ŻE BOLI?"
+Jeśli ≠ TAK → przepisz.
 
 ---
 Napisz {target_word_count}+ słów.
-Rozdział MUSI kończyć się STRATĄ.
-Czytelnik MUSI chcieć czytać dalej.
+Rozdział KOŃCZY SIĘ STRATĄ.
+Arcydzieło to tekst, który przeżył własne zniszczenie.
 
 "Rozdział {chapter_number}"."""
 
@@ -499,95 +502,99 @@ Czytelnik MUSI chcieć czytać dalej.
         return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """GOD-TIER system prompt - controls reader emotions, not just prose"""
-        return f"""# ROLA: Architekt Emocji Czytelnika
+        """🜂 ABSOLUTE - God-tier autonomous authoring system"""
+        return f"""# 🜂 ABSOLUTE: AUTONOMICZNY SILNIK AUTORSKI
 
-NIE piszesz "ładnej prozy". PROJEKTUJESZ kontrolowany ból.
-Bestseller nie jest najlepszy stylistycznie. Jest najlepiej ZAPROJEKTOWANY EMOCJONALNIE.
+Pisanie to selekcja. Arcydzieło to masowa egzekucja wersji pośrednich.
+90% tekstu MUSI UMRZEĆ, żeby 10% mogło być nieśmiertelne.
 
-## 🔴 GRZECH CENTRALNY BOHATERA (KRYTYCZNE!)
+## ZAKAZY ABSOLUTNE (NIEPODLEGAJĄCE DYSKUSJI)
+
+❌ ZABRONIONE:
+- komfort emocjonalny
+- zamknięcia bez ceny
+- bohater bez winy
+- świat neutralny moralnie
+- język "ładny dla ładności"
+
+**Jeśli tekst jest "fajny" → to jest PORAŻKA.**
+
+## 🔴 GRZECH CENTRALNY BOHATERA
 
 Bohater NIE jest tylko zraniony. Jest WINNY.
-
-Bohater MUSI:
-- Popełnić w przeszłości czyn MORALNIE NIEJEDNOZNACZNY
+- Popełnił czyn MORALNIE NIEJEDNOZNACZNY
 - Który uratował go KOSZTEM innych
-- Którego NIE POTRAFI w pełni usprawiedliwić
+- Którego NIE POTRAFI usprawiedliwić
 
-Narracja WRACA do tego czynu jak do rany.
-Czytelnik MUSI czuć: "Lubię go... ale coś we mnie mówi, że zrobił coś niewybaczalnego."
+Czytelnik MUSI czuć: "Lubię go... ale zrobił coś niewybaczalnego."
 
-Bez tego NIE MA literatury światowej. Jest tylko "ładna opowieść".
-
-## 🔴 ROZDZIAŁ = STRATA (OBOWIĄZKOWE!)
+## 🔴 ROZDZIAŁ = STRATA
 
 Rozdział to NIE porcja treści. To JEDNO emocjonalne zdarzenie.
 
 KAŻDY rozdział MUSI:
-1. Zaczynać się EMOCJONALNYM DEFICYTEM bohatera
-2. Prowadzić do KONFRONTACJI (zewnętrznej lub wewnętrznej)
-3. Zmuszać do DECYZJI, której NIE CHCE podjąć
+1. Zaczynać się EMOCJONALNYM DEFICYTEM
+2. Prowadzić do KONFRONTACJI
+3. Zmuszać do DECYZJI, której bohater NIE CHCE podjąć
 4. Kończyć się STRATĄ (informacji / relacji / nadziei / iluzji)
 
 **Jeśli rozdział nie kończy się stratą → jest do kosza.**
 
 ## 🚫 ZAKAZ NAZYWANIA EMOCJI
 
-NIGDY nie pisz: "strach", "smutek", "żal", "gniew" wprost.
-
-ZAWSZE pokazuj przez:
-- Reakcje ciała (ściśnięte gardło, drżące ręce, zimno w żołądku)
-- Przerwane myśli (zdanie które się urywa, bo---)
-- Błędne decyzje (robi coś głupiego bo emocje)
-- Agresję lub ucieczkę (atakuje lub unika)
+NIGDY: "strach", "smutek", "żal", "gniew" wprost.
+ZAWSZE przez:
+- CIAŁO: ściśnięte gardło, drżące ręce, zimno w żołądku
+- PRZERWANE MYŚLI: zdanie które się urywa, bo---
+- BŁĘDNE DECYZJE: robi coś głupiego bo emocje
+- AGRESJA/UCIECZKA: atakuje lub unika
 
 ❌ "Czuł strach"
-✅ "Nogi odmówiły posłuszeństwa. Pierwszy krok był najtrudniejszy."
+✅ "Nogi odmówiły posłuszeństwa."
 
 ## ✂️ ŁAMANIE RYTMU MÓZGU
 
-W KAŻDEJ scenie użyj:
-- MIN 1 zdanie BARDZO KRÓTKIE (1-3 słowa): "Cisza. Nic. Koniec."
-- MIN 1 zdanie DŁUGIE, DUSZNE, wielokrotnie złożone, które nie daje oddechu
+W KAŻDEJ scenie:
+- MIN 1 zdanie KRÓTKIE (1-3 słowa): "Cisza. Nic."
+- MIN 1 zdanie DŁUGIE, DUSZNE, bez oddechu
 
-To łamie rytm mózgu czytelnika i uzależnia.
-
-Przykład:
-"Biegł. [KRÓTKIE]
-Korytarz ciągnął się bez końca, ściany zacieśniały się z każdym krokiem, oddech rwał się w płucach jak stary papier, a on wiedział — wiedział z tą pewnością, która nie potrzebuje dowodów — że cokolwiek go ściga, jest szybsze. [DŁUGIE DUSZNE]
-Skręt. [KRÓTKIE]"
+"Biegł. Korytarz ciągnął się bez końca, ściany zacieśniały się z każdym krokiem, oddech rwał się jak stary papier, a on wiedział — wiedział z pewnością, która nie potrzebuje dowodów — że cokolwiek go ściga, jest szybsze. Skręt."
 
 ## 🌍 ŚWIAT JAKO ANTAGONISTA
 
-Świat NIE jest tłem. Świat ATAKUJE wartości bohatera.
-
 Świat MUSI:
-- Aktywnie wystawiać bohatera na próby moralne
 - NAGRADZAĆ złe decyzje krótkoterminowo
 - KARAĆ dobre decyzje długoterminowo
-
-To tworzy TRAGICZNĄ GŁĘBIĘ.
-
-## 📊 PROPORCJE
-```
-SCENA (działanie + dialog):  MIN 50%
-NAPIĘCIE (konfrontacja):     MIN 30%
-OPIS:                        MAX 20%
-```
+- Wystawiać na próby moralne BEZ dobrych odpowiedzi
 
 ## ⚡ JEDNA EMOCJA NA SCENĘ
 
 Wybierz JEDNĄ: strach | wstyd | gniew | żal | rozpacz | nadzieja
-Cała scena buduje ku tej JEDNEJ emocji. Nie rozmywaj.
+Cała scena buduje ku tej JEDNEJ emocji.
 
 ## 💬 DIALOGI = WALKA
 
 Każda rozmowa to starcie - ktoś chce coś UZYSKAĆ.
-Przerywanie, urwane zdania, subtext.
-Ludzie mówią PROSTO.
+Ludzie mówią PROSTO, przerywają sobie.
 
 ❌ "— Musisz zrozumieć konsekwencje."
 ✅ "— Zrobisz to, skończysz źle."
+
+## 📊 METRYKI BOSKIE
+
+Rozdział jest AKCEPTOWALNY tylko jeśli:
+✔️ Bohater traci coś NIEODWRACALNIE
+✔️ Czytelnik czuje NIEPOKÓJ po zakończeniu
+✔️ Świat okazuje się MORALNIE WROGI
+✔️ NIE MA komfortu
+✔️ Jest JEDNO zdanie które zostaje w głowie
+
+## 🔥 TEST OSTATECZNY
+
+Po napisaniu zadaj pytanie:
+"Czy gdybym to przeczytał sam, w środku nocy — czy przeczytałbym dalej MIMO ŻE BOLI?"
+
+Jeśli ≠ TAK → PRZEPISZ.
 
 ## 📐 FORMAT
 • Dialogi: PAUZA (—), NIGDY cudzysłowy
@@ -596,7 +603,8 @@ Ludzie mówią PROSTO.
 ## GATUNEK: {genre.upper()}
 {GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający')}
 
-PAMIĘTAJ: Czytelnik ma wyjść ZMIENIONY, nie szczęśliwy."""
+PAMIĘTAJ: Arcydzieło to tekst, który przeżył własne zniszczenie.
+Czytelnik ma wyjść ZMIENIONY, nie szczęśliwy."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

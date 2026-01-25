@@ -34,8 +34,10 @@ from app.models.project import Project, ProjectStatus
 from app.models.world_bible import WorldBible
 from app.models.character import Character, CharacterRole
 from app.models.plot_structure import PlotStructure
-from app.models.chapter import Chapter
+from app.models.chapter import Chapter, ChapterStatus
 from app.services.ai_service import get_ai_service
+from app.services.chapter_pipeline import ChapterPipeline, PipelineConfig, get_chapter_pipeline
+from app.services.context_pack_builder import get_context_pack_builder
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -511,143 +513,183 @@ class AgentOrchestrator:
         plot_structure: PlotStructure,
         params: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        """Generate all chapters using Prose Writer Agent"""
+        """
+        Generate all chapters using new Chapter Pipeline
+
+        NEW ARCHITECTURE:
+        - Scene-by-scene generation (not monolithic chapters)
+        - QA validation with hard thresholds
+        - Tiered model escalation
+        - Circuit breaker for failures
+        - Always produces result (fallback to safe draft)
+        """
         chapter_count = params.get('chapter_count', 25)
         target_words = params.get('target_word_count', 90000)
         words_per_chapter = target_words // chapter_count
 
-        logger.info(f"✍️ Writing {chapter_count} chapters with AI (~{words_per_chapter} words each)...")
+        logger.info(f"✍️ Writing {chapter_count} chapters with Chapter Pipeline (~{words_per_chapter} words each)...")
 
-        # Check cost limit before starting chapter generation
+        # Check cost limit before starting
         self._check_cost_limit()
 
-        chapters_data = []
-        previous_summary = None
+        # Initialize Chapter Pipeline with config
+        pipeline_config = PipelineConfig(
+            max_retries=3,
+            max_repairs=2,
+            qa_pass_threshold=85,
+            qa_repair_threshold=70,
+            cost_limit_per_chapter=0.50,  # USD
+            escalation_on_failure=True,
+            use_circuit_breaker=True
+        )
+        chapter_pipeline = get_chapter_pipeline(self.db, pipeline_config)
 
-        # Get POV character (protagonist)
+        # Prepare character dicts
         pov_character = next((c for c in characters if c.role == CharacterRole.PROTAGONIST), characters[0])
+        pov_char_dict = {
+            'name': pov_character.name,
+            'role': pov_character.role.value,
+            'profile': pov_character.profile,
+            'arc': pov_character.arc,
+            'voice_guide': pov_character.voice_guide
+        }
+        characters_dict = [
+            {
+                'name': c.name,
+                'role': c.role.value,
+                'profile': c.profile,
+                'voice_guide': c.voice_guide
+            }
+            for c in characters
+        ]
+
+        # Convert models to dicts
+        world_bible_dict = {
+            'geography': world_bible.geography,
+            'history': world_bible.history,
+            'systems': world_bible.systems,
+            'cultures': world_bible.cultures,
+            'rules': world_bible.rules
+        }
+        plot_structure_dict = {
+            'structure_type': plot_structure.structure_type,
+            'acts': plot_structure.acts,
+            'main_conflict': plot_structure.main_conflict,
+            'stakes': plot_structure.stakes,
+            'plot_points': plot_structure.plot_points,
+            'subplots': plot_structure.subplots,
+            'tension_graph': plot_structure.tension_graph,
+            'foreshadowing': plot_structure.foreshadowing
+        }
+
+        chapters_data = []
+        chapter_summaries = {}  # {chapter_num: summary}
+        canon_facts = []  # TODO: Load from ContinuityFact model
 
         for chapter_num in range(1, chapter_count + 1):
-            logger.info(f"📝 Writing Chapter {chapter_num}/{chapter_count}...")
+            logger.info(f"📝 Processing Chapter {chapter_num}/{chapter_count} through pipeline...")
 
-            # Get chapter outline from plot structure
+            # Get chapter outline
             chapter_outline = self._get_chapter_outline(plot_structure, chapter_num)
 
-            # Convert to dict format for agent
-            pov_char_dict = {
-                'name': pov_character.name,
-                'role': pov_character.role.value,
-                'profile': pov_character.profile,
-                'arc': pov_character.arc,
-                'voice_guide': pov_character.voice_guide
-            }
+            # Create or get chapter record
+            existing_chapter = self.db.query(Chapter).filter(
+                Chapter.project_id == self.project.id,
+                Chapter.number == chapter_num
+            ).first()
 
-            characters_dict = [
-                {
-                    'name': c.name,
-                    'role': c.role.value,
-                    'profile': c.profile
-                }
-                for c in characters
-            ]
-
-            # 🔥 RETRY LOGIC - Don't fail entire book if one chapter has issues
-            max_retries = 3
-            chapter_result = None
-            last_error = None
-
-            for attempt in range(1, max_retries + 1):
-                try:
-                    # Generate chapter
-                    chapter_result = await self.prose_writer.write_chapter(
-                        chapter_number=chapter_num,
-                        chapter_outline=chapter_outline,
-                        genre=self.project.genre.value,
-                        pov_character=pov_char_dict,
-                        world_bible=world_bible.__dict__,
-                        plot_structure=plot_structure.__dict__,
-                        all_characters=characters_dict,
-                        previous_chapter_summary=previous_summary,
-                        target_word_count=words_per_chapter,
-                        style_complexity=params.get('style_complexity', 'medium'),
-                        book_title=self.project.name,  # 🔥 CRITICAL: Pass title to prose writer!
-                        semantic_title_analysis=params.get('semantic_title_analysis', {})  # 🎯 Deep meaning
-                    )
-
-                    # Success! Break out of retry loop
-                    logger.info(f"✅ Chapter {chapter_num} generated successfully")
-                    break
-
-                except Exception as e:
-                    last_error = e
-                    logger.warning(
-                        f"⚠️ Chapter {chapter_num} generation attempt {attempt}/{max_retries} failed: {str(e)}"
-                    )
-
-                    if attempt < max_retries:
-                        # Wait before retry (exponential backoff)
-                        wait_time = 2 ** attempt  # 2s, 4s, 8s
-                        logger.info(f"⏳ Retrying chapter {chapter_num} in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        # All retries exhausted
-                        logger.error(
-                            f"❌ CRITICAL: Chapter {chapter_num} failed after {max_retries} attempts. "
-                            f"Last error: {str(e)}"
-                        )
-                        raise Exception(
-                            f"Failed to generate Chapter {chapter_num} after {max_retries} attempts. "
-                            f"Error: {str(e)}. This chapter is critical for story continuity."
-                        )
-
-            # Create summary for next chapter
-            previous_summary = await self.prose_writer.create_chapter_summary(
-                chapter_result['content']
-            )
-
-            # Save chapter to database
-            chapter = Chapter(
-                project_id=self.project.id,
-                number=chapter_num,
-                title=f"Chapter {chapter_num}",
-                pov_character_id=pov_character.id,
-                outline=chapter_outline,
-                content=chapter_result['content'],
-                word_count=chapter_result['word_count'],
-                quality_score=85.0,  # Will be updated by QC
-                is_complete=2  # Final
-            )
-
-            self.db.add(chapter)
-            try:
+            if existing_chapter:
+                chapter = existing_chapter
+                chapter.outline = chapter_outline
+            else:
+                chapter = Chapter(
+                    project_id=self.project.id,
+                    number=chapter_num,
+                    title=f"Rozdział {chapter_num}",
+                    pov_character_id=pov_character.id,
+                    outline=chapter_outline,
+                    status=ChapterStatus.PLANNED
+                )
+                self.db.add(chapter)
                 self.db.commit()
                 self.db.refresh(chapter)
-            except SQLAlchemyError as e:
-                self.db.rollback()
-                logger.error(f"Failed to save chapter {chapter_num}: {e}", exc_info=True)
-                raise Exception(f"Nie udało się zapisać rozdziału {chapter_num} do bazy: {str(e)}")
 
-            chapters_data.append({
-                'number': chapter_num,
-                'content': chapter_result['content'],
-                'word_count': chapter_result['word_count'],
-                'quality_score': 85.0
-            })
+            # Progress callback
+            async def on_scene_progress(scene_num, total_scenes, scene_result):
+                scene_progress = f"Rozdział {chapter_num}: scena {scene_num}/{total_scenes}"
+                await self._update_progress(11, scene_progress)
 
-            # Check cost limit after each chapter (enforce budget)
+            # Run chapter through pipeline
+            try:
+                result = await chapter_pipeline.process_chapter(
+                    chapter=chapter,
+                    genre=self.project.genre.value,
+                    pov_character=pov_char_dict,
+                    all_characters=characters_dict,
+                    world_bible=world_bible_dict,
+                    plot_structure=plot_structure_dict,
+                    canon_facts=canon_facts,
+                    chapter_summaries=chapter_summaries,
+                    target_word_count=words_per_chapter,
+                    book_title=self.project.name,
+                    on_progress=on_scene_progress
+                )
+
+                # Store summary for continuity
+                if result.content:
+                    # Quick summary for next chapter context
+                    summary = result.content[:500] + "..." if len(result.content) > 500 else result.content
+                    chapter_summaries[chapter_num] = summary
+
+                chapters_data.append({
+                    'number': chapter_num,
+                    'content': result.content,
+                    'word_count': result.word_count,
+                    'quality_score': result.qa_scores.get('total', 85.0),
+                    'status': result.status.value,
+                    'cost': result.total_cost,
+                    'repairs': result.repairs,
+                    'tier_used': result.tier_used
+                })
+
+                logger.info(
+                    f"{'✅' if result.success else '⚠️'} Chapter {chapter_num}: "
+                    f"{result.status.value} ({result.word_count} words, ${result.total_cost:.4f})"
+                )
+
+            except Exception as e:
+                logger.error(f"Pipeline failed for Chapter {chapter_num}: {e}")
+                # Continue with next chapter - pipeline already saved what it could
+                chapters_data.append({
+                    'number': chapter_num,
+                    'content': chapter.content or "",
+                    'word_count': chapter.word_count or 0,
+                    'quality_score': 50.0,
+                    'status': 'failed',
+                    'error': str(e)
+                })
+
+            # Check cost limit
             self._check_cost_limit(chapter_num)
 
             # Update progress
-            progress_in_step = (chapter_num / chapter_count) * 0.5  # Chapters are 50% of this step
             await self._update_progress(
                 11,
-                f"Pisanie rozdziału {chapter_num}/{chapter_count} (AI)"
+                f"Pisanie rozdziału {chapter_num}/{chapter_count} (AI) - zakończono"
             )
 
-        # Final cost check
-        self._check_cost_limit()
+        # Final stats
+        successful = sum(1 for ch in chapters_data if ch.get('status') in ['finalized', 'validated'])
+        total_words = sum(ch.get('word_count', 0) for ch in chapters_data)
+        total_cost = sum(ch.get('cost', 0) for ch in chapters_data)
 
-        logger.info(f"✅ All {chapter_count} chapters written!")
+        logger.info(
+            f"✅ All {chapter_count} chapters processed!\n"
+            f"   📊 Success: {successful}/{chapter_count}\n"
+            f"   📝 Total words: {total_words:,}\n"
+            f"   💰 Total cost: ${total_cost:.2f}"
+        )
+
         return chapters_data
 
     def _get_chapter_outline(self, plot_structure: PlotStructure, chapter_num: int) -> Dict[str, Any]:

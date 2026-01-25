@@ -44,7 +44,7 @@ class ModelTier(int, Enum):
 
 # Model context limits (total tokens including prompt + completion)
 MODEL_CONTEXT_LIMITS = {
-    "gpt-4o-mini": 8192,
+    "gpt-4o-mini": 128000,  # Actually 128k, not 8k
     "gpt-4o": 128000,
     "gpt-4": 8192,
     "gpt-4-turbo": 128000,
@@ -137,10 +137,12 @@ class AIService:
             return settings.GPT_4O, ModelProvider.OPENAI
 
         else:  # TIER_3
-            # Tier 3: Premium quality
+            # Tier 3: Premium quality (128k context)
             if prefer_anthropic and self.anthropic_client:
                 return "claude-opus-4-5-20251101", ModelProvider.ANTHROPIC
-            return settings.GPT_4, ModelProvider.OPENAI
+            # Use gpt-4-turbo (128k context) instead of gpt-4 (8k context)
+            # This prevents context overflow errors on long chapters
+            return "gpt-4-turbo", ModelProvider.OPENAI
 
     def _calculate_cost(self, tokens_in: int, tokens_out: int, model: str, provider: ModelProvider) -> float:
         """

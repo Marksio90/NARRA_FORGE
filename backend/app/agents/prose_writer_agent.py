@@ -336,6 +336,13 @@ class ProseWriterAgent:
         # ULTIMATE GOD-TIER PROMPT
         prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
 
+## ⚠️ KRYTYCZNE: DŁUGOŚĆ ROZDZIAŁU ⚠️
+**MINIMUM {target_word_count} SŁÓW** - to wymóg absolutny!
+• Każda scena: min. 500-800 słów
+• Dialogi: rozbudowane z opisami i reakcjami
+• NIE SKRACAJ - pisz pełnymi scenami do końca
+• Rozdział kończy się CLIFFHANGEREM, nie wcześniej
+
 ## WYMAGANIA TECHNICZNE
 • Gatunek: {genre} | Długość: **MIN. {target_word_count} słów** | Język: 100% polski
 • POV: {pov_character['name']} (głęboki POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
@@ -430,7 +437,11 @@ Przynajmniej JEDEN moment prawdziwej emocjonalnej intymności:
 • Prawdziwe uczucie przebija przez obronę
 • Czytelnik CZUJE, nie tylko rozumie
 
-Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
+## ⚠️ PRZYPOMNIENIE: PEŁNA DŁUGOŚĆ
+Napisz PEŁNY rozdział minimum {target_word_count} słów. Rozwijaj każdą scenę szczegółowo.
+NIE PRZERYWAJ w połowie - pisz aż do naturalnego CLIFFHANGERA na końcu.
+
+Zacznij: "Rozdział {chapter_number}"."""
 
         system_prompt = self._get_system_prompt(genre)
 
@@ -510,6 +521,12 @@ Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
 
 Tworzysz prozę która ZOSTAJE z czytelnikiem. Sceny które śnią się po nocach.
 Dialogi które ludzie cytują. Postacie za którymi tęsknią.
+
+## ⚠️ KRYTYCZNA ZASADA: PEŁNE ROZDZIAŁY
+ZAWSZE piszesz PEŁNE rozdziały zgodnie z wymaganą długością.
+NIGDY nie przerywasz w połowie. NIGDY nie skracasz.
+Każda scena jest w pełni rozwinięta z dialogami, opisami, emocjami.
+Rozdział kończy się TYLKO na naturalnym cliffhangerze.
 
 ## KONTEKST: Profesjonalna proza {genre} (Sapkowski, King, Sanderson, Martin)
 

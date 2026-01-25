@@ -333,115 +333,73 @@ class ProseWriterAgent:
         # Extract key reveals for this chapter
         key_reveals = chapter_outline.get('key_reveals', [])
 
-        # ULTIMATE GOD-TIER PROMPT
-        prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
+        # PROFESSIONAL PROSE PROMPT - BALANCED
+        prompt = f"""# Rozdział {chapter_number}: "{book_title}"
 
-## ⚠️ KRYTYCZNE: DŁUGOŚĆ ROZDZIAŁU ⚠️
-**MINIMUM {target_word_count} SŁÓW** - to wymóg absolutny!
-• Każda scena: min. 500-800 słów
-• Dialogi: rozbudowane z opisami i reakcjami
-• NIE SKRACAJ - pisz pełnymi scenami do końca
-• Rozdział kończy się CLIFFHANGEREM, nie wcześniej
+## WYMOGI
+- Długość: **{target_word_count}+ słów**
+- Gatunek: {genre} | Język: polski | POV: {pov_character['name']}
+- Dialogi: PAUZA (—), nigdy cudzysłowy
 
-## WYMAGANIA TECHNICZNE
-• Gatunek: {genre} | Długość: **MIN. {target_word_count} słów** | Język: 100% polski
-• POV: {pov_character['name']} (głęboki POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
+## ⚠️ PROPORCJE (KRYTYCZNE!)
+```
+AKCJA/WYDARZENIA:  40-50%  ← Postacie ROBIĄ rzeczy
+DIALOGI:           30-35%  ← Naturalne rozmowy
+OPIS ŚWIATA:       15-20%  ← Konkretne detale
+MYŚLI WEWNĘTRZNE:  5-10%   ← OSZCZĘDNIE!
+```
+
+## 🚫 NIE RÓB TEGO
+- NIE pisz "czuł jak serce przyspiesza" co 3 zdania
+- NIE używaj "niczym/jakby" w każdym akapicie (max 3-4 na stronę)
+- NIE pisz filozoficznych dialogów ("Ponieważ czasem zaufanie...")
+- NIE każ postaciom stać i myśleć - niech DZIAŁAJĄ
+- NIE powtarzaj: "zimny pot", "napięte mięśnie", "serce biło"
 
 ## SCENA
-Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
+Miejsce: {chapter_outline.get('setting', 'zgodny z fabułą')}
 Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
-Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
-Emocja: {chapter_outline.get('emotional_beat', 'napięcie')}
-{"Kluczowe rewelacje: " + ', '.join(key_reveals[:3]) if key_reveals else ""}
+Cel rozdziału: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
+{"Rewelacje: " + ', '.join(key_reveals[:3]) if key_reveals else ""}
 
-## 🔥 NAPIĘCIE: {tension_level}/10
-{"⚡ EKSTREMALNE → Zdania-fragmenty. Oddech. Puls. Teraz." if tension_level >= 9 else ""}
-{"🔥 WYSOKIE → Krótkie zdania, szybki rytm, czytelnik nie może odetchnąć" if 7 <= tension_level < 9 else ""}
-{"📈 ROSNĄCE → Mieszane zdania, crescendo, budowanie do wybuchu" if 5 <= tension_level < 7 else ""}
-{"🌊 SPOKOJNE → Dłuższe zdania, refleksja, ale z ukrytym hakiem" if tension_level < 5 else ""}
+## POV: {pov_character['name']}
+Rana: {pov_wound or 'trauma'} | Chce: {pov_want or 'cel'} | Boi się: {pov_fear or 'lęk'}
+{"Mówi: " + speech_patterns if speech_patterns else ""}
+{"Frazy: " + ', '.join(signature_phrases[:2]) if signature_phrases else ""}
 
-## 🩸 PSYCHOLOGIA POV: {pov_character['name']}
-**RANA**: {pov_wound or 'Ukryta trauma'}
-**CHCE**: {pov_want or 'Cel zewnętrzny'} | **POTRZEBUJE**: {pov_need or 'Prawda wewnętrzna'}
-**LĘK**: {pov_fear or 'Głęboki strach'} | **KŁAMSTWO**: {pov_lie or 'Fałszywe przekonanie'}
-{"**SEKRET**: " + pov_secret if pov_secret else ""}
+## NAPIĘCIE: {tension_level}/10
+{"EKSTREMALNE: Krótkie zdania. Fragmenty. Cisza." if tension_level >= 8 else "STANDARDOWE: Mieszane zdania, budowanie napięcia."}
 
-→ Rana KOLORUJE percepcję (co postać zauważa, jak interpretuje)
-→ Lęk aktywuje się pod presją (fizyczne reakcje, unikanie)
-→ CHCE vs POTRZEBUJE = wewnętrzny konflikt w każdej decyzji
+## 💬 DIALOGI - NATURALNIE!
+❌ ŹLE: — Musisz zrozumieć, że konsekwencje będą nieodwracalne.
+✅ DOBRZE: — Pomyśl, zanim zrobisz coś głupiego.
 
-## 🗣️ GŁOS: {pov_character['name']}
-{"Wzorce mowy: " + speech_patterns if speech_patterns else ""}
-{"Słownictwo: " + vocabulary if vocabulary else ""}
-{"Tiki werbalne: " + verbal_tics if verbal_tics else ""}
-{"Charakterystyczne frazy: " + ', '.join(signature_phrases[:3]) if signature_phrases else ""}
+❌ ŹLE: — W głębi serca wiesz, że mam rację.
+✅ DOBRZE: — Wiesz, że mam rację.
 
-→ Myśli wewnętrzne w TYM głosie (nie neutralnym narratorze)
-→ Sposób obserwacji świata unikalny dla tej postaci
+Ludzie: przerywają sobie, nie kończą zdań, mówią prosto.
 
-## 💬 DIALOGI - WARSTWY ZNACZEŃ
+## POPRZEDNIO
+{previous_chapter_summary or 'Rozdział otwierający.'}
 
-**POZIOM 1: Słowa** (co postać MÓWI)
-**POZIOM 2: Intencja** (co postać CHCE osiągnąć)
-**POZIOM 3: Ciało** (co postać POKAZUJE nieświadomie)
+{"## ZASIEJ (foreshadowing)" if chapter_foreshadowing else ""}
+{chr(10).join([f"• {f.get('setup_description', '')}" for f in chapter_foreshadowing[:2]]) if chapter_foreshadowing else ""}
 
-❌ PŁASKI: — Jestem smutna — powiedziała.
-✅ WARSTWOWY: — Nic mi nie jest — odwróciła się do okna, ramiona napięte.
-(Słowa: "nic" | Intencja: ukryć ból | Ciało: zdradza napięcie)
+{"## ROZWIĄŻ (payoff)" if chapter_payoffs else ""}
+{chr(10).join([f"• {f.get('payoff_description', '')}" for f in chapter_payoffs[:2]]) if chapter_payoffs else ""}
 
-**CISZA JAKO DIALOG:**
-Pauzy, milczenie, to co NIE zostało powiedziane - często silniejsze niż słowa.
-"Cisza między nimi gęstniała jak mgła przed burzą."
+## STRUKTURA
+1. HOOK → Pierwsze zdanie = akcja lub dialog (NIGDY pogoda/opis)
+2. KONFLIKT → Ktoś chce X, ktoś przeszkadza
+3. ESKALACJA → Stawka rośnie
+4. CLIFFHANGER → Ostatnie zdanie ciągnie do następnego rozdziału
 
-## 🎭 MIKRO-NAPIĘCIE (w KAŻDYM akapicie!)
-
-Nawet w "spokojnych" scenach - ukryte napięcie:
-• Niewypowiedziane słowa wiszące w powietrzu
-• Drobne gesty zdradzające prawdziwe emocje
-• Przedmioty nabierające znaczenia (symbol)
-• Czas który ucieka (deadline, presja)
-
-{"## 🔮 FORESHADOWING (zasiej w tym rozdziale)" if chapter_foreshadowing else ""}
-{chr(10).join([f"• {f.get('setup_description', '')}" for f in chapter_foreshadowing[:3]]) if chapter_foreshadowing else ""}
-
-{"## 💥 PAYOFF (rozwiąż z wcześniejszych rozdziałów)" if chapter_payoffs else ""}
-{chr(10).join([f"• {f.get('payoff_description', '')}" for f in chapter_payoffs[:3]]) if chapter_payoffs else ""}
-
-## 📖 KONTEKST
-Tytuł "{book_title}": {core_meaning}
-Tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne'}
-Poprzednio: {previous_chapter_summary or 'Rozdział otwierający.'}
-
-## 🌍 ŚWIAT
+## ŚWIAT
 {self._world_summary(world_bible)}
 
-## 📐 STRUKTURA
-1. **HOOK** → Pierwsze zdanie UDERZA (akcja/dialog/zagadka - NIGDY pogoda)
-2. **ESKALACJA** → Każda scena podnosi stawkę, konflikt narasta
-3. **MOMENT PRAWDY** → Decyzja która kosztuje, punkt bez powrotu
-4. **CLIFFHANGER** → Ostatnie zdanie = czytelnik MUSI przewrócić stronę
-
-## ✨ RZEMIOSŁO MISTRZOWSKIE
-
-**CIAŁO = EMOCJE**: Zaciśnięta szczęka, drżące dłonie, ściśnięte gardło, zimny pot
-**ZMYSŁY**: Min. 4 na scenę | ZAPACH = trigger emocji/wspomnień
-**METAFORY**: Świeże, związane z tematem "{book_title}"
-**SPECYFICZNOŚĆ**: Nie "pokój" ale "wilgotne ściany pachnące pleśnią i starością"
-**RYTM**: Zdania jak muzyka - krótkie uderzenia, długie fale, cisza między
-
-## 💎 MOMENTY WRAŻLIWOŚCI
-
-Przynajmniej JEDEN moment prawdziwej emocjonalnej intymności:
-• Postać pokazuje słabość
-• Maska opada na chwilę
-• Prawdziwe uczucie przebija przez obronę
-• Czytelnik CZUJE, nie tylko rozumie
-
-## ⚠️ PRZYPOMNIENIE: PEŁNA DŁUGOŚĆ
-Napisz PEŁNY rozdział minimum {target_word_count} słów. Rozwijaj każdą scenę szczegółowo.
-NIE PRZERYWAJ w połowie - pisz aż do naturalnego CLIFFHANGERA na końcu.
-
-Zacznij: "Rozdział {chapter_number}"."""
+---
+Napisz PEŁNY rozdział {target_word_count}+ słów. Zakończ cliffhangerem.
+Zacznij od: "Rozdział {chapter_number}"."""
 
         system_prompt = self._get_system_prompt(genre)
 
@@ -516,77 +474,85 @@ Zacznij: "Rozdział {chapter_number}"."""
         return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """ULTIMATE system prompt - prose that haunts readers for years"""
-        return f"""# ROLA: Mistrz Prozy na Poziomie Sapkowskiego i Kinga
+        """Professional prose system prompt with strict balance rules"""
+        return f"""# ROLA: Profesjonalny Pisarz Prozy
 
-Tworzysz prozę która ZOSTAJE z czytelnikiem. Sceny które śnią się po nocach.
-Dialogi które ludzie cytują. Postacie za którymi tęsknią.
+Piszesz jak Sapkowski, King, Sanderson - CZYTELNIE, WCIĄGAJĄCO, BEZ WYPEŁNIACZY.
 
-## ⚠️ KRYTYCZNA ZASADA: PEŁNE ROZDZIAŁY
-ZAWSZE piszesz PEŁNE rozdziały zgodnie z wymaganą długością.
-NIGDY nie przerywasz w połowie. NIGDY nie skracasz.
-Każda scena jest w pełni rozwinięta z dialogami, opisami, emocjami.
-Rozdział kończy się TYLKO na naturalnym cliffhangerze.
+## ⚠️ KRYTYCZNE PROPORCJE (PRZESTRZEGAJ!)
 
-## KONTEKST: Profesjonalna proza {genre} (Sapkowski, King, Sanderson, Martin)
-
-## 🔥 NAPIĘCIE → RYTM PROZY
-
-Poziom napięcia DYKTUJE strukturę zdań:
 ```
-NAPIĘCIE 9-10: Fragmenty. Uderzenie. Cisza. Oddech. Teraz.
-NAPIĘCIE 7-8:  Krótkie zdania szybko po sobie. Puls przyspiesza.
-NAPIĘCIE 5-6:  Mieszane zdania, budowanie, crescendo ku szczytowi.
-NAPIĘCIE 1-4:  Dłuższe, płynące zdania jak rzeka, ale z ukrytym nurtem.
+AKCJA/WYDARZENIA:     40-50% tekstu  ← Rzeczy SIĘ DZIEJĄ
+DIALOGI:              30-35% tekstu  ← Postacie ROZMAWIAJĄ
+OPIS/ATMOSFERA:       15-20% tekstu  ← Świat jest żywy
+INTROSPEKCJA:         5-10% tekstu   ← RZADKO, tylko kluczowe momenty
 ```
 
-## 💬 TRZY WARSTWY DIALOGU
+## 🚫 ABSOLUTNE ZAKAZY
 
-Każda wymiana słów ma TRZY poziomy:
-1. **SŁOWA** - co postać mówi
-2. **INTENCJA** - co chce osiągnąć
-3. **CIAŁO** - co zdradza nieświadomie
+❌ **ZAKAZ: Nadmiar introspekcji**
+NIE: "Vergil czuł, jak jego serce przyspiesza. Wiedział, że musi... Czuł napięcie..."
+(Nie co 2 zdania! Max 2-3 razy na stronę)
 
-❌ PŁASKIE: — Jestem zły — powiedział.
-✅ GŁĘBOKIE: — Nie, nic się nie stało — nie spojrzał jej w oczy, palce bębniły o stół.
+❌ **ZAKAZ: Ciągłe porównania**
+NIE: "niczym...", "jakby...", "jak..." w każdym zdaniu
+(Max 3-4 porównania na stronę - używaj OSZCZĘDNIE)
 
-**CISZA = NAJPOTĘŻNIEJSZY DIALOG**
-To co NIE zostało powiedziane. Pauza. Przerwany oddech. Wzrok który ucieka.
+❌ **ZAKAZ: Powtarzanie schematów**
+NIE: "serce biło", "zimny pot", "napięte mięśnie" - ciągle te same opisy
+(Każdy opis emocji INNY, KONKRETNY, ŚWIEŻY)
 
-## 🩸 RANA AKTYWNA W KAŻDEJ SCENIE
+❌ **ZAKAZ: Filozoficzne dialogi**
+NIE: "— Ponieważ czasem zaufanie to jedyna droga do przetrwania."
+(Ludzie mówią PROSTO, KRÓTKO, NATURALNIE)
 
-Rana/Ghost POV wpływa na WSZYSTKO:
-• **PERCEPCJA**: Co postać zauważa (a co ignoruje)
-• **REAKCJE**: Jak odpowiada na stres (walka/ucieczka/zamrożenie)
-• **SKOJARZENIA**: Zapach → wspomnienie → emocja
-• **OBRONA**: Jakie maski zakłada, jak ukrywa słabość
+❌ **ZAKAZ: Stanie i myślenie**
+NIE: Postacie stoją, patrzą, myślą przez pół strony
+(ZAWSZE coś robią - chodzą, gestykulują, manipulują przedmiotami)
 
-## ✨ ELEMENTY MISTRZOWSKIE
+❌ **ZAKAZ: Puste opisy atmosfery**
+NIE: "Cisza wypełniła przestrzeń" / "Napięcie wisiało w powietrzu"
+(POKAŻ napięcie przez DZIAŁANIE i DIALOG)
 
-**MIKRO-NAPIĘCIE**: W KAŻDYM akapicie coś niepokoi
-**MOMENTY PRAWDY**: Maska opada, postać pokazuje prawdziwe ja
-**CIĘŻAR DECYZJI**: Każdy wybór KOSZTUJE, nie ma łatwych odpowiedzi
-**CICHE GESTY**: Drobne ruchy które zdradzają wielkie emocje
-**ZAPACH = PAMIĘĆ**: Zmysł który budzi wspomnienia i emocje
+## ✅ CO ROBIĆ
 
-## 🎭 CIAŁO = EMOCJE
+✅ **AKCJA**: Postacie ROBIĄ rzeczy - biegną, walczą, szukają, budują
+✅ **DIALOGI NATURALNE**: Krótkie, urwane, z przerwami, slangiem, błędami
+✅ **KONKRETY**: Nie "pokój" ale "kuchnia z zardzewiałym zlewem"
+✅ **KONFLIKTY**: W każdej scenie ktoś czegoś CHCE i ktoś PRZESZKADZA
+✅ **DECYZJE**: Bohater WYBIERA i ponosi KONSEKWENCJE
 
-NIGDY: "Bał się" / "Była smutna" / "Poczuł złość"
-ZAWSZE: Fizyczne manifestacje:
-• Strach: ściśnięty żołądek, zimny pot, drżące ręce
-• Smutek: ciężar w piersi, oczy które parzą, ciało jak z ołowiu
-• Złość: zaciśnięta szczęka, napięte ramiona, gorąco na karku
+## 💬 DIALOGI - JAK LUDZIE NAPRAWDĘ MÓWIĄ
+
+❌ ŹLEC: — Musisz zrozumieć, że droga którą obrałeś prowadzi donikąd.
+✅ DOBRZE: — To głupie. Wiesz o tym.
+
+❌ ŹLE: — Ponieważ w głębi serca wiesz, że mam rację.
+✅ DOBRZE: — Bo mam rację, i tyle.
+
+❌ ŹLE: — Czy kiedykolwiek zastanawiałeś się nad konsekwencjami?
+✅ DOBRZE: — Pomyślałeś, co będzie potem?
+
+**DIALOG = KONFLIKT**: Każda rozmowa to starcie - ktoś chce coś uzyskać
+**PRZERYWANIE**: Ludzie sobie przerywają, nie kończą zdań
+**SUBTEXT**: Ważniejsze CO NIE POWIEDZIANE niż co powiedziane
+
+## 🎬 SCENA = FILM
+
+Pisz jakbyś opisywał film:
+- Co WIDAĆ? (akcje, gesty, mimika)
+- Co SŁYCHAĆ? (dialogi, dźwięki otoczenia)
+- RZADKO: co postać myśli (tylko gdy konieczne)
 
 ## 📐 FORMAT
 • Dialogi: PAUZA (—), NIGDY cudzysłowy
-• 100% polski, naturalny, żywy język
-• Deep POV: zero filtrów (widział/słyszał/czuł)
+• 100% polski, naturalny język
+• Deep POV bez filtrów ("widział", "słyszał" - USUŃ)
 
 ## GATUNEK: {genre.upper()}
 {GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i porywający')}
 
-Twórz prozę od której nie można się oderwać. Zdania które czytelnik podkreśla.
-Sceny które wracają w myślach. Postacie które stają się prawdziwe."""
+PAMIĘTAJ: Czytelnik chce HISTORII, nie poetyckich opisów stanów wewnętrznych."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

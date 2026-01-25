@@ -35,7 +35,7 @@ from app.models.world_bible import WorldBible
 from app.models.character import Character, CharacterRole
 from app.models.plot_structure import PlotStructure
 from app.models.chapter import Chapter, ChapterStatus
-from app.services.ai_service import get_ai_service
+from app.services.ai_service import get_ai_service, ModelTier
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -534,15 +534,10 @@ class AgentOrchestrator:
         # Check cost limit before starting
         self._check_cost_limit()
 
-        # Initialize Chapter Pipeline with config
+        # Initialize Chapter Pipeline - SIMPLIFIED config
         pipeline_config = PipelineConfig(
-            max_retries=3,
-            max_repairs=2,
-            qa_pass_threshold=85,
-            qa_repair_threshold=70,
-            cost_limit_per_chapter=0.50,  # USD
-            escalation_on_failure=True,
-            use_circuit_breaker=True
+            target_tier=ModelTier.TIER_2,  # GPT-4o for quality
+            cost_limit_per_chapter=1.00  # USD - generous limit for long chapters
         )
         chapter_pipeline = get_chapter_pipeline(self.db, pipeline_config)
 
@@ -621,74 +616,36 @@ class AgentOrchestrator:
                 scene_progress = f"Rozdział {chapter_num}: scena {scene_num}/{total_scenes}"
                 await self._update_progress(11, scene_progress)
 
-            # Run chapter through pipeline with FALLBACK to ProseWriter
-            chapter_content = ""
-            chapter_word_count = 0
-            chapter_quality = 85.0
+            # Run chapter through pipeline - NO FALLBACKS, must work correctly
+            result = await chapter_pipeline.process_chapter(
+                chapter=chapter,
+                genre=self.project.genre.value,
+                pov_character=pov_char_dict,
+                all_characters=characters_dict,
+                world_bible=world_bible_dict,
+                plot_structure=plot_structure_dict,
+                canon_facts=canon_facts,
+                chapter_summaries=chapter_summaries,
+                target_word_count=words_per_chapter,
+                book_title=self.project.name,
+                on_progress=on_scene_progress
+            )
 
-            try:
-                result = await chapter_pipeline.process_chapter(
-                    chapter=chapter,
-                    genre=self.project.genre.value,
-                    pov_character=pov_char_dict,
-                    all_characters=characters_dict,
-                    world_bible=world_bible_dict,
-                    plot_structure=plot_structure_dict,
-                    canon_facts=canon_facts,
-                    chapter_summaries=chapter_summaries,
-                    target_word_count=words_per_chapter,
-                    book_title=self.project.name,
-                    on_progress=on_scene_progress
-                )
+            chapter_content = result.content
+            chapter_word_count = result.word_count
+            chapter_quality = result.qa_scores.get('total', 85.0)
 
-                chapter_content = result.content
-                chapter_word_count = result.word_count
-                chapter_quality = result.qa_scores.get('total', 85.0)
+            logger.info(
+                f"✅ Chapter {chapter_num}: {result.word_count} words, "
+                f"${result.total_cost:.4f}, tier={result.tier_used}"
+            )
 
-                logger.info(
-                    f"{'✅' if result.success else '⚠️'} Pipeline Chapter {chapter_num}: "
-                    f"{result.status.value} ({result.word_count} words)"
-                )
-
-            except Exception as e:
-                logger.error(f"❌ Pipeline failed for Chapter {chapter_num}: {e}", exc_info=True)
-
-            # FALLBACK: If pipeline produced empty/short content, use ProseWriter
+            # Validate - pipeline MUST produce content
             if not chapter_content or chapter_word_count < 500:
-                logger.warning(f"⚠️ Pipeline produced insufficient content ({chapter_word_count} words), using ProseWriter fallback...")
-
-                try:
-                    # Use the reliable ProseWriter as fallback
-                    prose_result = await self.prose_writer.write_chapter(
-                        chapter_number=chapter_num,
-                        chapter_outline=chapter_outline,
-                        genre=self.project.genre.value,
-                        pov_character=pov_char_dict,
-                        world_bible=world_bible_dict,
-                        plot_structure=plot_structure_dict,
-                        all_characters=characters_dict,
-                        previous_chapter_summary=chapter_summaries.get(chapter_num - 1, ""),
-                        target_word_count=words_per_chapter,
-                        style_complexity=params.get('style_complexity', 'medium'),
-                        book_title=self.project.name,
-                        semantic_title_analysis=params.get('semantic_title_analysis', {})
-                    )
-
-                    chapter_content = prose_result['content']
-                    chapter_word_count = prose_result['word_count']
-                    chapter_quality = 85.0
-
-                    # Update chapter in DB
-                    chapter.content = chapter_content
-                    chapter.word_count = chapter_word_count
-                    self.db.commit()
-
-                    logger.info(f"✅ ProseWriter fallback succeeded: {chapter_word_count} words")
-
-                except Exception as e2:
-                    logger.error(f"❌ ProseWriter fallback also failed: {e2}", exc_info=True)
-                    chapter_content = f"[Rozdział {chapter_num} - generacja nieudana]"
-                    chapter_word_count = 0
+                raise RuntimeError(
+                    f"Chapter {chapter_num} generation failed: only {chapter_word_count} words produced. "
+                    f"Pipeline must generate content, not return empty chapters!"
+                )
 
             # Store summary for continuity
             if chapter_content and len(chapter_content) > 100:

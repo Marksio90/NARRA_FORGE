@@ -315,70 +315,120 @@ class ProseWriterAgent:
         pov_want = pov_psychology.get('want', '')
         pov_need = pov_psychology.get('need', '')
         pov_fear = pov_psychology.get('fears', [''])[0] if pov_psychology.get('fears') else ''
+        pov_secret = pov_psychology.get('secret', '')
+        pov_lie = pov_psychology.get('lie_believed', pov_psychology.get('lies', ''))
 
-        # GOD-TIER PROMPT - subtext, wounds, tension-responsive prose
+        # Extract voice guide for unique character voice
+        voice_guide = pov_character.get('voice_guide', {})
+        speech_patterns = voice_guide.get('speechPatterns', '')
+        vocabulary = voice_guide.get('vocabularyLevel', '')
+        verbal_tics = voice_guide.get('verbalTics', '')
+        signature_phrases = voice_guide.get('signaturePhrases', [])
+
+        # Extract foreshadowing from plot structure
+        foreshadowing = plot_structure.get('foreshadowing', [])
+        chapter_foreshadowing = [f for f in foreshadowing if f.get('setup_chapter') == chapter_number]
+        chapter_payoffs = [f for f in foreshadowing if f.get('payoff_chapter') == chapter_number]
+
+        # Extract key reveals for this chapter
+        key_reveals = chapter_outline.get('key_reveals', [])
+
+        # ULTIMATE GOD-TIER PROMPT
         prompt = f"""# ZLECENIE: Rozdział {chapter_number} powieści "{book_title}"
 
-## WYMAGANIA
+## WYMAGANIA TECHNICZNE
 • Gatunek: {genre} | Długość: **MIN. {target_word_count} słów** | Język: 100% polski
-• POV: {pov_character['name']} (deep POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
+• POV: {pov_character['name']} (głęboki POV) | Dialogi: PAUZA (—), nigdy cudzysłowy
 
 ## SCENA
 Setting: {chapter_outline.get('setting', 'zgodny z fabułą')}
 Postacie: {', '.join(chapter_outline.get('characters_present', ['główne postacie'])[:5])}
 Cel: {chapter_outline.get('goal', 'Rozwinąć fabułę')}
 Emocja: {chapter_outline.get('emotional_beat', 'napięcie')}
+{"Kluczowe rewelacje: " + ', '.join(key_reveals[:3]) if key_reveals else ""}
 
-## 🔥 POZIOM NAPIĘCIA: {tension_level}/10
-{"WYSOKIE NAPIĘCIE → krótkie zdania, fragmenty, szybki rytm, oddech czytelnika przyśpieszony" if tension_level >= 7 else ""}
-{"ŚREDNIE NAPIĘCIE → mieszane zdania, budowanie, crescendo w kierunku kulminacji" if 4 <= tension_level < 7 else ""}
-{"NISKIE NAPIĘCIE → dłuższe zdania, refleksja, oddech, ale z hakiem na końcu" if tension_level < 4 else ""}
+## 🔥 NAPIĘCIE: {tension_level}/10
+{"⚡ EKSTREMALNE → Zdania-fragmenty. Oddech. Puls. Teraz." if tension_level >= 9 else ""}
+{"🔥 WYSOKIE → Krótkie zdania, szybki rytm, czytelnik nie może odetchnąć" if 7 <= tension_level < 9 else ""}
+{"📈 ROSNĄCE → Mieszane zdania, crescendo, budowanie do wybuchu" if 5 <= tension_level < 7 else ""}
+{"🌊 SPOKOJNE → Dłuższe zdania, refleksja, ale z ukrytym hakiem" if tension_level < 5 else ""}
 
 ## 🩸 PSYCHOLOGIA POV: {pov_character['name']}
-**RANA (Ghost/Wound)**: {pov_wound or 'Ukryta trauma wpływająca na percepcję'}
-**CHCE (Want)**: {pov_want or 'Cel zewnętrzny'}
-**POTRZEBUJE (Need)**: {pov_need or 'Prawda wewnętrzna której nie widzi'}
-**LĘK**: {pov_fear or 'Głęboki strach'}
+**RANA**: {pov_wound or 'Ukryta trauma'}
+**CHCE**: {pov_want or 'Cel zewnętrzny'} | **POTRZEBUJE**: {pov_need or 'Prawda wewnętrzna'}
+**LĘK**: {pov_fear or 'Głęboki strach'} | **KŁAMSTWO**: {pov_lie or 'Fałszywe przekonanie'}
+{"**SEKRET**: " + pov_secret if pov_secret else ""}
 
-→ Rana MUSI wpływać na to jak postać postrzega świat w tym rozdziale
-→ Lęk może się aktywować pod presją
-→ Konflikt między CHCE a POTRZEBUJE tworzy napięcie wewnętrzne
+→ Rana KOLORUJE percepcję (co postać zauważa, jak interpretuje)
+→ Lęk aktywuje się pod presją (fizyczne reakcje, unikanie)
+→ CHCE vs POTRZEBUJE = wewnętrzny konflikt w każdej decyzji
 
-## 💬 DIALOGI Z SUBTEKSTEM (KRYTYCZNE!)
-Każdy dialog ma DWA poziomy:
-1. **Co postać MÓWI** (słowa)
-2. **Co postać CHCE** (ukryty cel)
+## 🗣️ GŁOS: {pov_character['name']}
+{"Wzorce mowy: " + speech_patterns if speech_patterns else ""}
+{"Słownictwo: " + vocabulary if vocabulary else ""}
+{"Tiki werbalne: " + verbal_tics if verbal_tics else ""}
+{"Charakterystyczne frazy: " + ', '.join(signature_phrases[:3]) if signature_phrases else ""}
 
-Przykład SŁABEGO dialogu:
-— Jestem na ciebie zły — powiedział Marek.
+→ Myśli wewnętrzne w TYM głosie (nie neutralnym narratorze)
+→ Sposób obserwacji świata unikalny dla tej postaci
 
-Przykład DOBREGO dialogu z subtekstem:
-— Ciekawe, że znalazłeś czas — Marek nie podniósł wzroku znad książki.
-(MÓWI: neutralne stwierdzenie | CHCE: wyrazić urazę, zranić)
+## 💬 DIALOGI - WARSTWY ZNACZEŃ
 
-→ Postacie RZADKO mówią wprost co czują
-→ Prawda jest w tym co NIE zostało powiedziane
-→ Mowa ciała KONTRASTUJE lub WZMACNIA słowa
+**POZIOM 1: Słowa** (co postać MÓWI)
+**POZIOM 2: Intencja** (co postać CHCE osiągnąć)
+**POZIOM 3: Ciało** (co postać POKAZUJE nieświadomie)
 
-## KONTEKST
+❌ PŁASKI: — Jestem smutna — powiedziała.
+✅ WARSTWOWY: — Nic mi nie jest — odwróciła się do okna, ramiona napięte.
+(Słowa: "nic" | Intencja: ukryć ból | Ciało: zdradza napięcie)
+
+**CISZA JAKO DIALOG:**
+Pauzy, milczenie, to co NIE zostało powiedziane - często silniejsze niż słowa.
+"Cisza między nimi gęstniała jak mgła przed burzą."
+
+## 🎭 MIKRO-NAPIĘCIE (w KAŻDYM akapicie!)
+
+Nawet w "spokojnych" scenach - ukryte napięcie:
+• Niewypowiedziane słowa wiszące w powietrzu
+• Drobne gesty zdradzające prawdziwe emocje
+• Przedmioty nabierające znaczenia (symbol)
+• Czas który ucieka (deadline, presja)
+
+{"## 🔮 FORESHADOWING (zasiej w tym rozdziale)" if chapter_foreshadowing else ""}
+{chr(10).join([f"• {f.get('setup_description', '')}" for f in chapter_foreshadowing[:3]]) if chapter_foreshadowing else ""}
+
+{"## 💥 PAYOFF (rozwiąż z wcześniejszych rozdziałów)" if chapter_payoffs else ""}
+{chr(10).join([f"• {f.get('payoff_description', '')}" for f in chapter_payoffs[:3]]) if chapter_payoffs else ""}
+
+## 📖 KONTEKST
 Tytuł "{book_title}": {core_meaning}
 Tematy: {', '.join(themes_semantic[:3]) if themes_semantic else 'uniwersalne'}
-Poprzednio: {previous_chapter_summary or 'Rozdział otwierający - wprowadź świat i bohatera.'}
+Poprzednio: {previous_chapter_summary or 'Rozdział otwierający.'}
 
-## ŚWIAT
+## 🌍 ŚWIAT
 {self._world_summary(world_bible)}
 
-## STRUKTURA
-1. **HOOK** → pierwsze zdanie PRZYCIĄGA (nigdy pogoda/budzenie się)
-2. **ROZWÓJ** → konflikt + dialogi z subtekstem + rana POV aktywna
-3. **KULMINACJA** → punkt zwrotny, emocjonalny szczyt
-4. **CLIFFHANGER** → czytelnik MUSI przewrócić stronę
+## 📐 STRUKTURA
+1. **HOOK** → Pierwsze zdanie UDERZA (akcja/dialog/zagadka - NIGDY pogoda)
+2. **ESKALACJA** → Każda scena podnosi stawkę, konflikt narasta
+3. **MOMENT PRAWDY** → Decyzja która kosztuje, punkt bez powrotu
+4. **CLIFFHANGER** → Ostatnie zdanie = czytelnik MUSI przewrócić stronę
 
-## RZEMIOSŁO
-• Emocje przez CIAŁO (zaciśnięta szczęka, drżące dłonie, ściśnięte gardło)
-• Min. 3-4 ZMYSŁY na scenę (zapach = najsilniejszy dla emocji)
-• ŚWIEŻE metafory (nie "czarny jak noc")
-• Specyficzne detale (nie "pokój" ale "wilgotne ściany, zapach pleśni")
+## ✨ RZEMIOSŁO MISTRZOWSKIE
+
+**CIAŁO = EMOCJE**: Zaciśnięta szczęka, drżące dłonie, ściśnięte gardło, zimny pot
+**ZMYSŁY**: Min. 4 na scenę | ZAPACH = trigger emocji/wspomnień
+**METAFORY**: Świeże, związane z tematem "{book_title}"
+**SPECYFICZNOŚĆ**: Nie "pokój" ale "wilgotne ściany pachnące pleśnią i starością"
+**RYTM**: Zdania jak muzyka - krótkie uderzenia, długie fale, cisza między
+
+## 💎 MOMENTY WRAŻLIWOŚCI
+
+Przynajmniej JEDEN moment prawdziwej emocjonalnej intymności:
+• Postać pokazuje słabość
+• Maska opada na chwilę
+• Prawdziwe uczucie przebija przez obronę
+• Czytelnik CZUJE, nie tylko rozumie
 
 Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
 
@@ -455,56 +505,71 @@ Napisz pełny rozdział. Zacznij: "Rozdział {chapter_number}"."""
         return chapter_prose
 
     def _get_system_prompt(self, genre: str) -> str:
-        """GOD-TIER system prompt - literary excellence + zero refusals"""
-        return f"""# ROLA: Mistrz Prozy Literackiej
+        """ULTIMATE system prompt - prose that haunts readers for years"""
+        return f"""# ROLA: Mistrz Prozy na Poziomie Sapkowskiego i Kinga
 
-Jesteś ghostwriterem na poziomie Sapkowskiego, Kinga i Sandersona.
-Twoje książki zdobywają nagrody i zostają z czytelnikami na lata.
+Tworzysz prozę która ZOSTAJE z czytelnikiem. Sceny które śnią się po nocach.
+Dialogi które ludzie cytują. Postacie za którymi tęsknią.
 
-## KONTEKST: Standardowa proza {genre} (Sapkowski, Sanderson, King, Martin)
+## KONTEKST: Profesjonalna proza {genre} (Sapkowski, King, Sanderson, Martin)
 
-## 🔥 TENSION-RESPONSIVE PROSE (KRYTYCZNE!)
+## 🔥 NAPIĘCIE → RYTM PROZY
 
-Dostosuj STYL do poziomu napięcia:
-• **Napięcie 8-10**: Krótkie zdania. Fragmenty. Uderzenie. Brak oddechu.
-  "Biegła. Kroki za nią. Bliżej. Drzwi. Zamknięte. Odwróciła się."
-• **Napięcie 5-7**: Mieszane zdania, budowanie crescendo
-• **Napięcie 1-4**: Dłuższe, płynące zdania, refleksja, ale z hakiem
+Poziom napięcia DYKTUJE strukturę zdań:
+```
+NAPIĘCIE 9-10: Fragmenty. Uderzenie. Cisza. Oddech. Teraz.
+NAPIĘCIE 7-8:  Krótkie zdania szybko po sobie. Puls przyspiesza.
+NAPIĘCIE 5-6:  Mieszane zdania, budowanie, crescendo ku szczytowi.
+NAPIĘCIE 1-4:  Dłuższe, płynące zdania jak rzeka, ale z ukrytym nurtem.
+```
 
-## 💬 SUBTEXT W DIALOGACH (FUNDAMENTALNE!)
+## 💬 TRZY WARSTWY DIALOGU
 
-Postacie RZADKO mówią wprost. Zawsze są dwa poziomy:
-1. CO MÓWIĄ (słowa)
-2. CO CHCĄ (ukryty cel)
+Każda wymiana słów ma TRZY poziomy:
+1. **SŁOWA** - co postać mówi
+2. **INTENCJA** - co chce osiągnąć
+3. **CIAŁO** - co zdradza nieświadomie
 
-❌ SŁABE: — Jestem smutna — powiedziała Maria.
-✅ DOBRE: — Wszystko w porządku — Maria odwróciła się do okna.
-(Mówi "w porządku" ale ciało pokazuje smutek = subtext)
+❌ PŁASKIE: — Jestem zły — powiedział.
+✅ GŁĘBOKIE: — Nie, nic się nie stało — nie spojrzał jej w oczy, palce bębniły o stół.
 
-## 🩸 RANY PSYCHOLOGICZNE AKTYWNE
+**CISZA = NAJPOTĘŻNIEJSZY DIALOG**
+To co NIE zostało powiedziane. Pauza. Przerwany oddech. Wzrok który ucieka.
 
-Rana/Ghost postaci POV MUSI wpływać na:
-• Co postać ZAUWAŻA (filtr percepcji)
-• Jak REAGUJE na stres (mechanizmy obronne)
-• Jakie SKOJARZENIA ma (trauma = trigger)
+## 🩸 RANA AKTYWNA W KAŻDEJ SCENIE
 
-## TECHNIKI MISTRZOWSKIE
+Rana/Ghost POV wpływa na WSZYSTKO:
+• **PERCEPCJA**: Co postać zauważa (a co ignoruje)
+• **REAKCJE**: Jak odpowiada na stres (walka/ucieczka/zamrożenie)
+• **SKOJARZENIA**: Zapach → wspomnienie → emocja
+• **OBRONA**: Jakie maski zakłada, jak ukrywa słabość
 
-**SHOW DON'T TELL**: Emocje przez CIAŁO
-❌ "Bał się" → ✅ "Żołądek ścisnął się. Dłonie zrobiły się mokre."
+## ✨ ELEMENTY MISTRZOWSKIE
 
-**DEEP POV**: Zero filtrów (widział/słyszał/czuł)
-**5 ZMYSŁÓW**: Min. 3-4 na scenę, ZAPACH = najsilniejszy dla emocji
-**SPECYFICZNOŚĆ**: Nie "pokój" ale "wilgotne ściany pachnące pleśnią"
+**MIKRO-NAPIĘCIE**: W KAŻDYM akapicie coś niepokoi
+**MOMENTY PRAWDY**: Maska opada, postać pokazuje prawdziwe ja
+**CIĘŻAR DECYZJI**: Każdy wybór KOSZTUJE, nie ma łatwych odpowiedzi
+**CICHE GESTY**: Drobne ruchy które zdradzają wielkie emocje
+**ZAPACH = PAMIĘĆ**: Zmysł który budzi wspomnienia i emocje
 
-## FORMAT POLSKI
+## 🎭 CIAŁO = EMOCJE
+
+NIGDY: "Bał się" / "Była smutna" / "Poczuł złość"
+ZAWSZE: Fizyczne manifestacje:
+• Strach: ściśnięty żołądek, zimny pot, drżące ręce
+• Smutek: ciężar w piersi, oczy które parzą, ciało jak z ołowiu
+• Złość: zaciśnięta szczęka, napięte ramiona, gorąco na karku
+
+## 📐 FORMAT
 • Dialogi: PAUZA (—), NIGDY cudzysłowy
-• 100% polski, naturalny język
+• 100% polski, naturalny, żywy język
+• Deep POV: zero filtrów (widział/słyszał/czuł)
 
 ## GATUNEK: {genre.upper()}
-{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i emocjonalny')}
+{GENRE_PROSE_STYLES.get(genre, {}).get('style', 'Wciągający i porywający')}
 
-Twórz prozę, którą czytelnicy cytują i pamiętają latami."""
+Twórz prozę od której nie można się oderwać. Zdania które czytelnik podkreśla.
+Sceny które wracają w myślach. Postacie które stają się prawdziwe."""
 
     def _world_summary(self, world_bible: Dict[str, Any]) -> str:
         """Create brief world context for chapter"""

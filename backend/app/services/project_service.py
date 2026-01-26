@@ -809,6 +809,9 @@ def _analyze_title(title: str, genre: str) -> dict:
     ]
 
     # Detect parent names from pattern "córka/syn X i Y" (e.g., "córka Hanny i Mateusza")
+    # Also track genitive forms to avoid adding them as duplicates later
+    processed_genitive_forms = set()  # Track genitive forms we've processed
+
     parent_pattern = re.search(
         r'(?:córka|syn|dziecko)\s+(\w+)\s+i\s+(\w+)',
         title,
@@ -818,9 +821,9 @@ def _analyze_title(title: str, genre: str) -> dict:
         parent1_name = parent_pattern.group(1).strip('.,')
         parent2_name = parent_pattern.group(2).strip('.,')
 
-        # Determine genders from name endings
-        parent1_gender = "female" if parent1_name.endswith(('y', 'i')) else ("male" if parent1_name.endswith('a') else "neutral")
-        parent2_gender = "male" if parent2_name.endswith('a') else ("female" if parent2_name.endswith(('y', 'i')) else "neutral")
+        # Track these genitive forms
+        processed_genitive_forms.add(parent1_name.lower())
+        processed_genitive_forms.add(parent2_name.lower())
 
         # Polish genitive: Hanny (from Hanna), Mateusza (from Mateusz)
         # Try to convert from genitive to nominative
@@ -836,6 +839,10 @@ def _analyze_title(title: str, genre: str) -> dict:
         parent1_nominative = genitive_to_nominative(parent1_name)
         parent2_nominative = genitive_to_nominative(parent2_name)
 
+        # Also track nominative forms
+        processed_genitive_forms.add(parent1_nominative.lower())
+        processed_genitive_forms.add(parent2_nominative.lower())
+
         insights["character_names"].append({
             "name": parent1_nominative,
             "role": "main",  # Parent is a protagonist
@@ -847,6 +854,26 @@ def _analyze_title(title: str, genre: str) -> dict:
             "gender": "male" if not parent2_nominative.endswith('a') else "female"
         })
         insights["focus"] = "oparty na postaciach"
+
+    # Helper function to check if a name (in any form) is already in our list
+    def is_name_already_added(name: str) -> bool:
+        name_lower = name.lower()
+        # Check if this exact name or its genitive/nominative form is already processed
+        if name_lower in processed_genitive_forms:
+            return True
+        # Check against existing character names
+        for cn in insights["character_names"]:
+            if cn["name"].lower() == name_lower:
+                return True
+        return False
+
+    # Detect which name is associated with child age (for catalyst detection)
+    child_name_pattern = re.search(
+        r'(\w+)[,.]?\s*\d+[,.]?\s*(?:roczn[ayi]|letni[aey]|miesi[ęe]czn[ayi])',
+        title,
+        re.IGNORECASE
+    )
+    catalyst_name = child_name_pattern.group(1).strip('.,') if child_name_pattern else None
 
     # Extract character names (capitalized words, excluding first word if common article)
     for i, word in enumerate(words):
@@ -860,13 +887,16 @@ def _analyze_title(title: str, genre: str) -> dict:
                 if i + 1 < len(words):
                     next_word = words[i + 1].strip('.,!?;:"\'')
                     if next_word and next_word[0].isupper() and len(next_word) > 2:
-                        # Skip if already added from parent pattern
-                        if not any(cn["name"] == next_word for cn in insights["character_names"]):
+                        # Skip if already added (checking all forms)
+                        if not is_name_already_added(next_word):
+                            # Check if this is the catalyst child
+                            is_catalyst = (catalyst_name and next_word.lower() == catalyst_name.lower())
                             insights["character_names"].append({
                                 "name": next_word,
-                                "role": info["role"],
+                                "role": "catalyst" if is_catalyst else info["role"],
                                 "gender": info["gender"]
                             })
+                            processed_genitive_forms.add(next_word.lower())
                         insights["focus"] = "oparty na postaciach"
 
         # Check for setting keywords
@@ -946,18 +976,19 @@ def _analyze_title(title: str, genre: str) -> dict:
                     if prev_word in ["mag", "król", "królowa", "rycerz", "lord", "lady", "sir", "master"]:
                         continue  # Skip this, it's likely genitive after a title
 
-                # Likely Polish name
-                if not any(cn["name"] == word_clean for cn in insights["character_names"]):
-                    # Determine role: if catalyst detected and this is the first name, it's likely the catalyst
+                # Likely Polish name - check if not already added (in any form)
+                if not is_name_already_added(word_clean):
+                    # Determine role: if this is the catalyst child name, mark as catalyst
                     char_role = "main"
-                    if insights.get("catalyst_character_detected") and len(insights["character_names"]) == 0:
-                        char_role = "catalyst"  # First character with age detected is the catalyst
+                    if catalyst_name and word_clean.lower() == catalyst_name.lower():
+                        char_role = "catalyst"  # This specific character is the catalyst
 
                     insights["character_names"].append({
                         "name": word_clean,
                         "role": char_role,
                         "gender": "female" if word_clean.endswith("a") else "neutral"
                     })
+                    processed_genitive_forms.add(word_clean.lower())
                 if "Polska/Europa Wschodnia" not in insights["setting_hints"]:
                     insights["setting_hints"].append("Polska/Europa Wschodnia")
 

@@ -5,6 +5,7 @@ Project service - core business logic for project management
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
+import re
 from datetime import datetime, timedelta
 
 from app.models.project import Project, ProjectStatus, GenreType
@@ -85,26 +86,73 @@ Genre: {genre}
 
 🇵🇱 WSZYSTKIE pola w JSON MUSZĄ być PO POLSKU!
 
-🔍 GRAMMAR: "Vergil, mag ognia" → "Vergil" = NAME, "mag ognia" = role/class
+═════════════════════════════════════════════════════════════════
+⚠️ CRITICAL: CHARACTER ROLE CLASSIFICATION
+═════════════════════════════════════════════════════════════════
+
+BARDZO WAŻNE! Prawidłowo klasyfikuj role postaci:
+
+**PROTAGONIST (main)** - Aktywna postać podejmująca decyzje i działania:
+- Osoba dorosła lub nastolatek mogący działać samodzielnie
+- Ma własne cele, motywacje, dokonuje wyborów
+
+**CATALYST (catalyst)** - Postać wokół której toczy się akcja, ale NIE jest aktywnym protagonistą:
+- Niemowlęta, małe dzieci (0-5 lat) - NIE MOGĄ być protagonistami!
+- Osoby nieprzytomne, w śpiączce
+- Osoby zmarłe (wspominane, ale nieobecne)
+- Np. "Rozalia, 1,5 roczna" → Rozalia = CATALYST, rodzice = PROTAGONISTS
+
+**SUPPORTING** - Postacie drugoplanowe wspierające fabułę
+
+═════════════════════════════════════════════════════════════════
+🔍 CRITICAL: TRAUMA & BACKSTORY SIGNALS
+═════════════════════════════════════════════════════════════════
+
+WYKRYJ ukryte sygnały traumy i historii w tytule:
+
+**Sygnały płodności/trudnego poczęcia:**
+- "długo oczekiwana/y" → problemy z płodnością, IVF, poronienia, lata starań
+- "upragniona/y" → desperackie pragnienie dziecka
+- "jedyna/y" → możliwa niezdolność do posiadania więcej dzieci
+- "cud" → nadprzyrodzone/medyczne okoliczności poczęcia
+
+**Sygnały straty/traumy:**
+- "po powrocie" → separacja, więzienie, choroba, podróż
+- "ostatnia/i" → śmierć bliskich, koniec linii rodzinnej
+- "jedyna/y córka/syn" → strata innych dzieci
+- "wdowa/wdowiec" → śmierć partnera
+- "sierota" → śmierć rodziców
+
+**Sygnały napięć rodzinnych:**
+- "córka X i Y" → relacja między rodzicami kluczowa
+- podanie obu rodziców → możliwe konflikty, różnice w wychowaniu
+- wiek dziecka → specyficzne wyzwania rozwojowe
+
+Te sygnały to SERCE DRAMATU - wyciągnij z nich maksimum!
 
 ═════════════════════════════════════════════════════════════════
 📚 PART 1: CULTURAL & MYTHOLOGICAL DEPTH
 ═════════════════════════════════════════════════════════════════
 
-1. **Cultural/Literary References**: Does name reference mythology/history? (np. Vergil = Wergiliusz → epicka narracja, przewodnik)
+1. **Cultural/Literary References**: Does name reference mythology/history? (np. Vergil = Wergiliusz → epicka narracja, przewodnik; Rozalia = róża, symbol piękna i delikatności; Hanna = biblijna matka Samuela, modlitwa o dziecko!)
 2. **Symbolic Meanings**: Metafory beyond literal meaning
-3. **Archetypal Significance**: Jakie archetypy są obecne?
+3. **Archetypal Significance**: Jakie archetypy są obecne? (dla dramatu: Matka, Ojciec, Dziecko jako Dar/Cud, Rodzina jako Ostoja)
 
 ═════════════════════════════════════════════════════════════════
-🔥 PART 2: MAGIC/POWER SYSTEM (if applicable)
+🔥 PART 2: MAGIC/POWER SYSTEM (or EMOTIONAL DYNAMICS for drama)
 ═════════════════════════════════════════════════════════════════
 
-If title mentions powers:
+FOR FANTASY: If title mentions powers:
 - Element-based? (ogień, woda, etc.)
 - Rare gift or common?
 - Hierarchy (uczeń → mag → archimag)
 - Costs of using magic (fizyczne/mentalne)
 - Power dynamics (protagonist słaby czy potężny?)
+
+FOR DRAMA/REALISTIC: Emotional power dynamics:
+- Kto ma "władzę emocjonalną" w rodzinie?
+- Jakie są ukryte napięcia?
+- Co jest źródłem siły/słabości postaci?
 
 ═════════════════════════════════════════════════════════════════
 🗺️ PART 3: DEEP SETTING ANALYSIS
@@ -124,12 +172,26 @@ If title mentions powers:
 - **Content**: violence level, moral complexity
 
 ═════════════════════════════════════════════════════════════════
-👹 PART 5: ANTAGONIST PREDICTIONS
+👹 PART 5: ANTAGONIST/CONFLICT SOURCE PREDICTIONS
 ═════════════════════════════════════════════════════════════════
 
-Based on protagonist, predict:
+Based on genre and title, predict source of conflict:
+
+**FOR FANTASY/ACTION:**
 - Antagonist type (elemental opposite? tyrant? internal demon?)
 - Opposition nature (physical/emotional/philosophical)
+
+**FOR DRAMA/REALISTIC (antagonista to NIE zawsze osoba!):**
+- Wewnętrzne demony (lęki, traumy, wątpliwości)
+- Okoliczności życiowe (choroba, bieda, presja społeczna)
+- Napięcia rodzinne (różnice w wartościach, tajemnice)
+- Presja społeczna (oczekiwania otoczenia, normy)
+- Przeszłość (trauma, żal, niespełnione marzenia)
+
+Przykład dla "długo oczekiwanego dziecka":
+- Antagonista: strach przed utratą dziecka, nadopiekuńczość
+- Konflikt: trauma z lat starań vs. radość z dziecka
+- Napięcie: czy można być "normalnym" rodzicem po takiej drodze?
 
 ═════════════════════════════════════════════════════════════════
 ⚔️ PART 6: MULTI-LAYERED CONFLICTS
@@ -183,6 +245,15 @@ Suggest 3-5 subplots:
 
 {{
   "core_meaning": "Pełna interpretacja...",
+  "detected_characters": [
+    {{"name": "Imię", "role": "protagonist/catalyst/supporting", "gender": "female/male/neutral", "age_hint": "dorosły/dziecko/niemowlę", "role_explanation": "dlaczego ta rola"}}
+  ],
+  "backstory_signals": {{
+    "detected_hints": ["długo oczekiwana = problemy z płodnością", "córka X i Y = focus na relacji rodziców"],
+    "implied_trauma": "Opis domniemanej traumy/historii",
+    "emotional_weight": "Co ten tytuł sugeruje o emocjonalnym ciężarze historii",
+    "hidden_conflicts": ["ukryty konflikt 1", "ukryty konflikt 2"]
+  }},
   "cultural_analysis": {{
     "mythological_references": ["Wergiliusz - przewodnik przez zaświaty", "Feniks - odrodzenie z ognia"],
     "cultural_context": "Odniesienia do klasycznej mitologii i epickich podróży",
@@ -192,11 +263,12 @@ Suggest 3-5 subplots:
   "metaphors": ["zapomniany = odrzucony przez społeczeństwo", "ogień = niszcząca ale oczyszczająca moc"],
   "emotional_core": "samotność i poszukiwanie celu",
   "magic_system": {{
-    "magic_type": "Elementarna magia ognia",
-    "power_source": "Wewnętrzna energia emocjonalna",
+    "magic_type": "Elementarna magia ognia (lub 'Brak - dramat realistyczny')",
+    "power_source": "Wewnętrzna energia emocjonalna (lub 'Nie dotyczy')",
     "limitations": "Wymaga kontroli emocji, niebezpieczna gdy niekontrolowana",
     "cost": "Fizyczne i mentalne wyczerpanie, ryzyko spalenia się od środka",
-    "scope": "Od małych płomieni po niszczycielskie inferno"
+    "scope": "Od małych płomieni po niszczycielskie inferno",
+    "emotional_dynamics": "Dla dramatu: Kto ma 'władzę' w rodzinie, jakie są ukryte napięcia"
   }},
   "setting_analysis": {{
     "environment": "Puste pustkowia, opuszczone tereny, izolacja",
@@ -251,9 +323,11 @@ Suggest 3-5 subplots:
     "arc_type": "pozytywny"
   }},
   "character_implications": {{
-    "protagonist_archetype": "Mag Ognia",
+    "protagonist_archetype": "Mag Ognia (lub dla dramatu: Matka/Ojciec zmagający się z...)",
     "protagonist_journey": "od rozpaczy do nadziei poprzez opanowanie mocy",
-    "suggested_names": ["Vergil"]
+    "suggested_protagonists": ["Imiona PRAWDZIWYCH protagonistów - osób dorosłych podejmujących decyzje"],
+    "catalyst_characters": ["Imiona postaci-katalizatorów (dzieci, osoby wokół których toczy się akcja)"],
+    "true_protagonist_explanation": "Dla 'Rozalia, córka Hanny i Mateusza' → protagoniści to Hanna i Mateusz, NIE Rozalia!"
   }},
   "themes": ["odkrywanie siebie", "nadzieja w rozpaczy", "kontrola nad mocą", "transformacja poprzez cierpienie", "wybaczenie"],
   "reader_promise": "Epicka podróż od rozpaczy do nadziei z magią, emocjami i transformacją"
@@ -570,6 +644,73 @@ def _analyze_title(title: str, genre: str) -> dict:
         "czarodziej": "magia/wiedza tajemna",
     }
 
+    # Detect backstory/trauma signals (CRITICAL for drama!)
+    backstory_signals = {
+        "długo oczekiwana": "problemy z płodnością/lata starań o dziecko",
+        "długo oczekiwany": "problemy z płodnością/lata starań o dziecko",
+        "upragniona": "desperackie pragnienie dziecka",
+        "upragniony": "desperackie pragnienie dziecka",
+        "jedyna": "możliwa utrata innych dzieci/niezdolność do posiadania więcej",
+        "jedyny": "możliwa utrata innych dzieci/niezdolność do posiadania więcej",
+        "ostatnia": "śmierć bliskich/koniec linii rodzinnej",
+        "ostatni": "śmierć bliskich/koniec linii rodzinnej",
+        "po powrocie": "separacja/więzienie/choroba/długa nieobecność",
+        "wdowa": "śmierć męża",
+        "wdowiec": "śmierć żony",
+        "sierota": "śmierć rodziców",
+        "adoptowana": "adopcja/poszukiwanie tożsamości",
+        "adoptowany": "adopcja/poszukiwanie tożsamości",
+        "cud": "niezwykłe okoliczności narodzin/poczęcia",
+    }
+
+    # Age pattern detection for character role classification
+    age_patterns = [
+        (r'(\d+)[,.]?\s*(?:roczn[ayi]|letni[aey]|miesi[ęe]czn[ayi])', 'child_age'),
+        (r'niemowl[ęe]', 'infant'),
+        (r'noworod(?:ek|ka)', 'newborn'),
+        (r'maluch|malutk[aiy]', 'toddler'),
+    ]
+
+    # Detect parent names from pattern "córka/syn X i Y" (e.g., "córka Hanny i Mateusza")
+    parent_pattern = re.search(
+        r'(?:córka|syn|dziecko)\s+(\w+)\s+i\s+(\w+)',
+        title,
+        re.IGNORECASE
+    )
+    if parent_pattern:
+        parent1_name = parent_pattern.group(1).strip('.,')
+        parent2_name = parent_pattern.group(2).strip('.,')
+
+        # Determine genders from name endings
+        parent1_gender = "female" if parent1_name.endswith(('y', 'i')) else ("male" if parent1_name.endswith('a') else "neutral")
+        parent2_gender = "male" if parent2_name.endswith('a') else ("female" if parent2_name.endswith(('y', 'i')) else "neutral")
+
+        # Polish genitive: Hanny (from Hanna), Mateusza (from Mateusz)
+        # Try to convert from genitive to nominative
+        def genitive_to_nominative(name: str) -> str:
+            if name.endswith('y') or name.endswith('i'):
+                # Hanny -> Hanna, Ani -> Ania
+                return name[:-1] + 'a'
+            elif name.endswith('a'):
+                # Mateusza -> Mateusz, Tomasza -> Tomasz
+                return name[:-1]
+            return name
+
+        parent1_nominative = genitive_to_nominative(parent1_name)
+        parent2_nominative = genitive_to_nominative(parent2_name)
+
+        insights["character_names"].append({
+            "name": parent1_nominative,
+            "role": "main",  # Parent is a protagonist
+            "gender": "female" if parent1_nominative.endswith('a') else "male"
+        })
+        insights["character_names"].append({
+            "name": parent2_nominative,
+            "role": "main",  # Parent is a protagonist
+            "gender": "male" if not parent2_nominative.endswith('a') else "female"
+        })
+        insights["focus"] = "oparty na postaciach"
+
     # Extract character names (capitalized words, excluding first word if common article)
     for i, word in enumerate(words):
         word_clean = word.strip('.,!?;:"\'')
@@ -582,11 +723,13 @@ def _analyze_title(title: str, genre: str) -> dict:
                 if i + 1 < len(words):
                     next_word = words[i + 1].strip('.,!?;:"\'')
                     if next_word and next_word[0].isupper() and len(next_word) > 2:
-                        insights["character_names"].append({
-                            "name": next_word,
-                            "role": info["role"],
-                            "gender": info["gender"]
-                        })
+                        # Skip if already added from parent pattern
+                        if not any(cn["name"] == next_word for cn in insights["character_names"]):
+                            insights["character_names"].append({
+                                "name": next_word,
+                                "role": info["role"],
+                                "gender": info["gender"]
+                            })
                         insights["focus"] = "oparty na postaciach"
 
         # Check for setting keywords
@@ -599,6 +742,43 @@ def _analyze_title(title: str, genre: str) -> dict:
             if key in word_clean.lower():
                 if theme_info not in insights["themes"]:
                     insights["themes"].append(theme_info)
+
+    # Check for backstory/trauma signals (multi-word phrases)
+    detected_backstory = []
+    for signal, meaning in backstory_signals.items():
+        if signal in title_lower:
+            detected_backstory.append({"signal": signal, "meaning": meaning})
+            # Add related themes
+            if "płodność" in meaning or "dziecko" in meaning:
+                if "trudności rodzicielskie" not in insights["themes"]:
+                    insights["themes"].append("trudności rodzicielskie")
+            if "śmierć" in meaning or "utrata" in meaning:
+                if "strata/żałoba" not in insights["themes"]:
+                    insights["themes"].append("strata/żałoba")
+            if "adopcja" in meaning:
+                if "tożsamość/korzenie" not in insights["themes"]:
+                    insights["themes"].append("tożsamość/korzenie")
+
+    if detected_backstory:
+        insights["backstory_signals"] = detected_backstory
+
+    # Check for age patterns - classify young children as catalysts, not protagonists
+    detected_ages = []
+    for pattern, age_type in age_patterns:
+        match = re.search(pattern, title_lower)
+        if match:
+            if age_type == 'child_age':
+                age_value = float(match.group(1).replace(',', '.'))
+                detected_ages.append({"type": age_type, "value": age_value})
+                # Children under 6 should be catalysts, not protagonists
+                if age_value < 6:
+                    insights["catalyst_character_detected"] = True
+            else:
+                detected_ages.append({"type": age_type, "value": 0})
+                insights["catalyst_character_detected"] = True
+
+    if detected_ages:
+        insights["detected_ages"] = detected_ages
 
     # Detect Polish names and set Polish/Eastern European setting
     polish_name_endings = ["a", "ia", "ka", "na", "ska"]
@@ -631,9 +811,14 @@ def _analyze_title(title: str, genre: str) -> dict:
 
                 # Likely Polish name
                 if not any(cn["name"] == word_clean for cn in insights["character_names"]):
+                    # Determine role: if catalyst detected and this is the first name, it's likely the catalyst
+                    char_role = "main"
+                    if insights.get("catalyst_character_detected") and len(insights["character_names"]) == 0:
+                        char_role = "catalyst"  # First character with age detected is the catalyst
+
                     insights["character_names"].append({
                         "name": word_clean,
-                        "role": "main",
+                        "role": char_role,
                         "gender": "female" if word_clean.endswith("a") else "neutral"
                     })
                 if "Polska/Europa Wschodnia" not in insights["setting_hints"]:
@@ -641,13 +826,34 @@ def _analyze_title(title: str, genre: str) -> dict:
 
     # Generate title-based suggestions for AI decisions
     if insights["character_names"]:
-        insights["title_suggestions"]["main_character_name"] = insights["character_names"][0]["name"]
-        insights["title_suggestions"]["main_character_gender"] = insights["character_names"][0]["gender"]
+        first_char = insights["character_names"][0]
+
+        # Check if first character is a catalyst (child) - then find the real protagonists
+        if first_char.get("role") == "catalyst":
+            insights["title_suggestions"]["catalyst_character"] = first_char["name"]
+            insights["title_suggestions"]["catalyst_explanation"] = "Małe dziecko jest katalizatorem akcji, nie protagonistą"
+
+            # Look for parent names (usually mentioned after "córka/syn X i Y")
+            protagonist_names = [c["name"] for c in insights["character_names"] if c.get("role") != "catalyst"]
+            if protagonist_names:
+                insights["title_suggestions"]["suggested_protagonists"] = protagonist_names
+                insights["title_suggestions"]["main_character_name"] = protagonist_names[0]
+            else:
+                insights["title_suggestions"]["main_character_name"] = "Rodzic (do określenia)"
+                insights["title_suggestions"]["needs_protagonist_names"] = True
+        else:
+            insights["title_suggestions"]["main_character_name"] = first_char["name"]
+            insights["title_suggestions"]["main_character_gender"] = first_char["gender"]
 
         # If title has relationships, suggest family-focused plot
-        if "family" in insights["themes"]:
-            insights["title_suggestions"]["add_subplots"] = ["family_relationships", "generational_conflict"]
-            insights["title_suggestions"]["character_count_modifier"] = 1  # Add one more main character for family member
+        if "rodzina" in insights["themes"] or insights.get("catalyst_character_detected"):
+            insights["title_suggestions"]["add_subplots"] = ["family_relationships", "generational_conflict", "parenting_challenges"]
+            insights["title_suggestions"]["character_count_modifier"] = 2  # Add parents/family members
+
+        # If backstory signals detected, add relevant themes
+        if insights.get("backstory_signals"):
+            insights["title_suggestions"]["implied_backstory"] = [s["meaning"] for s in insights["backstory_signals"]]
+            insights["title_suggestions"]["add_subplots"] = insights["title_suggestions"].get("add_subplots", []) + ["past_trauma", "healing_journey"]
 
     if insights["setting_hints"]:
         insights["title_suggestions"]["world_setting"] = insights["setting_hints"][0]

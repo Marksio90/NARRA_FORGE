@@ -260,6 +260,13 @@ class ContextPackBuilder:
         acts = plot_structure.get('acts', [])
         current_act = None
         for act in acts:
+            # Handle case where act might be a string instead of a dict
+            if isinstance(act, str):
+                logger.warning(f"Act is a string instead of dict: {act[:100]}")
+                continue
+            if not isinstance(act, dict):
+                logger.warning(f"Act is not a dict: {type(act)}")
+                continue
             chapters = act.get('chapters', [])
             if chapter_number in chapters:
                 current_act = act
@@ -308,6 +315,10 @@ class ContextPackBuilder:
 
         active = []
         for f in foreshadowing:
+            # Handle case where foreshadowing item might not be a dict
+            if not isinstance(f, dict):
+                logger.warning(f"Foreshadowing item is not a dict: {type(f)}")
+                continue
             setup_ch = f.get('setup_chapter', 0)
             payoff_ch = f.get('payoff_chapter', 0)
 

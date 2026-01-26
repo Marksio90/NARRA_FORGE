@@ -56,10 +56,11 @@ interface AntagonistPrediction {
 }
 
 interface Conflicts {
-  external?: string;
-  internal?: string;
-  philosophical?: string;
-  moral?: string;
+  external?: string | { description?: string; stakes?: string };
+  internal?: string | { description?: string; false_belief?: string };
+  philosophical?: string | { question?: string; both_sides?: string };
+  moral?: string | { dilemma?: string; cost?: string };
+  relational?: string | { description?: string; source?: string };
 }
 
 interface Subgenre {
@@ -510,16 +511,44 @@ const ProjectView: React.FC = () => {
                   <div className="text-purple-300 font-semibold mb-2">💥 Wielowarstwowe Konflikty</div>
                   <div className="text-white text-sm space-y-1">
                     {simulation.ai_decisions.title_analysis.conflicts.external && (
-                      <div><span className="text-gray-400">Zewnętrzny:</span> {simulation.ai_decisions.title_analysis.conflicts.external}</div>
+                      <div>
+                        <span className="text-gray-400">Zewnętrzny:</span>{' '}
+                        {typeof simulation.ai_decisions.title_analysis.conflicts.external === 'string'
+                          ? simulation.ai_decisions.title_analysis.conflicts.external
+                          : `${simulation.ai_decisions.title_analysis.conflicts.external.description || ''}${simulation.ai_decisions.title_analysis.conflicts.external.stakes ? ` (Stawka: ${simulation.ai_decisions.title_analysis.conflicts.external.stakes})` : ''}`}
+                      </div>
                     )}
                     {simulation.ai_decisions.title_analysis.conflicts.internal && (
-                      <div><span className="text-gray-400">Wewnętrzny:</span> {simulation.ai_decisions.title_analysis.conflicts.internal}</div>
+                      <div>
+                        <span className="text-gray-400">Wewnętrzny:</span>{' '}
+                        {typeof simulation.ai_decisions.title_analysis.conflicts.internal === 'string'
+                          ? simulation.ai_decisions.title_analysis.conflicts.internal
+                          : `${simulation.ai_decisions.title_analysis.conflicts.internal.description || ''}${simulation.ai_decisions.title_analysis.conflicts.internal.false_belief ? ` (Kłamstwo: ${simulation.ai_decisions.title_analysis.conflicts.internal.false_belief})` : ''}`}
+                      </div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.conflicts.relational && (
+                      <div>
+                        <span className="text-gray-400">Relacyjny:</span>{' '}
+                        {typeof simulation.ai_decisions.title_analysis.conflicts.relational === 'string'
+                          ? simulation.ai_decisions.title_analysis.conflicts.relational
+                          : `${simulation.ai_decisions.title_analysis.conflicts.relational.description || ''}${simulation.ai_decisions.title_analysis.conflicts.relational.source ? ` (Źródło: ${simulation.ai_decisions.title_analysis.conflicts.relational.source})` : ''}`}
+                      </div>
                     )}
                     {simulation.ai_decisions.title_analysis.conflicts.philosophical && (
-                      <div><span className="text-gray-400">Filozoficzny:</span> {simulation.ai_decisions.title_analysis.conflicts.philosophical}</div>
+                      <div>
+                        <span className="text-gray-400">Filozoficzny:</span>{' '}
+                        {typeof simulation.ai_decisions.title_analysis.conflicts.philosophical === 'string'
+                          ? simulation.ai_decisions.title_analysis.conflicts.philosophical
+                          : `${simulation.ai_decisions.title_analysis.conflicts.philosophical.question || ''}${simulation.ai_decisions.title_analysis.conflicts.philosophical.both_sides ? ` (${simulation.ai_decisions.title_analysis.conflicts.philosophical.both_sides})` : ''}`}
+                      </div>
                     )}
                     {simulation.ai_decisions.title_analysis.conflicts.moral && (
-                      <div><span className="text-gray-400">Moralny:</span> {simulation.ai_decisions.title_analysis.conflicts.moral}</div>
+                      <div>
+                        <span className="text-gray-400">Moralny:</span>{' '}
+                        {typeof simulation.ai_decisions.title_analysis.conflicts.moral === 'string'
+                          ? simulation.ai_decisions.title_analysis.conflicts.moral
+                          : `${simulation.ai_decisions.title_analysis.conflicts.moral.dilemma || ''}${simulation.ai_decisions.title_analysis.conflicts.moral.cost ? ` (Koszt: ${simulation.ai_decisions.title_analysis.conflicts.moral.cost})` : ''}`}
+                      </div>
                     )}
                   </div>
                 </div>

@@ -434,12 +434,28 @@ Want: {protagonist['arc'].get('want_vs_need', {}).get('want', 'Unknown')}
                 prompt += f"- Motivation: {pred.get('motivation', 'Unknown')}\n"
                 prompt += f"- Opposition: {pred.get('opposition_nature', 'Unknown')}\n"
 
+        # Helper to extract conflict description (handles both string and object formats)
+        def get_conflict_text(conflict_value):
+            if isinstance(conflict_value, str):
+                return conflict_value
+            elif isinstance(conflict_value, dict):
+                desc = conflict_value.get('description', conflict_value.get('question', conflict_value.get('dilemma', '')))
+                extra = conflict_value.get('stakes', conflict_value.get('false_belief', conflict_value.get('both_sides', conflict_value.get('cost', ''))))
+                return f"{desc} ({extra})" if extra else desc
+            return str(conflict_value)
+
         if conflicts:
             prompt += "\n## ⚔️ CONFLICT DIMENSIONS TO EXPLORE\n"
             if conflicts.get('external'):
-                prompt += f"- **External**: {conflicts['external']}\n"
+                prompt += f"- **External**: {get_conflict_text(conflicts['external'])}\n"
+            if conflicts.get('internal'):
+                prompt += f"- **Internal**: {get_conflict_text(conflicts['internal'])}\n"
+            if conflicts.get('relational'):
+                prompt += f"- **Relational**: {get_conflict_text(conflicts['relational'])}\n"
             if conflicts.get('philosophical'):
-                prompt += f"- **Philosophical**: {conflicts['philosophical']}\n"
+                prompt += f"- **Philosophical**: {get_conflict_text(conflicts['philosophical'])}\n"
+            if conflicts.get('moral'):
+                prompt += f"- **Moral**: {get_conflict_text(conflicts['moral'])}\n"
 
         prompt += """
 ## YOUR TASK

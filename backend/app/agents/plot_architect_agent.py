@@ -222,15 +222,27 @@ By the end, the reader must say: "NOW I understand why it's called '{project_nam
 ## ⚔️ CONFLICT LAYERS (From Advanced Analysis)
 """
 
+        # Helper to extract conflict description (handles both string and object formats)
+        def get_conflict_text(conflict_value):
+            if isinstance(conflict_value, str):
+                return conflict_value
+            elif isinstance(conflict_value, dict):
+                desc = conflict_value.get('description', conflict_value.get('question', conflict_value.get('dilemma', '')))
+                extra = conflict_value.get('stakes', conflict_value.get('false_belief', conflict_value.get('both_sides', conflict_value.get('cost', ''))))
+                return f"{desc} ({extra})" if extra else desc
+            return str(conflict_value)
+
         if conflicts:
             if conflicts.get('external'):
-                prompt += f"- **External**: {conflicts['external']}\n"
+                prompt += f"- **External**: {get_conflict_text(conflicts['external'])}\n"
             if conflicts.get('internal'):
-                prompt += f"- **Internal**: {conflicts['internal']}\n"
+                prompt += f"- **Internal**: {get_conflict_text(conflicts['internal'])}\n"
+            if conflicts.get('relational'):
+                prompt += f"- **Relational**: {get_conflict_text(conflicts['relational'])}\n"
             if conflicts.get('philosophical'):
-                prompt += f"- **Philosophical**: {conflicts['philosophical']}\n"
+                prompt += f"- **Philosophical**: {get_conflict_text(conflicts['philosophical'])}\n"
             if conflicts.get('moral'):
-                prompt += f"- **Moral**: {conflicts['moral']}\n"
+                prompt += f"- **Moral**: {get_conflict_text(conflicts['moral'])}\n"
 
         if pacing_suggestions:
             prompt += "\n## ⏱️ PACING GUIDANCE\n"

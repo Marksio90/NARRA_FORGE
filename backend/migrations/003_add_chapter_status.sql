@@ -3,29 +3,40 @@
 -- Description: Add production state machine status enum for chapter generation workflow
 
 -- Create the ChapterStatus ENUM type if it doesn't exist
+-- Using UPPERCASE values to match SQLAlchemy enum name serialization
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chapterstatus') THEN
         CREATE TYPE chapterstatus AS ENUM (
-            'planned',
-            'drafting',
-            'drafted',
-            'validating',
-            'validated',
-            'repair_needed',
-            'repairing',
-            'finalized',
-            'exported'
+            'PLANNED',
+            'DRAFTING',
+            'DRAFTED',
+            'VALIDATING',
+            'VALIDATED',
+            'REPAIR_NEEDED',
+            'REPAIRING',
+            'FINALIZED',
+            'EXPORTED'
         );
     END IF;
 END$$;
 
--- Add status column to chapters table with default value 'planned'
-ALTER TABLE chapters
-ADD COLUMN IF NOT EXISTS status chapterstatus NOT NULL DEFAULT 'planned';
+-- Add status column to chapters table (only if table exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'chapters') THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chapters' AND column_name = 'status') THEN
+            ALTER TABLE chapters ADD COLUMN status chapterstatus NOT NULL DEFAULT 'PLANNED';
+        END IF;
+    END IF;
+END$$;
 
--- Create index for querying by status
-CREATE INDEX IF NOT EXISTS idx_chapters_status ON chapters(status);
-
--- Add comment for documentation
-COMMENT ON COLUMN chapters.status IS 'Production state machine: planned -> drafting -> drafted -> validating -> validated/repair_needed -> finalized -> exported';
+-- Create index for querying by status (only if table exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'chapters') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_chapters_status') THEN
+            CREATE INDEX idx_chapters_status ON chapters(status);
+        END IF;
+    END IF;
+END$$;

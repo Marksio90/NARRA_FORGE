@@ -34,6 +34,7 @@ docker exec -it narraforge-postgres psql -U narraforge -d narraforge -f /tmp/001
 |-----------|------|-------------|
 | 001_add_simulation_fields.sql | 2026-01-20 | Add simulation_data and estimated_duration_minutes fields to projects table |
 | 002_add_error_message_field.sql | 2026-01-21 | Add error_message field to projects table for detailed error tracking |
+| 003_add_chapter_status.sql | 2026-01-26 | Add status enum column to chapters table for production state machine |
 
 ## Notes
 

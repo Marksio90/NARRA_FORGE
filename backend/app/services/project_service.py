@@ -80,270 +80,407 @@ async def _semantic_analyze_title_with_ai(title: str, genre: str) -> dict:
 
     ai_service = get_ai_service()
 
-    prompt = f"""🎯 ADVANCED TITLE ANALYSIS - Extract MAXIMUM creative intelligence from: "{title}"
+    prompt = f"""🏆 BESTSELLER-LEVEL TITLE ANALYSIS - Extract EVERYTHING for world-class book creation
 
-Genre: {genre}
+═══════════════════════════════════════════════════════════════════════════════
+📖 TYTUŁ: "{title}"
+🎭 GATUNEK: {genre}
+═══════════════════════════════════════════════════════════════════════════════
 
-🇵🇱 WSZYSTKIE pola w JSON MUSZĄ być PO POLSKU!
+🇵🇱 WSZYSTKIE odpowiedzi MUSZĄ być PO POLSKU!
 
-═════════════════════════════════════════════════════════════════
-⚠️ CRITICAL: CHARACTER ROLE CLASSIFICATION
-═════════════════════════════════════════════════════════════════
+Jesteś ekspertem od bestsellerów. Przeanalizuj ten tytuł tak, jakbyś był:
+- Redaktorem z Big Five (Penguin, HarperCollins, etc.)
+- Scenarzystą Hollywood szukającym adaptacji
+- Psychologiem analizującym głębię postaci
+- Historykiem szukającym kulturowych odniesień
 
-BARDZO WAŻNE! Prawidłowo klasyfikuj role postaci:
+═══════════════════════════════════════════════════════════════════════════════
+🎯 CZĘŚĆ 1: HOOK - CO CHWYTA CZYTELNIKA W PIERWSZEJ SEKUNDZIE?
+═══════════════════════════════════════════════════════════════════════════════
 
-**PROTAGONIST (main)** - Aktywna postać podejmująca decyzje i działania:
-- Osoba dorosła lub nastolatek mogący działać samodzielnie
-- Ma własne cele, motywacje, dokonuje wyborów
+Bestsellery mają NATYCHMIASTOWY hook. Znajdź go w tym tytule:
 
-**CATALYST (catalyst)** - Postać wokół której toczy się akcja, ale NIE jest aktywnym protagonistą:
-- Niemowlęta, małe dzieci (0-5 lat) - NIE MOGĄ być protagonistami!
-- Osoby nieprzytomne, w śpiączce
-- Osoby zmarłe (wspominane, ale nieobecne)
-- Np. "Rozalia, 1,5 roczna" → Rozalia = CATALYST, rodzice = PROTAGONISTS
+1. **Emocjonalny Hook**: Jaką emocję budzi tytuł? (ciekawość, strach, nadzieję, tęsknotę?)
+2. **Obietnica Intrygi**: Co czytelnik MUSI się dowiedzieć?
+3. **Napięcie Wbudowane**: Jaki konflikt jest już sugerowany?
+4. **Unikalność**: Co wyróżnia ten tytuł spośród tysięcy innych?
 
-**SUPPORTING** - Postacie drugoplanowe wspierające fabułę
+═══════════════════════════════════════════════════════════════════════════════
+🧠 CZĘŚĆ 2: GŁĘBOKA PSYCHOLOGIA POSTACI (KLUCZOWE DLA BESTSELLERA!)
+═══════════════════════════════════════════════════════════════════════════════
 
-═════════════════════════════════════════════════════════════════
-🔍 CRITICAL: TRAUMA & BACKSTORY SIGNALS
-═════════════════════════════════════════════════════════════════
+Bestsellery mają postacie z GŁĘBIĄ PSYCHOLOGICZNĄ. Wyciągnij z tytułu:
 
-WYKRYJ ukryte sygnały traumy i historii w tytule:
+**KLASYFIKACJA RÓL (KRYTYCZNE!):**
+- PROTAGONIST (main) = Aktywnie podejmuje decyzje, ma cele, zmienia się
+- CATALYST = Wyzwala akcję, ale nie jest aktywnym bohaterem (dzieci 0-6 lat, osoby martwe/w śpiączce)
+- DEUTERAGONIST = Drugi najważniejszy bohater, często w konflikcie/sojuszu z protagonistą
+- ANTAGONIST = Źródło opozycji (osoba, system, okoliczności, własne demony)
 
-**Sygnały płodności/trudnego poczęcia:**
-- "długo oczekiwana/y" → problemy z płodnością, IVF, poronienia, lata starań
-- "upragniona/y" → desperackie pragnienie dziecka
-- "jedyna/y" → możliwa niezdolność do posiadania więcej dzieci
-- "cud" → nadprzyrodzone/medyczne okoliczności poczęcia
+**DLA KAŻDEJ POSTACI WYKRYTEJ W TYTULE określ:**
+- WOUND (Rana): Trauma z przeszłości kształtująca zachowanie
+- GHOST (Duch): Konkretne wydarzenie, które spowodowało ranę
+- LIE (Kłamstwo): Fałszywe przekonanie o sobie/świecie
+- WANT (Pragnienie): Świadomy cel zewnętrzny
+- NEED (Potrzeba): Nieświadoma potrzeba wewnętrzna (często przeciwna do WANT)
+- FEAR (Lęk): Najgłębszy strach napędzający działanie
 
-**Sygnały straty/traumy:**
-- "po powrocie" → separacja, więzienie, choroba, podróż
-- "ostatnia/i" → śmierć bliskich, koniec linii rodzinnej
-- "jedyna/y córka/syn" → strata innych dzieci
-- "wdowa/wdowiec" → śmierć partnera
-- "sierota" → śmierć rodziców
+Przykład dla "Rozalia, 1,5 roczna, długo oczekiwana":
+- Hanna (matka): WOUND=lata bezpłodności, GHOST=poronienia?, LIE="nie zasługuję na szczęście",
+  WANT=być idealną matką, NEED=zaakceptować niedoskonałość, FEAR=stracić dziecko
+- Mateusz (ojciec): WOUND=bezsilność wobec cierpienia żony, GHOST=patrzenie jak żona płacze,
+  LIE="muszę być silny", WANT=ochronić rodzinę, NEED=pozwolić sobie na słabość, FEAR=nie wystarczyć
 
-**Sygnały napięć rodzinnych:**
-- "córka X i Y" → relacja między rodzicami kluczowa
-- podanie obu rodziców → możliwe konflikty, różnice w wychowaniu
-- wiek dziecka → specyficzne wyzwania rozwojowe
+═══════════════════════════════════════════════════════════════════════════════
+💔 CZĘŚĆ 3: SYGNAŁY TRAUMY I BACKSTORY (KOPALNIA ZŁOTA!)
+═══════════════════════════════════════════════════════════════════════════════
 
-Te sygnały to SERCE DRAMATU - wyciągnij z nich maksimum!
+KAŻDE słowo w tytule może kryć CAŁĄ HISTORIĘ. Szukaj:
 
-═════════════════════════════════════════════════════════════════
-📚 PART 1: CULTURAL & MYTHOLOGICAL DEPTH
-═════════════════════════════════════════════════════════════════
+**Sygnały Płodności/Rodzicielstwa:**
+- "długo oczekiwana/y" → IVF, poronienia, lata starań, trauma medyczna
+- "upragniona/y" → obsesyjne pragnienie, możliwa depresja
+- "jedyna/y" → strata innych dzieci, niemożność posiadania więcej
+- "cud" → cudowne uzdrowienie, niespodziewana ciąża, adopcja
+- "późna córka/syn" → ciąża po 40-tce, ryzyko, społeczna presja
 
-1. **Cultural/Literary References**: Does name reference mythology/history? (np. Vergil = Wergiliusz → epicka narracja, przewodnik; Rozalia = róża, symbol piękna i delikatności; Hanna = biblijna matka Samuela, modlitwa o dziecko!)
-2. **Symbolic Meanings**: Metafory beyond literal meaning
-3. **Archetypal Significance**: Jakie archetypy są obecne? (dla dramatu: Matka, Ojciec, Dziecko jako Dar/Cud, Rodzina jako Ostoja)
+**Sygnały Straty/Żałoby:**
+- "po śmierci" → żałoba, dziedzictwo, nierozwiązane konflikty
+- "ostatni/a" → wymieranie, samotność, ciężar odpowiedzialności
+- "wdowa/wdowiec" → strata partnera, samotne rodzicielstwo, nowa miłość?
+- "sierota" → trauma porzucenia, poszukiwanie tożsamości
 
-═════════════════════════════════════════════════════════════════
-🔥 PART 2: MAGIC/POWER SYSTEM (or EMOTIONAL DYNAMICS for drama)
-═════════════════════════════════════════════════════════════════
+**Sygnały Rodzinnych Sekretów:**
+- "córka/syn X i Y" → OBOJE rodzice ważni = konflikt między nimi?
+- nazwisko w tytule → dziedzictwo, oczekiwania, ciężar tradycji
+- "nieślubna/y" → tajemnica, wstyd, poszukiwanie ojca/matki
+- "adoptowana/y" → podwójna tożsamość, poszukiwanie korzeni
 
-FOR FANTASY: If title mentions powers:
-- Element-based? (ogień, woda, etc.)
-- Rare gift or common?
-- Hierarchy (uczeń → mag → archimag)
-- Costs of using magic (fizyczne/mentalne)
-- Power dynamics (protagonist słaby czy potężny?)
+**Sygnały Wieku/Etapu Życia:**
+- wiek dziecka (1,5 roku) → konkretne wyzwania rozwojowe, sen, jedzenie, choroba?
+- "nastoletnia" → bunt, tożsamość, pierwszy raz
+- "starsza" → przemijanie, mądrość, żal za przeszłością
 
-FOR DRAMA/REALISTIC: Emotional power dynamics:
-- Kto ma "władzę emocjonalną" w rodzinie?
-- Jakie są ukryte napięcia?
-- Co jest źródłem siły/słabości postaci?
+**Sygnały Miejsca/Czasu:**
+- miasto/wieś w tytule → kontrast kultur, ucieczka, powrót do korzeni
+- "w czasie wojny" → trauma historyczna, rozłąka, przetrwanie
+- "przed świtem/o północy" → tajemnica, transgresja, ukryte życie
 
-═════════════════════════════════════════════════════════════════
-🗺️ PART 3: DEEP SETTING ANALYSIS
-═════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════════════════
+🌍 CZĘŚĆ 4: UNIWERSALNE TEMATY (DNA BESTSELLERÓW!)
+═══════════════════════════════════════════════════════════════════════════════
 
-1. **Physical & Historical**: Opis miejsca, co spowodowało ten stan?
-2. **Emotional Landscape**: Dosłowne czy metaforyczne miejsce?
-3. **Setting Role**: Antagonista/sojusznik/neutralne?
-4. **Protagonist Relationship**: Uciec/zmienić/zrozumieć?
+Bestsellery poruszają UNIWERSALNE tematy. Które są w tym tytule?
 
-═════════════════════════════════════════════════════════════════
-🎭 PART 4: TONE & MATURITY
-═════════════════════════════════════════════════════════════════
+**Tematy Egzystencjalne:**
+- Miłość (romantyczna, rodzinna, przyjacielska, do siebie)
+- Śmierć i przemijanie
+- Tożsamość (kim jestem? skąd pochodzę?)
+- Przynależność (gdzie jest mój dom? moja rodzina?)
+- Wolność vs obowiązek
+- Sens życia/cierpienia
 
-- **Tone**: ciemny/neutralny/jasny
-- **Maturity**: YA/Adult/Mature 16+/Mature 18+
-- **Content**: violence level, moral complexity
+**Tematy Relacyjne:**
+- Rodzic-dziecko (najsilniejsza więź!)
+- Partner-partner (miłość, zdrada, wybaczenie)
+- Rodzeństwo (rywalizacja, lojalność)
+- Przyjaciele (lojalność, zdrada)
+- Ja-społeczeństwo (konformizm, bunt)
 
-═════════════════════════════════════════════════════════════════
-👹 PART 5: ANTAGONIST/CONFLICT SOURCE PREDICTIONS
-═════════════════════════════════════════════════════════════════
+**Tematy Transformacji:**
+- Od słabości do siły
+- Od niewiedzy do mądrości
+- Od samotności do wspólnoty
+- Od nienawiści do miłości
+- Od zemsty do przebaczenia
 
-Based on genre and title, predict source of conflict:
+═══════════════════════════════════════════════════════════════════════════════
+⚔️ CZĘŚĆ 5: KONFLIKTY WIELOWARSTWOWE (SILNIK FABUŁY!)
+═══════════════════════════════════════════════════════════════════════════════
 
-**FOR FANTASY/ACTION:**
-- Antagonist type (elemental opposite? tyrant? internal demon?)
-- Opposition nature (physical/emotional/philosophical)
+Bestsellery mają MINIMUM 3 warstwy konfliktu działające JEDNOCZEŚNIE:
 
-**FOR DRAMA/REALISTIC (antagonista to NIE zawsze osoba!):**
-- Wewnętrzne demony (lęki, traumy, wątpliwości)
-- Okoliczności życiowe (choroba, bieda, presja społeczna)
-- Napięcia rodzinne (różnice w wartościach, tajemnice)
-- Presja społeczna (oczekiwania otoczenia, normy)
-- Przeszłość (trauma, żal, niespełnione marzenia)
+1. **Zewnętrzny (EXTERNAL)**: Protagonista vs świat/antagonista
+   - Fizyczne przeszkody, wrogowie, katastrofy, systemy
 
-Przykład dla "długo oczekiwanego dziecka":
-- Antagonista: strach przed utratą dziecka, nadopiekuńczość
-- Konflikt: trauma z lat starań vs. radość z dziecka
-- Napięcie: czy można być "normalnym" rodzicem po takiej drodze?
+2. **Wewnętrzny (INTERNAL)**: Protagonista vs siebie
+   - Lęki, wątpliwości, uzależnienia, traumy, kłamstwa o sobie
 
-═════════════════════════════════════════════════════════════════
-⚔️ PART 6: MULTI-LAYERED CONFLICTS
-═════════════════════════════════════════════════════════════════
+3. **Interpersonalny (RELATIONAL)**: Protagonista vs bliscy
+   - Konflikty z rodziną, przyjaciółmi, partnerem - nawet gdy się kochają!
 
-- External: vs world/villain
-- Internal: vs self (fear, doubt)
-- Philosophical: competing ideologies
-- Moral: right action in impossible situation
+4. **Filozoficzny (PHILOSOPHICAL)**: Pytanie bez łatwej odpowiedzi
+   - Czy cel uświęca środki? Co jest ważniejsze - prawda czy szczęście?
 
-═════════════════════════════════════════════════════════════════
-🏷️ PART 7: SUBGENRE & READER EXPECTATIONS
-═════════════════════════════════════════════════════════════════
+5. **Moralny (MORAL)**: Wybór między dwoma "dobrami" lub dwoma "złami"
+   - Kłamać żeby chronić? Zdradzić jednego żeby uratować drugiego?
 
-- Subgenre: Epic Fantasy? Dark Fantasy? Character-driven?
-- Magic level: High/Low magic
-- Expected scenes (battles, training, political intrigue)
-- Emotional journey readers expect
+**Dla gatunku {genre} SZCZEGÓLNIE WAŻNE są:**
+- Fantasy/Sci-Fi: zewnętrzny (świat) + wewnętrzny (moc/tożsamość) + filozoficzny
+- Drama: wewnętrzny + interpersonalny + moralny
+- Thriller: zewnętrzny (zagrożenie) + wewnętrzny (przeszłość) + moralny
+- Romans: interpersonalny + wewnętrzny + moralny
+- Horror: zewnętrzny (zło) + wewnętrzny (strach) + filozoficzny (natura zła)
 
-═════════════════════════════════════════════════════════════════
-⏱️ PART 8: PACING & STRUCTURE
-═════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════════════════
+🎭 CZĘŚĆ 6: SPECYFIKA GATUNKOWA - MUST-HAVES!
+═══════════════════════════════════════════════════════════════════════════════
 
-- Overall pace: fast/medium/slow
-- Structure: 3-act? Hero's Journey?
-- Which act should be darkest?
+**Jeśli gatunek to DRAMA:**
+- Emocjonalny rdzeń: Jaka emocja dominuje? (smutek, nadzieja, tęsknota, gniew)
+- Katharsis: Jakie oczyszczenie czeka czytelnika?
+- Momenty prawdy: Kiedy maska spada i widzimy prawdziwe ja?
+- Ciche sceny: Momenty ciszy pełne znaczenia
+- Antagonista = często okoliczności, przeszłość, własne demony (NIE osoba!)
 
-═════════════════════════════════════════════════════════════════
-🧵 PART 9: SECONDARY PLOT THREADS
-═════════════════════════════════════════════════════════════════
+**Jeśli gatunek to FANTASY:**
+- System magii: Źródło, zasady, koszty, ograniczenia
+- Worldbuilding: Co czyni ten świat unikalnym?
+- Chosen One?: Czy protagonista jest wyjątkowy? Dlaczego?
+- Stawka światowa: Co się stanie jeśli przegra?
+- Mentor: Kto go/ją prowadzi?
 
-Suggest 3-5 subplots:
-- Romance possibility
-- Mentorship arc
-- Political intrigue
-- Mystery to uncover
-- Redemption arc
+**Jeśli gatunek to THRILLER:**
+- Tykający zegar: Jaki jest deadline?
+- Stawka: Kto umrze jeśli zawiedzie?
+- Twist: Jaki zwrot akcji jest możliwy?
+- Antagonista: Jak inteligentny? Jak bezwzględny?
+- Past sin: Jaki grzech z przeszłości wraca?
 
-═════════════════════════════════════════════════════════════════
-📈 PART 10: CHARACTER ARC PREDICTION
-═════════════════════════════════════════════════════════════════
+**Jeśli gatunek to HORROR:**
+- Źródło strachu: Zewnętrzne (potwór) czy wewnętrzne (szaleństwo)?
+- Atmosfera: Izolacja, klaustrofobia, paranoja?
+- Zasady zła: Czy można je pokonać? Jak?
+- Ofiara vs Fighter: Kim jest protagonista?
+- Cena przetrwania: Co musi poświęcić?
 
-- Starting point (emotional/skill state)
-- Midpoint shift (major revelation)
-- Climax challenge (ultimate test)
-- Transformation (who they become)
+**Jeśli gatunek to ROMANS:**
+- Przeszkoda: Co stoi między kochankami?
+- Chemistry: Skąd przyciąganie? (przeciwieństwa? podobieństwa?)
+- Moment wrażliwości: Kiedy mury padają?
+- Grand gesture: Jak udowadnia miłość?
+- Happy ending?: Czy razem? Czy osobno ale szczęśliwi?
 
-═════════════════════════════════════════════════════════════════
-📋 RETURN THIS JSON (ALL IN POLISH):
-═════════════════════════════════════════════════════════════════
+**Jeśli gatunek to SCI-FI:**
+- Technologia: Co definiuje ten świat?
+- Pytanie społeczne: Jaką prawdę o nas pokazuje?
+- Human element: Co pozostaje ludzkie?
+- Dystopia/Utopia?: Który kierunek?
+- Koszt postępu: Co straciliśmy?
+
+**Jeśli gatunek to MYSTERY/KRYMINAŁ:**
+- Zbrodnia: Co się stało?
+- Detektyw: Dlaczego TA osoba musi to rozwiązać?
+- Red herrings: Kto może być fałszywym podejrzanym?
+- Prawdziwy motyw: Dlaczego morderca to zrobił?
+- Koszt prawdy: Co zmienia się gdy prawda wyjdzie?
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 CZĘŚĆ 7: STRUKTURA I PACING
+═══════════════════════════════════════════════════════════════════════════════
+
+**Sugerowana struktura na podstawie gatunku i tytułu:**
+- 3-aktowa klasyczna
+- Hero's Journey (12 kroków)
+- Save the Cat (15 beats)
+- 7-punktowa
+- Kishotenketsu (4-aktowa japońska)
+
+**Pacing:**
+- Tempo ogólne: szybkie / średnie / wolne
+- Gdzie przyspieszyć: akcja, odkrycia, konfrontacje
+- Gdzie zwolnić: emocje, relacje, refleksja
+- Najciemniejszy moment: który akt?
+- Fałszywe zwycięstwo: gdzie?
+- Prawdziwy klimaks: co jest ostatecznym testem?
+
+═══════════════════════════════════════════════════════════════════════════════
+🎬 CZĘŚĆ 8: SCENY MUST-HAVE (CZYTELNICY OCZEKUJĄ!)
+═══════════════════════════════════════════════════════════════════════════════
+
+Każdy gatunek ma OBOWIĄZKOWE sceny. Jakie dla tego tytułu?
+
+Przykłady:
+- Drama rodzinna: "scena przy stole" gdzie wybucha kłótnia
+- Thriller: "tykający zegar" gdzie czas ucieka
+- Romans: "pierwszy pocałunek" i "rozstanie przed finałem"
+- Fantasy: "otrzymanie mocy" i "wszystko stracone"
+- Horror: "pierwsze spotkanie ze złem" i "zostałem sam"
+
+═══════════════════════════════════════════════════════════════════════════════
+✨ CZĘŚĆ 9: CO SPRAWI ŻE TO BĘDZIE BESTSELLER?
+═══════════════════════════════════════════════════════════════════════════════
+
+**Unique Selling Point**: Co wyróżnia TĘ historię?
+**Zeitgeist**: Dlaczego teraz? Co rezonuje z czasami?
+**Uniwersalność**: Kto się z tym utożsami?
+**Quotable moments**: Jakie zdania mogą stać się viralowe?
+**Adaptation potential**: Czy to się nada na film/serial?
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 ZWRÓĆ TEN JSON (WSZYSTKO PO POLSKU!):
+═══════════════════════════════════════════════════════════════════════════════
 
 {{
-  "core_meaning": "Pełna interpretacja...",
+  "bestseller_hook": {{
+    "emotional_hook": "Jaka emocja chwyta natychmiast",
+    "intrigue_promise": "Co czytelnik MUSI się dowiedzieć",
+    "built_in_tension": "Jaki konflikt jest już w tytule",
+    "uniqueness": "Co wyróżnia tę historię"
+  }},
+
   "detected_characters": [
-    {{"name": "Imię", "role": "protagonist/catalyst/supporting", "gender": "female/male/neutral", "age_hint": "dorosły/dziecko/niemowlę", "role_explanation": "dlaczego ta rola"}}
+    {{
+      "name": "Imię",
+      "role": "protagonist/catalyst/deuteragonist/antagonist",
+      "gender": "female/male/neutral",
+      "age_hint": "konkretny wiek lub przedział",
+      "role_explanation": "dlaczego ta rola",
+      "psychology": {{
+        "wound": "Trauma z przeszłości",
+        "ghost": "Konkretne wydarzenie które ją spowodowało",
+        "lie": "Fałszywe przekonanie o sobie/świecie",
+        "want": "Świadomy cel zewnętrzny",
+        "need": "Nieświadoma potrzeba wewnętrzna",
+        "fear": "Najgłębszy lęk"
+      }}
+    }}
   ],
+
   "backstory_signals": {{
-    "detected_hints": ["długo oczekiwana = problemy z płodnością", "córka X i Y = focus na relacji rodziców"],
-    "implied_trauma": "Opis domniemanej traumy/historii",
-    "emotional_weight": "Co ten tytuł sugeruje o emocjonalnym ciężarze historii",
-    "hidden_conflicts": ["ukryty konflikt 1", "ukryty konflikt 2"]
+    "detected_hints": ["sygnał 1 = interpretacja", "sygnał 2 = interpretacja"],
+    "implied_trauma": "Szczegółowy opis domniemanej traumy",
+    "emotional_weight": "Emocjonalny ciężar historii",
+    "hidden_conflicts": ["ukryty konflikt 1", "ukryty konflikt 2"],
+    "secrets_implied": ["możliwa tajemnica 1", "możliwa tajemnica 2"]
   }},
-  "cultural_analysis": {{
-    "mythological_references": ["Wergiliusz - przewodnik przez zaświaty", "Feniks - odrodzenie z ognia"],
-    "cultural_context": "Odniesienia do klasycznej mitologii i epickich podróży",
-    "symbolic_elements": ["ogień jako transformacja", "pustkowie jako izolacja"],
-    "archetypal_patterns": ["Bohater odrzucony", "Mag poszukujący", "Podróż do ciemności"]
+
+  "universal_themes": {{
+    "primary_theme": "Główny temat uniwersalny",
+    "secondary_themes": ["temat 2", "temat 3"],
+    "existential_question": "Jakie pytanie egzystencjalne stawia ta historia?",
+    "emotional_truth": "Jaka prawda emocjonalna jest w sercu?"
   }},
-  "metaphors": ["zapomniany = odrzucony przez społeczeństwo", "ogień = niszcząca ale oczyszczająca moc"],
-  "emotional_core": "samotność i poszukiwanie celu",
-  "magic_system": {{
-    "magic_type": "Elementarna magia ognia (lub 'Brak - dramat realistyczny')",
-    "power_source": "Wewnętrzna energia emocjonalna (lub 'Nie dotyczy')",
-    "limitations": "Wymaga kontroli emocji, niebezpieczna gdy niekontrolowana",
-    "cost": "Fizyczne i mentalne wyczerpanie, ryzyko spalenia się od środka",
-    "scope": "Od małych płomieni po niszczycielskie inferno",
-    "emotional_dynamics": "Dla dramatu: Kto ma 'władzę' w rodzinie, jakie są ukryte napięcia"
-  }},
-  "setting_analysis": {{
-    "environment": "Puste pustkowia, opuszczone tereny, izolacja",
-    "time_period": "Nieokreślona fantastyczna era",
-    "emotional_landscape": "Samotność, zapomnienie, odrzucenie",
-    "setting_role": "Odzwierciedla stan wewnętrzny protagonisty",
-    "protagonist_relationship": "Protagonista jest częścią pustkowia - zapomniany i odizolowany"
-  }},
-  "tone_and_maturity": {{
-    "tone": "ciemny i melancholijny",
-    "maturity_level": "Mature 16+",
-    "violence_level": "średnia",
-    "moral_complexity": "odcienie szarości",
-    "emotional_intensity": "wysoka"
-  }},
-  "antagonist_predictions": [
-    {{"type": "tyran krainy", "motivation": "utrzymać rozpacz", "opposition_nature": "fizyczna i filozoficzna"}}
-  ],
+
   "conflicts": {{
-    "external": "Vergil vs władca krainy",
-    "internal": "kontrola nad ogniem i emocjami",
-    "philosophical": "nadzieja vs rozpacz",
-    "moral": "czy niszczyć ogniem dla dobra"
+    "external": {{
+      "description": "Protagonista vs co?",
+      "stakes": "Co straci jeśli przegra?"
+    }},
+    "internal": {{
+      "description": "Protagonista vs jakie demony?",
+      "false_belief": "Jakie kłamstwo musi przezwyciężyć?"
+    }},
+    "relational": {{
+      "description": "Z kim jest w konflikcie mimo miłości?",
+      "source": "Skąd ten konflikt?"
+    }},
+    "philosophical": {{
+      "question": "Jakie pytanie bez łatwej odpowiedzi?",
+      "both_sides": "Argumenty obu stron"
+    }},
+    "moral": {{
+      "dilemma": "Jaki niemożliwy wybór?",
+      "cost": "Co musi poświęcić?"
+    }}
   }},
-  "subgenre": {{
-    "primary": "Dark Fantasy",
-    "secondary": ["Epic Fantasy", "Character-driven"],
-    "magic_level": "high magic",
-    "focus": "character-driven"
+
+  "genre_specific": {{
+    "genre": "{genre}",
+    "must_have_elements": ["element 1", "element 2", "element 3"],
+    "must_have_scenes": ["scena 1", "scena 2", "scena 3"],
+    "tropes_to_use": ["trop który działa", "trop który działa"],
+    "tropes_to_subvert": ["trop do odwrócenia"],
+    "tone": "ciemny/jasny/mieszany",
+    "pacing": "szybkie/średnie/wolne"
   }},
-  "reader_expectations": {{
-    "expected_scenes": ["walka magią", "trening mocy", "emocjonalne przełomy"],
-    "emotional_journey": "od rozpaczy do nadziei",
-    "tropes": ["fallen hero", "magic training", "dark world redemption"]
+
+  "antagonist_analysis": {{
+    "type": "osoba/system/okoliczności/własne demony/choroba/przeszłość",
+    "motivation": "Dlaczego się sprzeciwia?",
+    "methods": "Jak działa?",
+    "threat_level": "Jak niebezpieczny?",
+    "mirror_to_protagonist": "Jak odzwierciedla protagonistę?"
   }},
-  "pacing_suggestions": {{
-    "overall_pace": "średnie",
-    "structure_type": "Hero's Journey",
-    "darkest_act": "akt 2",
-    "tension_curve": "powolny wzrost do climaxu w akcie 2, wybuch w akcie 3"
+
+  "structure_recommendation": {{
+    "type": "3-akt/Hero's Journey/Save the Cat/inna",
+    "darkest_moment": "Kiedy wszystko stracone?",
+    "false_victory": "Gdzie fałszywe zwycięstwo?",
+    "climax_type": "Jaki rodzaj kulminacji?",
+    "resolution": "Jak się kończy?"
   }},
+
+  "cultural_depth": {{
+    "mythological_references": ["odniesienie 1", "odniesienie 2"],
+    "literary_allusions": ["aluzja literacka 1"],
+    "name_meanings": {{"imię": "znaczenie i konotacje"}},
+    "archetypal_patterns": ["archetyp 1", "archetyp 2"]
+  }},
+
+  "setting_analysis": {{
+    "environment": "Gdzie się dzieje?",
+    "time_period": "Kiedy?",
+    "atmosphere": "Jaka atmosfera?",
+    "setting_as_character": "Jak miejsce wpływa na fabułę?",
+    "contrast_potential": "Jaki kontrast można wykorzystać?"
+  }},
+
+  "emotional_journey": {{
+    "reader_starts_feeling": "Co czuje czytelnik na początku?",
+    "reader_ends_feeling": "Co czuje na końcu?",
+    "catharsis_type": "Jakiego oczyszczenia doświadcza?",
+    "memorable_emotions": ["emocja 1", "emocja 2"]
+  }},
+
+  "bestseller_potential": {{
+    "unique_selling_point": "Co wyróżnia tę historię?",
+    "zeitgeist_connection": "Dlaczego rezonuje z czasami?",
+    "universal_appeal": "Kto się utożsami?",
+    "quotable_potential": "Przykład zdania które może być viralne",
+    "adaptation_potential": "Film/serial/inne"
+  }},
+
+  "character_arcs": {{
+    "protagonist_arc": {{
+      "starting_state": "Kim jest na początku?",
+      "catalyst": "Co go zmusza do zmiany?",
+      "struggle": "Z czym walczy przez całą historię?",
+      "low_point": "Najgorszy moment",
+      "transformation": "Kim się staje?",
+      "arc_type": "pozytywny/negatywny/płaski"
+    }},
+    "supporting_arcs": [
+      {{"character": "imię", "arc": "krótki opis łuku"}}
+    ]
+  }},
+
   "secondary_plots": [
-    {{"type": "romans", "description": "spotyka osobę dającą nadzieję", "key_characters": ["love interest"]}},
-    {{"type": "mentorstwo", "description": "stary mag uczy kontroli", "key_characters": ["mentor"]}},
-    {{"type": "tajemnica", "description": "co spowodowało rozpacz", "key_characters": ["ancient source"]}}
+    {{
+      "type": "romans/mentorstwo/tajemnica/rywalizacja/redemption",
+      "description": "Krótki opis",
+      "connection_to_main": "Jak wspiera główną fabułę?",
+      "key_characters": ["kto jest zaangażowany"]
+    }}
   ],
-  "character_arc": {{
-    "starting_point": "zagubiony mag ze słabą kontrolą",
-    "midpoint_shift": "odkrywa prawdę o sobie i krainie",
-    "climax_challenge": "musi użyć pełnej mocy by pokonać źródło rozpaczy",
-    "transformation": "z zagubionego maga w beacon nadziei",
-    "arc_type": "pozytywny"
-  }},
-  "character_implications": {{
-    "protagonist_archetype": "Mag Ognia (lub dla dramatu: Matka/Ojciec zmagający się z...)",
-    "protagonist_journey": "od rozpaczy do nadziei poprzez opanowanie mocy",
-    "suggested_protagonists": ["Imiona PRAWDZIWYCH protagonistów - osób dorosłych podejmujących decyzje"],
-    "catalyst_characters": ["Imiona postaci-katalizatorów (dzieci, osoby wokół których toczy się akcja)"],
-    "true_protagonist_explanation": "Dla 'Rozalia, córka Hanny i Mateusza' → protagoniści to Hanna i Mateusz, NIE Rozalia!"
-  }},
-  "themes": ["odkrywanie siebie", "nadzieja w rozpaczy", "kontrola nad mocą", "transformacja poprzez cierpienie", "wybaczenie"],
-  "reader_promise": "Epicka podróż od rozpaczy do nadziei z magią, emocjami i transformacją"
+
+  "core_meaning": "Jednozdaniowe podsumowanie głębokiego znaczenia tytułu",
+  "reader_promise": "Co obiecujesz czytelnikowi który wybierze tę książkę?"
 }}
 
-Be COMPREHENSIVE. Fill EVERY field with rich, specific details."""
+BĄDŹ MAKSYMALNIE SZCZEGÓŁOWY. Każde pole wypełnij KONKRETNĄ, BOGATĄ treścią.
+To musi być analiza na poziomie profesjonalnego redaktora z wydawnictwa Big Five!"""
 
     try:
         response = await ai_service.generate(
             prompt=prompt,
             tier=ModelTier.TIER_2,  # Use good model for deep analysis
             temperature=0.7,
-            max_tokens=6000,  # Increased for comprehensive advanced analysis
+            max_tokens=12000,  # Large response for bestseller-level comprehensive analysis
             json_mode=True,
             prefer_anthropic=True,  # Claude excellent at deep analysis
-            metadata={"task": "advanced_title_analysis"}
+            metadata={"task": "bestseller_title_analysis"}
         )
 
         import json

@@ -1151,10 +1151,46 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
     char_implications = semantic_insights.get("character_implications", {})
     world_setting_sem = semantic_insights.get("world_setting", {})
 
-    # Primary: semantic AI names, Fallback: keyword names
-    suggested_names = char_implications.get("suggested_names", [])
-    if not suggested_names and title_insights["character_names"]:
-        suggested_names = [c["name"] for c in title_insights["character_names"]]
+    # Primary: detected_characters from AI (has proper roles), Fallback: keyword-based analysis
+    # IMPORTANT: Preserve role information (catalyst, protagonist, etc.) from both sources!
+    detected_characters = semantic_insights.get("detected_characters", [])
+    keyword_characters = title_insights.get("character_names", [])
+
+    # Merge characters: AI detected_characters take priority, then keyword-based
+    final_characters = []
+    seen_names = set()
+
+    # First add AI-detected characters (they have psychology info)
+    for char in detected_characters:
+        name = char.get("name", "")
+        if name and name.lower() not in seen_names:
+            final_characters.append({
+                "name": name,
+                "role": char.get("role", "main"),
+                "gender": char.get("gender", "neutral"),
+                "age_hint": char.get("age_hint", ""),
+                "psychology": char.get("psychology", {})
+            })
+            seen_names.add(name.lower())
+
+    # Then add keyword-based characters (with their catalyst/main roles preserved!)
+    for char in keyword_characters:
+        name = char.get("name", "")
+        if name and name.lower() not in seen_names:
+            final_characters.append({
+                "name": name,
+                "role": char.get("role", "main"),  # Preserve catalyst role!
+                "gender": char.get("gender", "neutral")
+            })
+            seen_names.add(name.lower())
+
+    # Fallback to old suggested_names only if nothing else found
+    if not final_characters:
+        suggested_names = char_implications.get("suggested_names", [])
+        for name in suggested_names:
+            if name and name.lower() not in seen_names:
+                final_characters.append({"name": name, "role": "main", "gender": "neutral"})
+                seen_names.add(name.lower())
 
     # Primary: semantic themes, Fallback: keyword themes
     themes = semantic_insights.get("themes", [])
@@ -1175,12 +1211,14 @@ async def simulate_generation(db: Session, project: Project) -> ProjectSimulatio
         "style_guidelines": genre_cfg["style"],
         # 🚀 TITLE-BASED ENHANCEMENTS (AI-powered primary, keyword fallback)
         "title_analysis": {
-            # Basic fields (for backward compatibility)
-            "character_names": [{"name": name, "role": "main", "gender": "neutral"} for name in suggested_names] if suggested_names else title_insights["character_names"],
+            # Basic fields (for backward compatibility) - NOW PRESERVING ROLES!
+            "character_names": final_characters,
             "themes": themes,
             "setting_hints": [world_setting_sem.get("type", "")] if world_setting_sem.get("type") else title_insights["setting_hints"],
             "tone": semantic_insights.get("emotional_core", title_insights["tone"]),
-            "focus": "oparty na postaciach" if suggested_names else title_insights["focus"],
+            "focus": "oparty na postaciach" if final_characters else title_insights["focus"],
+            # Include backstory signals from keyword analysis
+            "backstory_signals": title_insights.get("backstory_signals", []),
             # 🔮 ADVANCED: Unpack all 10 dimensions from semantic_insights directly here (not nested!)
             **{k: v for k, v in semantic_insights.items() if k not in ["emotional_core", "themes"]}
         },

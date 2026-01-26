@@ -97,6 +97,28 @@ interface CharacterArc {
   arc_type?: string;
 }
 
+interface BackstorySignals {
+  detected_hints?: string[];
+  implied_trauma?: string;
+  emotional_weight?: string;
+  hidden_conflicts?: string[];
+  secrets_implied?: string[];
+}
+
+interface BestsellerHook {
+  emotional_hook?: string;
+  intrigue_promise?: string;
+  built_in_tension?: string;
+  uniqueness?: string;
+}
+
+interface UniversalThemes {
+  primary_theme?: string;
+  secondary_themes?: string[];
+  existential_question?: string;
+  emotional_truth?: string;
+}
+
 interface TitleAnalysis {
   character_names: CharacterName[];
   themes: string[];
@@ -115,6 +137,10 @@ interface TitleAnalysis {
   pacing_suggestions?: PacingSuggestions;
   secondary_plots?: SecondaryPlot[];
   character_arc?: CharacterArc;
+  // Bestseller-level analysis fields
+  backstory_signals?: BackstorySignals;
+  bestseller_hook?: BestsellerHook;
+  universal_themes?: UniversalThemes;
 }
 
 interface AIDecisions {
@@ -421,6 +447,69 @@ const ProjectView: React.FC = () => {
                     )}
                     {simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns && simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns.length > 0 && (
                       <div><span className="text-gray-400">Archetypy:</span> {simulation.ai_decisions.title_analysis.cultural_analysis.archetypal_patterns.join(', ')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bestseller Hook */}
+              {simulation.ai_decisions.title_analysis.bestseller_hook && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🎯 Hook Bestsellerowy</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.bestseller_hook.emotional_hook && (
+                      <div><span className="text-gray-400">Hook emocjonalny:</span> {simulation.ai_decisions.title_analysis.bestseller_hook.emotional_hook}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.bestseller_hook.intrigue_promise && (
+                      <div><span className="text-gray-400">Obietnica intrygi:</span> {simulation.ai_decisions.title_analysis.bestseller_hook.intrigue_promise}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.bestseller_hook.built_in_tension && (
+                      <div><span className="text-gray-400">Wbudowane napięcie:</span> {simulation.ai_decisions.title_analysis.bestseller_hook.built_in_tension}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.bestseller_hook.uniqueness && (
+                      <div><span className="text-gray-400">Unikalność:</span> {simulation.ai_decisions.title_analysis.bestseller_hook.uniqueness}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Backstory Signals */}
+              {simulation.ai_decisions.title_analysis.backstory_signals && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">💔 Sygnały Traumy/Backstory</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.backstory_signals.implied_trauma && (
+                      <div><span className="text-gray-400">Domniemana trauma:</span> {simulation.ai_decisions.title_analysis.backstory_signals.implied_trauma}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.backstory_signals.emotional_weight && (
+                      <div><span className="text-gray-400">Ciężar emocjonalny:</span> {simulation.ai_decisions.title_analysis.backstory_signals.emotional_weight}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.backstory_signals.detected_hints && simulation.ai_decisions.title_analysis.backstory_signals.detected_hints.length > 0 && (
+                      <div><span className="text-gray-400">Wykryte sygnały:</span> {simulation.ai_decisions.title_analysis.backstory_signals.detected_hints.join(', ')}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.backstory_signals.hidden_conflicts && simulation.ai_decisions.title_analysis.backstory_signals.hidden_conflicts.length > 0 && (
+                      <div><span className="text-gray-400">Ukryte konflikty:</span> {simulation.ai_decisions.title_analysis.backstory_signals.hidden_conflicts.join(', ')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Universal Themes */}
+              {simulation.ai_decisions.title_analysis.universal_themes && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-purple-300 font-semibold mb-2">🌟 Uniwersalne Tematy</div>
+                  <div className="text-white text-sm space-y-1">
+                    {simulation.ai_decisions.title_analysis.universal_themes.primary_theme && (
+                      <div><span className="text-gray-400">Główny temat:</span> {simulation.ai_decisions.title_analysis.universal_themes.primary_theme}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.universal_themes.secondary_themes && simulation.ai_decisions.title_analysis.universal_themes.secondary_themes.length > 0 && (
+                      <div><span className="text-gray-400">Tematy poboczne:</span> {simulation.ai_decisions.title_analysis.universal_themes.secondary_themes.join(', ')}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.universal_themes.existential_question && (
+                      <div><span className="text-gray-400">Pytanie egzystencjalne:</span> {simulation.ai_decisions.title_analysis.universal_themes.existential_question}</div>
+                    )}
+                    {simulation.ai_decisions.title_analysis.universal_themes.emotional_truth && (
+                      <div><span className="text-gray-400">Prawda emocjonalna:</span> {simulation.ai_decisions.title_analysis.universal_themes.emotional_truth}</div>
                     )}
                   </div>
                 </div>

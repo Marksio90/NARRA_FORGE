@@ -2,7 +2,7 @@
 Project model - represents a book generation project
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Float, Enum, Text, Index
+from sqlalchemy import Column, Integer, String, DateTime, Float, Enum, Text, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -33,11 +33,18 @@ class GenreType(str, enum.Enum):
 
 class Project(Base):
     __tablename__ = "projects"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     genre = Column(Enum(GenreType), nullable=False)
     status = Column(Enum(ProjectStatus), default=ProjectStatus.INITIALIZING, nullable=False)
+
+    # User ownership (optional for backward compatibility)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Series support (optional)
+    series_id = Column(Integer, ForeignKey("series.id", ondelete="SET NULL"), nullable=True, index=True)
+    book_number_in_series = Column(Integer, nullable=True)
     
     # AI-determined parameters (stored as JSONB)
     parameters = Column(JSONB, default=dict)
@@ -81,12 +88,15 @@ class Project(Base):
     completed_at = Column(DateTime, nullable=True)
     
     # Relationships
+    user = relationship("User", back_populates="projects")
+    series = relationship("Series", back_populates="books")
     world_bible = relationship("WorldBible", back_populates="project", uselist=False)
     characters = relationship("Character", back_populates="project", cascade="all, delete-orphan")
     plot_structure = relationship("PlotStructure", back_populates="project", uselist=False)
     chapters = relationship("Chapter", back_populates="project", cascade="all, delete-orphan")
     continuity_facts = relationship("ContinuityFact", back_populates="project", cascade="all, delete-orphan")
     generation_logs = relationship("GenerationLog", back_populates="project", cascade="all, delete-orphan")
+    publishing_metadata = relationship("PublishingMetadata", back_populates="project", uselist=False)
 
     # Indexes for better query performance
     __table_args__ = (

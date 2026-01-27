@@ -11,6 +11,7 @@ import logging
 from app.config import settings
 from app.database import init_db
 from app.api import projects, health
+from app.api import auth, payments, series, publishing
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +81,26 @@ app.include_router(
     projects.router,
     prefix=f"{settings.API_V1_PREFIX}/projects",
     tags=["Projects"]
+)
+app.include_router(
+    auth.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Authentication"]
+)
+app.include_router(
+    payments.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Payments"]
+)
+app.include_router(
+    series.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Series"]
+)
+app.include_router(
+    publishing.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Publishing"]
 )
 
 

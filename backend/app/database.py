@@ -85,6 +85,9 @@ def init_db():
         scene,
         continuity_fact,
         generation_log,
+        user,
+        series,
+        publishing,
     )
 
     # First, create tables that don't exist

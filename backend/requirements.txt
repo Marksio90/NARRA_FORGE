@@ -55,6 +55,15 @@ loguru==0.7.2
 httpx==0.26.0
 aiohttp==3.9.3
 
+# Payments
+stripe==7.0.0
+
+# Image Processing (Cover Generation)
+Pillow==10.1.0
+
+# Text Analysis (Deep Editor)
+textstat==0.7.3
+
 # Data Processing
 numpy==1.26.3
 pandas==2.2.0

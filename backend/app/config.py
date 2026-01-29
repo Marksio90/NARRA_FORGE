@@ -224,6 +224,44 @@ class GenreConfig:
             "default_length": "novel",  # ~70-90k words
             "key_elements": ["puzzle", "clues", "red_herrings", "detective", "reveal"],
         },
+        "religious": {
+            "name": "Religijne",
+            "description": "Literatura religijna oparta na prawdziwych kerygmatach, Piśmie Świętym, nauce Kościoła",
+            "style": "Pełen szacunku, dostępny, poruszający serce i intelekt",
+            "structure": "Spiritual Journey",
+            "default_length": "novel",  # ~60-150k words
+            "key_elements": [
+                "scripture_references",
+                "authentic_spirituality",
+                "church_teaching",
+                "spiritual_transformation",
+                "grace_and_redemption",
+                "communion_with_god",
+                "theological_accuracy"
+            ],
+            "tone": "reverent_yet_accessible",
+            "pacing": "contemplative_with_moments_of_grace",
+            "required_sources": [
+                "Biblia (Stary i Nowy Testament)",
+                "Katechizm Kościoła Katolickiego",
+                "Encykliki papieskie",
+                "Pisma Ojców Kościoła",
+                "Zatwierdzone cuda",
+                "Żywoty świętych"
+            ],
+            "narrative_beats": [
+                "Życie przed wiarą / kryzys",
+                "Pierwsze dotknięcie łaski",
+                "Opór i wątpliwości",
+                "Spotkanie z autentycznym świadectwem",
+                "Ciemna noc duszy",
+                "Punkt nawrócenia",
+                "Próba wiary",
+                "Pogłębienie relacji z Bogiem",
+                "Misja / dzielenie się wiarą",
+                "Owoce Ducha Świętego"
+            ]
+        },
     }
     
     @classmethod

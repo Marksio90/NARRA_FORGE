@@ -19,7 +19,8 @@ CREATE TYPE genre_type AS ENUM (
     'romance',
     'drama',
     'comedy',
-    'mystery'
+    'mystery',
+    'religious'
 );
 
 CREATE TYPE character_role AS ENUM (

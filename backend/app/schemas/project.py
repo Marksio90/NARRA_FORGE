@@ -18,6 +18,7 @@ class GenreEnum(str, Enum):
     DRAMA = "drama"
     COMEDY = "comedy"
     MYSTERY = "mystery"
+    RELIGIOUS = "religious"
 
 
 class ProjectStatusEnum(str, Enum):

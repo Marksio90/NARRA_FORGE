@@ -67,6 +67,13 @@ const genres: Genre[] = [
     description: 'Tajemnice czekające na rozwiązanie',
     icon: '🔍',
     gradient: 'from-emerald-500 to-teal-600'
+  },
+  {
+    value: 'religious',
+    label: 'Religijny',
+    description: 'Duchowa podróż, wiara i transcendencja',
+    icon: '✝️',
+    gradient: 'from-amber-500 to-yellow-600'
   }
 ];
 

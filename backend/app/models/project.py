@@ -29,6 +29,7 @@ class GenreType(str, enum.Enum):
     DRAMA = "drama"
     COMEDY = "comedy"
     MYSTERY = "mystery"
+    RELIGIOUS = "religious"  # NarraForge 2.0: Religious/spiritual literature
 
 
 class Project(Base):

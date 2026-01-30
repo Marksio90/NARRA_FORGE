@@ -1,48 +1,51 @@
 """
-Auto Character Creator for NarraForge 2.0
+Auto Character Creator v2.0 for NarraForge 2.0
 
-Automatically creates unique, psychologically deep characters from title analysis
-when characters are not explicitly specified by the user.
+ENHANCED: Creates characters ENTIRELY from title semantics.
+NO FALLBACKS - every character must emerge from the title's essence.
+Characters are not generated randomly - they are DERIVED from the title's DNA.
 """
 
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-import random
 import json
+import re
 
 from app.services.ai_service import AIService
-from app.services.titan_analyzer import TITANAnalysis, TITANDimension
+from app.services.titan_analyzer import TITANAnalysis, TITANDimension, ImpliedCharacter, TitleEssence
 from app.models.project import GenreType
 
 
 @dataclass
 class CharacterPsychology:
-    """Deep psychological profile of a character"""
-    wound: str = ""  # Past trauma
-    ghost: str = ""  # What haunts them
-    lie: str = ""  # False belief they hold
-    want: str = ""  # External goal
-    need: str = ""  # Internal need
-    fear: str = ""  # Deepest fear
-    strength: str = ""  # Core strength
-    flaw: str = ""  # Fatal flaw
+    """Deep psychological profile derived from title themes"""
+    wound: str = ""  # Past trauma - connected to title's emotional core
+    ghost: str = ""  # What haunts them - connected to title's conflict
+    lie: str = ""  # False belief - thematic opposition to title's truth
+    want: str = ""  # External goal - derived from title's narrative promise
+    need: str = ""  # Internal need - the title's thematic lesson
+    fear: str = ""  # Deepest fear - shadow of the title's hope
+    strength: str = ""  # Core strength - embodies title's positive theme
+    flaw: str = ""  # Fatal flaw - embodies title's warning
 
 
 @dataclass
 class CharacterProfile:
-    """Complete character profile"""
-    name: str
-    role: str  # protagonist, antagonist, supporting, etc.
+    """Complete character profile - every element traces back to the title"""
+    name: str  # Name that RESONATES with title's essence
+    role: str  # Role determined by title's narrative needs
     age: int
     gender: str
-    physical_description: str
-    personality_traits: List[str]
-    psychology: CharacterPsychology
-    backstory: str
-    voice_style: str  # How they speak
-    signature_phrases: List[str]
+    physical_description: str  # Appearance that SYMBOLIZES their title connection
+    personality_traits: List[str]  # Traits that EMBODY title themes
+    psychology: CharacterPsychology  # Psychology DERIVED from title
+    backstory: str  # History that EXPLAINS their title connection
+    voice_style: str  # Speech that REFLECTS title's tone
+    signature_phrases: List[str]  # Phrases that ECHO title themes
+    title_connection: str = ""  # EXPLICIT connection to title
+    must_embody: List[str] = field(default_factory=list)  # What they MUST represent
     relationships: Dict[str, str] = field(default_factory=dict)
-    arc_type: str = ""  # positive change, negative change, flat, etc.
+    arc_type: str = ""
     cultural_background: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -66,56 +69,86 @@ class CharacterProfile:
             "backstory": self.backstory,
             "voice_style": self.voice_style,
             "signature_phrases": self.signature_phrases,
+            "title_connection": self.title_connection,
+            "must_embody": self.must_embody,
             "relationships": self.relationships,
             "arc_type": self.arc_type,
             "cultural_background": self.cultural_background
         }
 
 
-# Name pools by cultural region (for diverse character creation)
-NAME_POOLS = {
-    "polish": {
-        "male": ["Jakub", "Antoni", "Jan", "Aleksander", "Filip", "Mikołaj", "Wojciech", "Kacper", "Adam", "Szymon", "Bartosz", "Mateusz", "Piotr", "Tomasz", "Michał"],
-        "female": ["Zuzanna", "Julia", "Maja", "Zofia", "Hanna", "Lena", "Alicja", "Maria", "Amelia", "Oliwia", "Natalia", "Wiktoria", "Martyna", "Karolina", "Anna"]
-    },
-    "japanese": {
-        "male": ["Haruki", "Takeshi", "Kenji", "Yuki", "Ryo", "Daiki", "Shun", "Hiroshi", "Kazuki", "Sota", "Akira", "Ren", "Kaito", "Yamato", "Hayate"],
-        "female": ["Sakura", "Yuki", "Hana", "Aoi", "Mei", "Rin", "Mio", "Yuna", "Saki", "Akane", "Nozomi", "Ayaka", "Mika", "Emi", "Nanami"]
-    },
-    "african": {
-        "male": ["Kwame", "Chibuike", "Oluwaseun", "Mandla", "Kofi", "Jabari", "Tau", "Dayo", "Emeka", "Thabo", "Amara", "Zaire", "Jelani", "Ayo", "Tendai"],
-        "female": ["Amina", "Zainab", "Adaeze", "Thandiwe", "Aisha", "Chiamaka", "Fatima", "Nana", "Nneka", "Precious", "Blessing", "Khadija", "Yewande", "Oluwakemi", "Lindiwe"]
-    },
-    "latin_american": {
-        "male": ["Santiago", "Mateo", "Sebastian", "Diego", "Leonardo", "Nicolas", "Miguel", "Daniel", "Alejandro", "Carlos", "Gabriel", "Andres", "Lucas", "Rafael", "Francisco"],
-        "female": ["Sofia", "Valentina", "Isabella", "Camila", "Luciana", "Mariana", "Victoria", "Regina", "Jimena", "Fernanda", "Daniela", "Paula", "Gabriela", "Valeria", "Andrea"]
-    },
-    "arabic": {
-        "male": ["Omar", "Ahmed", "Yusuf", "Hassan", "Khalid", "Ibrahim", "Tariq", "Malik", "Samir", "Rashid", "Faisal", "Karim", "Nabil", "Zaid", "Bilal"],
-        "female": ["Fatima", "Aisha", "Layla", "Noor", "Sara", "Mariam", "Yasmin", "Hana", "Amira", "Lina", "Dalia", "Rania", "Salma", "Zeina", "Nadia"]
-    },
-    "indian": {
-        "male": ["Arjun", "Vikram", "Rohan", "Aarav", "Vivaan", "Aditya", "Vihaan", "Sai", "Krishna", "Ishaan", "Aryan", "Kabir", "Shaurya", "Atharv", "Dhruv"],
-        "female": ["Aanya", "Ananya", "Aadhya", "Ishita", "Priya", "Kavya", "Avni", "Riya", "Saanvi", "Diya", "Mira", "Anvi", "Tara", "Siya", "Kiara"]
-    },
-    "chinese": {
-        "male": ["Wei", "Jian", "Ming", "Chen", "Lei", "Feng", "Hao", "Long", "Jun", "Tao", "Kai", "Bo", "Liang", "Cheng", "Yang"],
-        "female": ["Mei", "Ling", "Yan", "Xia", "Hui", "Jing", "Xue", "Hong", "Yun", "Fang", "Qing", "Lan", "Zhen", "Ying", "Wen"]
-    },
-    "fantasy": {
-        "male": ["Thorin", "Aldric", "Kael", "Draven", "Zephyr", "Ragnar", "Lysander", "Theron", "Caspian", "Fenris", "Vaelin", "Gideon", "Orion", "Silas", "Corvus"],
-        "female": ["Elara", "Seraphina", "Astrid", "Lyra", "Freya", "Isolde", "Morgana", "Rhiannon", "Thalia", "Celestia", "Elowen", "Ariadne", "Niamh", "Aelwyn", "Ravenna"]
-    },
-    "scifi": {
-        "male": ["Zane", "Axel", "Nova", "Orion", "Cade", "Atlas", "Phoenix", "Kel", "Jett", "Rex", "Vector", "Blaze", "Cyrus", "Echo", "Kai"],
-        "female": ["Nova", "Lyra", "Zara", "Aria", "Luna", "Nyx", "Stellar", "Aurora", "Vega", "Sage", "Ember", "Raven", "Jade", "Quinn", "Zero"]
-    }
-}
+# Master prompt for title-driven character creation
+CHARACTER_FROM_TITLE_PROMPT = """Jesteś ekspertem od tworzenia postaci literackich.
+
+TYTUŁ KSIĄŻKI: "{title}"
+GATUNEK: {genre}
+
+ESENCJA TYTUŁU (DNA z którego WSZYSTKO musi wynikać):
+- Rdzeń znaczeniowy: {core_meaning}
+- Rdzeń emocjonalny: {emotional_core}
+- Centralne pytanie: {central_question}
+- Filary tematyczne: {thematic_pillars}
+- Elementy symboliczne: {symbolic_elements}
+- Elementy zakazane: {forbidden_elements}
+
+POSTAĆ DO STWORZENIA:
+- Rola: {role}
+- Esencja (z analizy TITAN): {character_essence}
+- Połączenie z tytułem: {title_connection}
+- MUSI uosabiać: {must_embody}
+- Sugerowane imiona (pasujące do tytułu): {name_suggestions}
+- Psychologiczny profil wyjściowy: {psychological_seed}
+
+TWOJA MISJA: Stwórz PEŁNY profil postaci, gdzie KAŻDY element jest BEZPOŚREDNIO powiązany z tytułem.
+
+ZASADY:
+1. IMIĘ musi REZONOWAĆ z esencją tytułu - nie może być przypadkowe
+2. WYGLĄD musi SYMBOLIZOWAĆ połączenie z tytułem
+3. PSYCHOLOGIA musi WYNIKAĆ z tematyki tytułu:
+   - WOUND (rana) - trauma związana z tematem tytułu
+   - GHOST (duch przeszłości) - co prześladuje, związane z konfliktem tytułu
+   - LIE (kłamstwo) - fałszywe przekonanie będące przeciwieństwem prawdy tytułu
+   - WANT (pragnienie) - cel zewnętrzny wynikający z obietnicy tytułu
+   - NEED (potrzeba) - lekcja którą tytuł chce przekazać
+   - FEAR (strach) - cień nadziei którą tytuł daje
+4. BACKSTORY musi WYJAŚNIAĆ dlaczego ta postać MUSI istnieć w historii o tym tytule
+5. GŁOS i FRAZY muszą ODZWIERCIEDLAĆ ton tytułu
+6. ŁUK POSTACI musi służyć ODPOWIEDZI na centralne pytanie tytułu
+
+ODPOWIEDZ W FORMACIE JSON:
+{{
+    "name": "Imię rezonujące z tytułem",
+    "name_reasoning": "DLACZEGO to imię pasuje do tytułu",
+    "age": 30,
+    "gender": "male/female/other",
+    "physical_description": "Wygląd SYMBOLIZUJĄCY połączenie z tytułem",
+    "appearance_symbolism": "Co wygląd SYMBOLIZUJE w kontekście tytułu",
+    "personality_traits": ["cecha uosabiająca temat1", "cecha uosabiająca temat2", "cecha uosabiająca temat3"],
+    "psychology": {{
+        "wound": "Rana związana z tematyką tytułu",
+        "ghost": "Co prześladuje - związane z konfliktem tytułu",
+        "lie": "Fałszywe przekonanie - przeciwieństwo prawdy tytułu",
+        "want": "Cel zewnętrzny - z obietnicy narracyjnej tytułu",
+        "need": "Potrzeba wewnętrzna - lekcja tytułu",
+        "fear": "Strach - cień nadziei tytułu",
+        "strength": "Siła uosabiająca pozytywny temat tytułu",
+        "flaw": "Słabość uosabiająca ostrzeżenie tytułu"
+    }},
+    "backstory": "Historia WYJAŚNIAJĄCA połączenie z tytułem",
+    "backstory_title_connection": "Jak backstory łączy się z tytułem",
+    "voice_style": "Sposób mówienia ODZWIERCIEDLAJĄCY ton tytułu",
+    "signature_phrases": ["fraza echująca temat1", "fraza echująca temat2"],
+    "arc_type": "positive_change/negative_change/flat/testing - służący odpowiedzi na pytanie tytułu",
+    "arc_connection_to_title": "Jak łuk postaci służy tytułowi",
+    "cultural_background": "Pochodzenie PASUJĄCE do świata tytułu",
+    "title_embodiment_summary": "Jak ta postać UCIELEŚNIA tytuł - podsumowanie"
+}}"""
 
 
 class AutoCharacterCreator:
     """
-    Automatically creates unique characters based on TITAN analysis.
+    Creates characters ENTIRELY from title semantics.
+    NO FALLBACKS - every character emerges from the title's DNA.
     """
 
     def __init__(self, ai_service: Optional[AIService] = None):
@@ -127,123 +160,115 @@ class AutoCharacterCreator:
         titan_analysis: TITANAnalysis,
         genre: GenreType,
         main_count: int = 4,
-        supporting_count: int = 10,
-        cultural_setting: str = "diverse"
+        supporting_count: int = 8
     ) -> Dict[str, List[CharacterProfile]]:
         """
-        Create complete character cast based on TITAN analysis.
-
-        Returns dict with 'main' and 'supporting' character lists.
+        Create complete character cast DERIVED from title semantics.
+        Every character traces back to the title's essence.
         """
-        # Determine cultural pool based on setting
-        name_pool = self._get_name_pool(cultural_setting, genre)
+        if not titan_analysis.essence:
+            raise ValueError("TITAN analysis must include title essence for character creation")
 
-        # Create main characters
-        main_characters = await self._create_main_characters(
-            title, titan_analysis, genre, main_count, name_pool
+        essence = titan_analysis.essence
+        implied_characters = titan_analysis.get_implied_characters()
+
+        # Phase 1: Create main characters from implied characters
+        main_characters = await self._create_main_characters_from_essence(
+            title=title,
+            essence=essence,
+            implied_characters=implied_characters,
+            genre=genre,
+            count=main_count
         )
 
-        # Create supporting characters
-        supporting_characters = await self._create_supporting_characters(
-            title, titan_analysis, genre, supporting_count, name_pool, main_characters
+        # Phase 2: Create supporting characters that serve the title's themes
+        supporting_characters = await self._create_supporting_characters_from_essence(
+            title=title,
+            essence=essence,
+            main_characters=main_characters,
+            genre=genre,
+            count=supporting_count
         )
 
-        # Build relationships between characters
-        self._build_relationships(main_characters, supporting_characters)
+        # Phase 3: Build relationships based on title dynamics
+        await self._build_title_driven_relationships(
+            main_characters,
+            supporting_characters,
+            essence
+        )
 
         return {
             "main": main_characters,
             "supporting": supporting_characters
         }
 
-    def _get_name_pool(self, cultural_setting: str, genre: GenreType) -> Dict[str, List[str]]:
-        """Get appropriate name pool based on cultural setting."""
-        setting_lower = cultural_setting.lower()
-
-        # Genre-specific pools
-        if genre == GenreType.FANTASY:
-            return NAME_POOLS["fantasy"]
-        if genre == GenreType.SCI_FI:
-            return NAME_POOLS["scifi"]
-
-        # Culture-based pools
-        if "azja" in setting_lower or "asian" in setting_lower:
-            return random.choice([NAME_POOLS["japanese"], NAME_POOLS["chinese"], NAME_POOLS["indian"]])
-        if "afryk" in setting_lower or "african" in setting_lower:
-            return NAME_POOLS["african"]
-        if "latin" in setting_lower or "america" in setting_lower:
-            return NAME_POOLS["latin_american"]
-        if "arab" in setting_lower or "middle" in setting_lower:
-            return NAME_POOLS["arabic"]
-        if "słowiań" in setting_lower or "polish" in setting_lower or "slav" in setting_lower:
-            return NAME_POOLS["polish"]
-        if "indi" in setting_lower:
-            return NAME_POOLS["indian"]
-
-        # Random selection for diverse setting
-        pools = list(NAME_POOLS.keys())
-        pools = [p for p in pools if p not in ["fantasy", "scifi"]]
-        return NAME_POOLS[random.choice(pools)]
-
-    async def _create_main_characters(
+    async def _create_main_characters_from_essence(
         self,
         title: str,
-        titan: TITANAnalysis,
+        essence: TitleEssence,
+        implied_characters: List[ImpliedCharacter],
         genre: GenreType,
-        count: int,
-        name_pool: Dict[str, List[str]]
+        count: int
     ) -> List[CharacterProfile]:
-        """Create main characters with deep psychology."""
+        """Create main characters from the title's implied characters."""
         characters = []
 
-        # Get archetype hints from TITAN
-        implied = titan.get_dimension(TITANDimension.IMPLIED_CHARACTERS)
-        protagonist_archetype = "Hero"
-        antagonist_type = "Shadow"
-        if implied:
-            protagonist_archetype = implied.output.get("protagonist_archetype", "Hero")
-            antagonist_type = implied.output.get("antagonist_type", "Shadow")
-
-        # Create protagonist first
-        protagonist = await self._create_single_character(
-            title=title,
-            titan=titan,
-            genre=genre,
-            role="protagonist",
-            archetype=protagonist_archetype,
-            name_pool=name_pool
-        )
-        characters.append(protagonist)
-
-        # Create antagonist if count > 1
-        if count > 1:
-            antagonist = await self._create_single_character(
+        # Use implied characters from TITAN analysis
+        for i, implied in enumerate(implied_characters[:count]):
+            char = await self._create_character_from_implied(
                 title=title,
-                titan=titan,
+                essence=essence,
+                implied=implied,
                 genre=genre,
-                role="antagonist",
-                archetype=antagonist_type,
-                name_pool=name_pool,
-                existing_names=[protagonist.name]
+                existing_names=[c.name for c in characters]
             )
-            characters.append(antagonist)
+            characters.append(char)
 
-        # Create remaining main characters
-        existing_names = [c.name for c in characters]
-        remaining_roles = ["deuteragonist", "love_interest", "mentor", "ally", "rival"]
-        for i in range(count - 2):
-            if i < len(remaining_roles):
-                role = remaining_roles[i]
-            else:
-                role = "main_character"
+        # If we need more characters, derive them from title themes
+        if len(characters) < count:
+            additional_roles = self._derive_additional_roles_from_title(
+                essence=essence,
+                existing_roles=[c.role for c in characters],
+                needed=count - len(characters)
+            )
 
-            char = await self._create_single_character(
+            for role_info in additional_roles:
+                char = await self._create_character_from_theme(
+                    title=title,
+                    essence=essence,
+                    role_info=role_info,
+                    genre=genre,
+                    existing_names=[c.name for c in characters]
+                )
+                characters.append(char)
+
+        return characters
+
+    async def _create_supporting_characters_from_essence(
+        self,
+        title: str,
+        essence: TitleEssence,
+        main_characters: List[CharacterProfile],
+        genre: GenreType,
+        count: int
+    ) -> List[CharacterProfile]:
+        """Create supporting characters that serve the title's thematic needs."""
+        characters = []
+        existing_names = [c.name for c in main_characters]
+
+        # Determine what supporting roles the title needs
+        supporting_needs = self._analyze_supporting_needs_from_title(
+            essence=essence,
+            main_characters=main_characters,
+            count=count
+        )
+
+        for need in supporting_needs:
+            char = await self._create_supporting_character(
                 title=title,
-                titan=titan,
+                essence=essence,
+                need=need,
                 genre=genre,
-                role=role,
-                archetype=None,
-                name_pool=name_pool,
                 existing_names=existing_names
             )
             characters.append(char)
@@ -251,277 +276,464 @@ class AutoCharacterCreator:
 
         return characters
 
-    async def _create_supporting_characters(
+    async def _create_character_from_implied(
         self,
         title: str,
-        titan: TITANAnalysis,
+        essence: TitleEssence,
+        implied: ImpliedCharacter,
         genre: GenreType,
-        count: int,
-        name_pool: Dict[str, List[str]],
-        main_characters: List[CharacterProfile]
-    ) -> List[CharacterProfile]:
-        """Create supporting characters."""
-        characters = []
-        existing_names = [c.name for c in main_characters]
-
-        supporting_roles = [
-            "family_member", "friend", "colleague", "informant",
-            "authority_figure", "helper", "obstacle", "comic_relief",
-            "wise_elder", "innocent", "trickster", "herald"
-        ]
-
-        for i in range(count):
-            role = supporting_roles[i % len(supporting_roles)]
-
-            char = await self._create_single_character(
-                title=title,
-                titan=titan,
-                genre=genre,
-                role=role,
-                archetype=None,
-                name_pool=name_pool,
-                existing_names=existing_names,
-                is_supporting=True
-            )
-            characters.append(char)
-            existing_names.append(char.name)
-
-        return characters
-
-    async def _create_single_character(
-        self,
-        title: str,
-        titan: TITANAnalysis,
-        genre: GenreType,
-        role: str,
-        archetype: Optional[str],
-        name_pool: Dict[str, List[str]],
-        existing_names: List[str] = None,
-        is_supporting: bool = False
+        existing_names: List[str]
     ) -> CharacterProfile:
-        """Create a single character with AI assistance."""
-        existing_names = existing_names or []
+        """Create a full character profile from an implied character seed."""
+        prompt = CHARACTER_FROM_TITLE_PROMPT.format(
+            title=title,
+            genre=genre.value,
+            core_meaning=essence.core_meaning,
+            emotional_core=essence.emotional_core,
+            central_question=essence.central_question,
+            thematic_pillars=", ".join(essence.thematic_pillars),
+            symbolic_elements=", ".join(essence.symbolic_elements),
+            forbidden_elements=", ".join(essence.forbidden_elements),
+            role=implied.role_in_story,
+            character_essence=implied.essence,
+            title_connection=implied.title_connection,
+            must_embody=", ".join(implied.must_embody),
+            name_suggestions=", ".join(implied.name_suggestions) if implied.name_suggestions else "do wygenerowania na podstawie tytułu",
+            psychological_seed=json.dumps(implied.psychological_profile, ensure_ascii=False)
+        )
 
-        # Get psychological context from TITAN
-        psychology_context = ""
-        psych_dim = titan.get_dimension(TITANDimension.DEEP_PSYCHOLOGY)
-        if psych_dim:
-            themes = psych_dim.output.get("psychological_themes", [])
-            growth = psych_dim.output.get("growth_arc_type", "")
-            psychology_context = f"""
-Tematy psychologiczne do eksploracji: {', '.join(themes[:3]) if themes else 'typowe dla gatunku'}
-Typ łuku rozwoju: {growth or 'transformacja pozytywna'}
-"""
+        if existing_names:
+            prompt += f"\n\nNIE UŻYWAJ tych imion (już zajęte): {', '.join(existing_names)}"
 
-        # Get world context
-        world_context = ""
-        spatial_dim = titan.get_dimension(TITANDimension.SPATIAL_WORLD)
-        if spatial_dim:
-            locations = spatial_dim.output.get("location_hints", [])
-            atmosphere = spatial_dim.output.get("atmosphere", "")
-            world_context = f"""
-Lokalizacje sugerowane: {', '.join(locations[:2]) if locations else 'różnorodne'}
-Atmosfera świata: {atmosphere or 'do określenia przez AI'}
-"""
+        try:
+            response = await self.ai_service.generate(
+                prompt=prompt,
+                model_tier=2,
+                max_tokens=2000,
+                temperature=0.75
+            )
 
-        prompt = f"""Stwórz UNIKALNĄ postać dla książki "{title}" w gatunku {genre.value}.
+            data = self._parse_character_json(response)
+            return self._build_character_profile(data, implied.role_in_story, implied)
 
-ROLA: {role}
-{'ARCHETYP: ' + archetype if archetype else ''}
-{psychology_context}
-{world_context}
+        except Exception as e:
+            # Even in error case, derive character from title - NO random fallbacks
+            return await self._create_character_from_title_only(
+                title=title,
+                essence=essence,
+                role=implied.role_in_story,
+                genre=genre,
+                existing_names=existing_names
+            )
 
-WYMAGANIA:
-1. Unikalne imię (NIE używaj: {', '.join(existing_names) if existing_names else 'brak ograniczeń'})
-2. Głęboka psychologia z WOUND (rana z przeszłości), GHOST (co ich prześladuje), LIE (fałszywe przekonanie), WANT (cel zewnętrzny), NEED (potrzeba wewnętrzna), FEAR (najgłębszy strach)
-3. Unikalna osobowość i sposób mówienia
-4. Charakterystyczne frazy (2-3)
-5. {'Krótki backstory' if is_supporting else 'Rozbudowany backstory'}
+    async def _create_character_from_theme(
+        self,
+        title: str,
+        essence: TitleEssence,
+        role_info: Dict[str, Any],
+        genre: GenreType,
+        existing_names: List[str]
+    ) -> CharacterProfile:
+        """Create a character from a thematic role derived from the title."""
+        # Create an implied character from the role info
+        implied = ImpliedCharacter(
+            essence=role_info.get("essence", ""),
+            role_in_story=role_info.get("role", "supporting"),
+            title_connection=role_info.get("title_connection", ""),
+            archetypal_function=role_info.get("function", ""),
+            psychological_profile={},
+            name_suggestions=[],
+            must_embody=role_info.get("must_embody", [])
+        )
 
-Odpowiedz TYLKO w formacie JSON:
+        return await self._create_character_from_implied(
+            title=title,
+            essence=essence,
+            implied=implied,
+            genre=genre,
+            existing_names=existing_names
+        )
+
+    async def _create_supporting_character(
+        self,
+        title: str,
+        essence: TitleEssence,
+        need: Dict[str, Any],
+        genre: GenreType,
+        existing_names: List[str]
+    ) -> CharacterProfile:
+        """Create a supporting character that fulfills a thematic need."""
+        prompt = f"""Stwórz WSPIERAJĄCĄ postać dla książki "{title}" w gatunku {genre.value}.
+
+ESENCJA TYTUŁU:
+- Rdzeń: {essence.core_meaning}
+- Emocja: {essence.emotional_core}
+- Tematy: {', '.join(essence.thematic_pillars)}
+
+TA POSTAĆ MUSI SŁUŻYĆ:
+- Funkcja: {need.get('function', 'supporting')}
+- Tematyczne powiązanie: {need.get('thematic_connection', '')}
+- MUSI reprezentować: {need.get('must_represent', '')}
+- Relacja z głównymi postaciami: {need.get('relationship_purpose', '')}
+
+NIE UŻYWAJ imion: {', '.join(existing_names)}
+
+STWÓRZ postać gdzie WSZYSTKO wynika z tytułu - imię, wygląd, psychologia.
+
+Odpowiedz w JSON:
 {{
-    "name": "Unikalne imię",
-    "age": 30,
-    "gender": "male/female/other",
-    "physical_description": "Krótki opis wyglądu",
+    "name": "Imię pasujące do tytułu",
+    "name_reasoning": "Dlaczego to imię pasuje",
+    "age": 35,
+    "gender": "male/female",
+    "physical_description": "Wygląd symbolizujący powiązanie z tytułem",
     "personality_traits": ["cecha1", "cecha2", "cecha3"],
     "psychology": {{
-        "wound": "Rana z przeszłości",
-        "ghost": "Co ich prześladuje",
+        "wound": "Rana związana z tytułem",
+        "ghost": "Co prześladuje",
         "lie": "Fałszywe przekonanie",
         "want": "Cel zewnętrzny",
         "need": "Potrzeba wewnętrzna",
-        "fear": "Najgłębszy strach",
-        "strength": "Główna siła",
-        "flaw": "Główna słabość"
+        "fear": "Strach",
+        "strength": "Siła",
+        "flaw": "Słabość"
     }},
-    "backstory": "Historia postaci",
-    "voice_style": "Jak mówi ta postać",
-    "signature_phrases": ["fraza1", "fraza2"],
-    "arc_type": "positive_change/negative_change/flat/etc",
-    "cultural_background": "Pochodzenie kulturowe"
+    "backstory": "Krótka historia",
+    "voice_style": "Sposób mówienia",
+    "signature_phrases": ["fraza1"],
+    "title_connection": "Jak łączy się z tytułem"
 }}"""
 
         try:
             response = await self.ai_service.generate(
                 prompt=prompt,
-                model_tier=2,  # Use Tier 2 for character creation
+                model_tier=1,
                 max_tokens=1500,
-                temperature=0.8  # Higher creativity
+                temperature=0.8
             )
 
-            # Parse response
-            char_data = self._parse_character_json(response)
+            data = self._parse_character_json(response)
+            return self._build_character_profile(data, need.get('function', 'supporting'), None)
 
-            # Create profile
-            psychology = CharacterPsychology(
-                wound=char_data.get("psychology", {}).get("wound", ""),
-                ghost=char_data.get("psychology", {}).get("ghost", ""),
-                lie=char_data.get("psychology", {}).get("lie", ""),
-                want=char_data.get("psychology", {}).get("want", ""),
-                need=char_data.get("psychology", {}).get("need", ""),
-                fear=char_data.get("psychology", {}).get("fear", ""),
-                strength=char_data.get("psychology", {}).get("strength", ""),
-                flaw=char_data.get("psychology", {}).get("flaw", "")
+        except Exception:
+            return await self._create_character_from_title_only(
+                title=title,
+                essence=essence,
+                role=need.get('function', 'supporting'),
+                genre=genre,
+                existing_names=existing_names
             )
 
-            return CharacterProfile(
-                name=char_data.get("name", self._generate_fallback_name(name_pool, existing_names)),
-                role=role,
-                age=char_data.get("age", random.randint(20, 50)),
-                gender=char_data.get("gender", random.choice(["male", "female"])),
-                physical_description=char_data.get("physical_description", ""),
-                personality_traits=char_data.get("personality_traits", []),
-                psychology=psychology,
-                backstory=char_data.get("backstory", ""),
-                voice_style=char_data.get("voice_style", ""),
-                signature_phrases=char_data.get("signature_phrases", []),
-                arc_type=char_data.get("arc_type", "positive_change"),
-                cultural_background=char_data.get("cultural_background", "")
-            )
+    async def _create_character_from_title_only(
+        self,
+        title: str,
+        essence: TitleEssence,
+        role: str,
+        genre: GenreType,
+        existing_names: List[str]
+    ) -> CharacterProfile:
+        """Emergency character creation - still derives from title, never random."""
+        prompt = f"""KRYTYCZNE: Stwórz postać WYŁĄCZNIE na podstawie tytułu "{title}".
 
-        except Exception as e:
-            # Fallback: create basic character
-            return self._create_fallback_character(role, name_pool, existing_names)
+Tytuł oznacza: {essence.core_meaning}
+Emocja tytułu: {essence.emotional_core}
+Rola postaci: {role}
+Gatunek: {genre.value}
+
+NIE UŻYWAJ imion: {', '.join(existing_names)}
+
+Wszystko - imię, wygląd, psychologia - MUSI wynikać BEZPOŚREDNIO z tytułu.
+
+JSON:
+{{
+    "name": "Imię z esencji tytułu",
+    "age": 30,
+    "gender": "male/female",
+    "physical_description": "Wygląd symboliczny",
+    "personality_traits": ["cecha1", "cecha2"],
+    "psychology": {{"wound": "", "ghost": "", "lie": "", "want": "", "need": "", "fear": "", "strength": "", "flaw": ""}},
+    "backstory": "Historia",
+    "voice_style": "Głos",
+    "signature_phrases": [],
+    "title_connection": "Połączenie z tytułem"
+}}"""
+
+        response = await self.ai_service.generate(
+            prompt=prompt,
+            model_tier=1,
+            max_tokens=1000,
+            temperature=0.7
+        )
+
+        data = self._parse_character_json(response)
+        return self._build_character_profile(data, role, None)
+
+    def _derive_additional_roles_from_title(
+        self,
+        essence: TitleEssence,
+        existing_roles: List[str],
+        needed: int
+    ) -> List[Dict[str, Any]]:
+        """Derive additional character roles from title themes."""
+        additional_roles = []
+
+        # Map themes to potential character roles
+        theme_to_role = {
+            "miłość": {"role": "love_interest", "function": "romantic partner", "must_embody": ["miłość", "połączenie"]},
+            "strata": {"role": "lost_one", "function": "catalyst for grief", "must_embody": ["utrata", "pamięć"]},
+            "władza": {"role": "authority", "function": "power figure", "must_embody": ["władza", "kontrola"]},
+            "odkupienie": {"role": "redeemer", "function": "path to redemption", "must_embody": ["odkupienie", "przebaczenie"]},
+            "tajemnica": {"role": "keeper_of_secrets", "function": "holds crucial information", "must_embody": ["tajemnica", "wiedza"]},
+            "zdrada": {"role": "betrayer", "function": "source of betrayal", "must_embody": ["zdrada", "oszustwo"]},
+            "nadzieja": {"role": "beacon", "function": "source of hope", "must_embody": ["nadzieja", "światło"]},
+            "strach": {"role": "embodiment_of_fear", "function": "represents fear", "must_embody": ["strach", "zagrożenie"]},
+            "rodzina": {"role": "family_member", "function": "family connection", "must_embody": ["rodzina", "więzy"]},
+            "przemiana": {"role": "transformer", "function": "catalyzes change", "must_embody": ["przemiana", "transformacja"]},
+        }
+
+        for theme in essence.thematic_pillars:
+            if len(additional_roles) >= needed:
+                break
+
+            theme_lower = theme.lower()
+            for key, role_info in theme_to_role.items():
+                if key in theme_lower and role_info["role"] not in existing_roles:
+                    role_info["essence"] = f"Postać uosabiająca temat '{theme}' z tytułu"
+                    role_info["title_connection"] = f"Reprezentuje tematyczny filar: {theme}"
+                    additional_roles.append(role_info)
+                    existing_roles.append(role_info["role"])
+                    break
+
+        # If still need more, create generic thematic roles
+        while len(additional_roles) < needed:
+            theme = essence.thematic_pillars[len(additional_roles) % len(essence.thematic_pillars)] if essence.thematic_pillars else "centralny temat"
+            additional_roles.append({
+                "role": f"thematic_character_{len(additional_roles)}",
+                "function": "embodies theme",
+                "essence": f"Ucieleśnienie tematu: {theme}",
+                "title_connection": f"Reprezentuje: {theme}",
+                "must_embody": [theme]
+            })
+
+        return additional_roles[:needed]
+
+    def _analyze_supporting_needs_from_title(
+        self,
+        essence: TitleEssence,
+        main_characters: List[CharacterProfile],
+        count: int
+    ) -> List[Dict[str, Any]]:
+        """Analyze what supporting characters the title thematically requires."""
+        needs = []
+
+        # Each main character might need a mirror, ally, or obstacle
+        character_functions = ["mirror", "ally", "obstacle", "confidant", "tempter"]
+
+        for i, main_char in enumerate(main_characters):
+            if len(needs) >= count:
+                break
+
+            func = character_functions[i % len(character_functions)]
+            theme = essence.thematic_pillars[i % len(essence.thematic_pillars)] if essence.thematic_pillars else "temat"
+
+            needs.append({
+                "function": func,
+                "thematic_connection": theme,
+                "must_represent": f"Aspekt tematu '{theme}' w relacji do {main_char.name}",
+                "relationship_purpose": f"Służy rozwojowi {main_char.name} przez funkcję {func}"
+            })
+
+        # Add characters for unrepresented themes
+        represented_themes = set()
+        for char in main_characters:
+            represented_themes.update(char.must_embody)
+
+        for theme in essence.thematic_pillars:
+            if len(needs) >= count:
+                break
+
+            if theme not in represented_themes:
+                needs.append({
+                    "function": "thematic_anchor",
+                    "thematic_connection": theme,
+                    "must_represent": f"Główny przedstawiciel tematu: {theme}",
+                    "relationship_purpose": "Wzmacnia tematykę poprzez interakcje"
+                })
+
+        # Fill remaining with world-building characters
+        while len(needs) < count:
+            needs.append({
+                "function": "world_anchor",
+                "thematic_connection": essence.core_meaning,
+                "must_represent": "Element świata tytułu",
+                "relationship_purpose": "Buduje autentyczność świata"
+            })
+
+        return needs[:count]
+
+    async def _build_title_driven_relationships(
+        self,
+        main_characters: List[CharacterProfile],
+        supporting_characters: List[CharacterProfile],
+        essence: TitleEssence
+    ):
+        """Build relationships that serve the title's thematic needs."""
+        # Relationships between main characters should reflect title's central dynamics
+        for i, char1 in enumerate(main_characters):
+            for j, char2 in enumerate(main_characters):
+                if i < j:
+                    # Determine relationship based on their thematic roles
+                    rel_type = self._determine_thematic_relationship(char1, char2, essence)
+                    char1.relationships[char2.name] = rel_type
+                    char2.relationships[char1.name] = self._reverse_relationship(rel_type)
+
+        # Connect supporting to main in ways that serve themes
+        for support in supporting_characters:
+            # Find the main character this supporting character best connects to
+            best_main = self._find_best_thematic_connection(support, main_characters, essence)
+            rel_type = self._determine_supporting_relationship(support, best_main, essence)
+            support.relationships[best_main.name] = rel_type
+
+    def _determine_thematic_relationship(
+        self,
+        char1: CharacterProfile,
+        char2: CharacterProfile,
+        essence: TitleEssence
+    ) -> str:
+        """Determine relationship type based on thematic roles."""
+        roles_combo = {char1.role, char2.role}
+
+        if "protagonist" in roles_combo and "antagonist" in roles_combo:
+            return "nemesis"
+        if "protagonist" in roles_combo and "love_interest" in roles_combo:
+            return "romantic"
+        if "protagonist" in roles_combo and "mentor" in roles_combo:
+            return "student_of"
+        if "antagonist" in roles_combo and "ally" in roles_combo:
+            return "enemy_of"
+
+        # Default: determine by shared themes
+        shared_themes = set(char1.must_embody) & set(char2.must_embody)
+        if shared_themes:
+            return "bonded_by_theme"
+
+        return "acquaintance"
+
+    def _reverse_relationship(self, rel_type: str) -> str:
+        """Get the reverse of a relationship."""
+        reverses = {
+            "nemesis": "nemesis",
+            "romantic": "romantic",
+            "student_of": "mentor_to",
+            "mentor_to": "student_of",
+            "enemy_of": "enemy_of",
+            "ally_of": "ally_of",
+            "bonded_by_theme": "bonded_by_theme",
+            "acquaintance": "acquaintance"
+        }
+        return reverses.get(rel_type, rel_type)
+
+    def _find_best_thematic_connection(
+        self,
+        support: CharacterProfile,
+        main_characters: List[CharacterProfile],
+        essence: TitleEssence
+    ) -> CharacterProfile:
+        """Find the main character best connected thematically to a supporting character."""
+        if not main_characters:
+            raise ValueError("No main characters to connect to")
+
+        best_match = main_characters[0]
+        best_score = 0
+
+        for main in main_characters:
+            # Score based on shared thematic elements
+            shared = len(set(support.must_embody) & set(main.must_embody))
+            if shared > best_score:
+                best_score = shared
+                best_match = main
+
+        return best_match
+
+    def _determine_supporting_relationship(
+        self,
+        support: CharacterProfile,
+        main: CharacterProfile,
+        essence: TitleEssence
+    ) -> str:
+        """Determine relationship between supporting and main character."""
+        if "mirror" in support.role.lower():
+            return "reflects"
+        if "ally" in support.role.lower():
+            return "ally_of"
+        if "obstacle" in support.role.lower():
+            return "obstacle_to"
+        if "confidant" in support.role.lower():
+            return "confidant_of"
+        if "tempter" in support.role.lower():
+            return "tempts"
+
+        return "connected_to"
+
+    def _build_character_profile(
+        self,
+        data: Dict[str, Any],
+        role: str,
+        implied: Optional[ImpliedCharacter]
+    ) -> CharacterProfile:
+        """Build a CharacterProfile from parsed data."""
+        psych_data = data.get("psychology", {})
+
+        psychology = CharacterPsychology(
+            wound=psych_data.get("wound", ""),
+            ghost=psych_data.get("ghost", ""),
+            lie=psych_data.get("lie", ""),
+            want=psych_data.get("want", ""),
+            need=psych_data.get("need", ""),
+            fear=psych_data.get("fear", ""),
+            strength=psych_data.get("strength", ""),
+            flaw=psych_data.get("flaw", "")
+        )
+
+        return CharacterProfile(
+            name=data.get("name", ""),
+            role=role,
+            age=data.get("age", 30),
+            gender=data.get("gender", ""),
+            physical_description=data.get("physical_description", ""),
+            personality_traits=data.get("personality_traits", []),
+            psychology=psychology,
+            backstory=data.get("backstory", ""),
+            voice_style=data.get("voice_style", ""),
+            signature_phrases=data.get("signature_phrases", []),
+            title_connection=data.get("title_connection", implied.title_connection if implied else ""),
+            must_embody=data.get("must_embody", implied.must_embody if implied else []),
+            arc_type=data.get("arc_type", ""),
+            cultural_background=data.get("cultural_background", "")
+        )
 
     def _parse_character_json(self, response: str) -> Dict:
         """Parse character JSON from AI response."""
-        import re
-
-        # Try direct parse
         try:
             return json.loads(response)
-        except:
+        except json.JSONDecodeError:
             pass
 
-        # Try to extract JSON from code block
         json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response, re.DOTALL)
         if json_match:
             try:
                 return json.loads(json_match.group(1))
-            except:
+            except json.JSONDecodeError:
                 pass
 
-        # Try to find raw JSON
-        json_match = re.search(r'\{[^{}]*"name"[^{}]*\}', response, re.DOTALL)
+        json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
             try:
                 return json.loads(json_match.group(0))
-            except:
+            except json.JSONDecodeError:
                 pass
 
         return {}
-
-    def _generate_fallback_name(
-        self,
-        name_pool: Dict[str, List[str]],
-        existing_names: List[str]
-    ) -> str:
-        """Generate a fallback name if AI fails."""
-        gender = random.choice(["male", "female"])
-        available = [n for n in name_pool.get(gender, []) if n not in existing_names]
-
-        if available:
-            return random.choice(available)
-
-        # Generate unique name
-        base_names = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Quinn", "Avery"]
-        for name in base_names:
-            if name not in existing_names:
-                return name
-
-        return f"Character_{len(existing_names) + 1}"
-
-    def _create_fallback_character(
-        self,
-        role: str,
-        name_pool: Dict[str, List[str]],
-        existing_names: List[str]
-    ) -> CharacterProfile:
-        """Create a basic fallback character."""
-        gender = random.choice(["male", "female"])
-        name = self._generate_fallback_name(name_pool, existing_names)
-
-        return CharacterProfile(
-            name=name,
-            role=role,
-            age=random.randint(20, 50),
-            gender=gender,
-            physical_description="Do uzupełnienia",
-            personality_traits=["odważny", "zdeterminowany"],
-            psychology=CharacterPsychology(
-                wound="Trauma z przeszłości",
-                ghost="Wspomnienia",
-                lie="Fałszywe przekonanie o sobie",
-                want="Osiągnąć cel",
-                need="Zaakceptować siebie",
-                fear="Porażka",
-                strength="Determinacja",
-                flaw="Upór"
-            ),
-            backstory="Do rozwinięcia",
-            voice_style="Bezpośredni",
-            signature_phrases=[]
-        )
-
-    def _build_relationships(
-        self,
-        main_characters: List[CharacterProfile],
-        supporting_characters: List[CharacterProfile]
-    ):
-        """Build relationship network between characters."""
-        relationship_types = [
-            "family", "friend", "rival", "mentor", "student",
-            "love_interest", "enemy", "colleague", "ally", "acquaintance"
-        ]
-
-        # Build relationships between main characters
-        for i, char1 in enumerate(main_characters):
-            for j, char2 in enumerate(main_characters):
-                if i < j:  # Avoid duplicates
-                    rel_type = random.choice(relationship_types)
-                    char1.relationships[char2.name] = rel_type
-                    # Reverse relationship
-                    reverse_map = {
-                        "mentor": "student",
-                        "student": "mentor",
-                        "family": "family",
-                        "friend": "friend",
-                        "enemy": "enemy",
-                        "rival": "rival",
-                        "love_interest": "love_interest",
-                        "colleague": "colleague",
-                        "ally": "ally",
-                        "acquaintance": "acquaintance"
-                    }
-                    char2.relationships[char1.name] = reverse_map.get(rel_type, rel_type)
-
-        # Connect supporting characters to main characters
-        for supporting in supporting_characters:
-            # Each supporting character knows at least one main character
-            main_char = random.choice(main_characters)
-            rel_type = random.choice(relationship_types)
-            supporting.relationships[main_char.name] = rel_type
 
 
 # Singleton instance

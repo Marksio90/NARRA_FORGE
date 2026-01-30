@@ -21,6 +21,9 @@ from app.api import pacing  # Predictive Pacing Algorithm - NarraForge 3.0
 from app.api import illustrations  # AI Illustrations - NarraForge 3.0 Phase 2
 from app.api import audiobook  # AI Audiobook Generator - NarraForge 3.0 Phase 2
 from app.api import covers  # AI Cover Art - NarraForge 3.0 Phase 2
+from app.api import trailer  # Book Trailer Generator - NarraForge 3.0 Phase 2
+from app.api import interactive  # Interactive Reading - NarraForge 3.0 Phase 2
+from app.api import soundtrack  # Ambient Soundtrack - NarraForge 3.0 Phase 2
 
 # Configure logging
 logging.basicConfig(
@@ -173,6 +176,27 @@ app.include_router(
     covers.router,
     prefix=settings.API_V1_PREFIX,
     tags=["AI Cover Art"]
+)
+
+# Book Trailer Generator - NarraForge 3.0 Phase 2
+app.include_router(
+    trailer.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Book Trailer"]
+)
+
+# Interactive Reading Experience - NarraForge 3.0 Phase 2
+app.include_router(
+    interactive.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Interactive Reading"]
+)
+
+# Ambient Soundtrack Generator - NarraForge 3.0 Phase 2
+app.include_router(
+    soundtrack.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Ambient Soundtrack"]
 )
 
 

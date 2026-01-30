@@ -18,6 +18,9 @@ from app.api import dialogue  # Advanced Dialogue System - NarraForge 3.0
 from app.api import consciousness  # Character Consciousness - NarraForge 3.0
 from app.api import style  # Style Adaptation Engine - NarraForge 3.0
 from app.api import pacing  # Predictive Pacing Algorithm - NarraForge 3.0
+from app.api import illustrations  # AI Illustrations - NarraForge 3.0 Phase 2
+from app.api import audiobook  # AI Audiobook Generator - NarraForge 3.0 Phase 2
+from app.api import covers  # AI Cover Art - NarraForge 3.0 Phase 2
 
 # Configure logging
 logging.basicConfig(
@@ -149,6 +152,27 @@ app.include_router(
     pacing.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Predictive Pacing"]
+)
+
+# AI Illustrations - NarraForge 3.0 Phase 2
+app.include_router(
+    illustrations.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["AI Illustrations"]
+)
+
+# AI Audiobook Generator - NarraForge 3.0 Phase 2
+app.include_router(
+    audiobook.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["AI Audiobook"]
+)
+
+# AI Cover Art - NarraForge 3.0 Phase 2
+app.include_router(
+    covers.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["AI Cover Art"]
 )
 
 

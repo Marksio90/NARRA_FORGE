@@ -14,6 +14,10 @@ from app.api import projects, health
 from app.api import auth, payments, series, publishing
 from app.api import mirix  # MIRIX Memory System - NarraForge 3.0
 from app.api import emotional  # Emotional Resonance Engine - NarraForge 3.0
+from app.api import dialogue  # Advanced Dialogue System - NarraForge 3.0
+from app.api import consciousness  # Character Consciousness - NarraForge 3.0
+from app.api import style  # Style Adaptation Engine - NarraForge 3.0
+from app.api import pacing  # Predictive Pacing Algorithm - NarraForge 3.0
 
 # Configure logging
 logging.basicConfig(
@@ -117,6 +121,34 @@ app.include_router(
     emotional.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Emotional Resonance"]
+)
+
+# Advanced Dialogue System - NarraForge 3.0
+app.include_router(
+    dialogue.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Advanced Dialogue"]
+)
+
+# Character Consciousness Simulation - NarraForge 3.0
+app.include_router(
+    consciousness.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Character Consciousness"]
+)
+
+# Style Adaptation Engine - NarraForge 3.0
+app.include_router(
+    style.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Style Adaptation"]
+)
+
+# Predictive Pacing Algorithm - NarraForge 3.0
+app.include_router(
+    pacing.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Predictive Pacing"]
 )
 
 

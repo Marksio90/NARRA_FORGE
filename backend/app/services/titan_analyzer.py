@@ -19,7 +19,7 @@ from app.config import settings
 
 
 class TITANDimension(str, Enum):
-    """The 12 dimensions of TITAN analysis"""
+    """The 13 dimensions of TITAN analysis (Enhanced 3.0)"""
     SEMANTIC_DEPTH = "semantic_depth"
     EMOTIONAL_RESONANCE = "emotional_resonance"
     TEMPORALITY = "temporality"
@@ -32,6 +32,8 @@ class TITANDimension(str, Enum):
     INTERTEXTUALITY = "intertextuality"
     COMMERCIAL_POTENTIAL = "commercial_potential"
     TRANSCENDENCE = "transcendence"
+    # NarraForge 3.0 Enhancement
+    CULTURAL_CONTEXT = "cultural_context"  # Cultural analysis dimension
 
 
 @dataclass
@@ -534,6 +536,85 @@ Odpowiedz w formacie JSON:
     "legacy_theme": "...",
     "universal_truth": "..."
 }}"""
+    },
+
+    # NarraForge 3.0 Enhancement - Cultural Context Dimension
+    TITANDimension.CULTURAL_CONTEXT: {
+        "description": "Kontekst kulturowy, wrażliwości i symbolika kulturowa",
+        "prompt_template": """Przeanalizuj tytuł "{title}" pod kątem KONTEKSTU KULTUROWEGO.
+
+KRYTYCZNE: Nie zakładaj domyślnie kultury zachodniej. Tytuł sam może sugerować specyficzny kontekst kulturowy.
+
+1. CULTURAL_ORIGIN: Jakie kultury/tradycje REZONUJĄ z tym tytułem?
+   - Jakie tradycje literackie przywołuje?
+   - Czy tytuł ma korzenie w konkretnej kulturze?
+   - Jakie globalne perspektywy obejmuje?
+
+2. CULTURAL_SYMBOLS: Jakie symbole kulturowe zawiera tytuł?
+   - Symbole uniwersalne vs specyficzne kulturowo
+   - Archetypy kulturowe
+   - Ikonografia kulturowa
+
+3. CULTURAL_SENSITIVITIES: Jakie wrażliwości kulturowe należy uwzględnić?
+   - Potencjalne tematy kontrowersyjne
+   - Reprezentacja mniejszości
+   - Stereotypy do unikania
+   - Autentyczność kulturowa
+
+4. REGIONAL_INFLUENCES: Jakie regionalne wpływy WYNIKAJĄ z tytułu?
+   - Klimat/geografia sugerowana przez tytuł
+   - Tradycje regionalne
+   - Dialekty/język
+
+5. HISTORICAL_CULTURAL_CONTEXT: Jaki kontekst historyczno-kulturowy?
+   - Epoka historyczna sugerowana
+   - Przemiany społeczne
+   - Kontekst polityczny
+
+6. CULTURAL_AUTHENTICITY_REQUIREMENTS: Co jest NIEZBĘDNE dla autentyczności?
+   - Elementy które MUSZĄ być autentyczne
+   - Badania kulturowe wymagane
+   - Konsultacje kulturowe zalecane
+
+7. CROSS_CULTURAL_APPEAL: Jak uniwersalny jest tytuł?
+   - Potencjał międzynarodowy (1-10)
+   - Bariery kulturowe
+   - Elementy wymagające adaptacji
+
+Odpowiedz w formacie JSON:
+{{
+    "cultural_origins": ["kultura1", "tradycja2"],
+    "primary_cultural_context": "główny kontekst kulturowy",
+    "cultural_symbols": [
+        {{"symbol": "...", "meaning": "...", "origin": "..."}}
+    ],
+    "cultural_sensitivities": {{
+        "topics_requiring_care": ["temat1", "temat2"],
+        "stereotypes_to_avoid": ["stereotyp1", "stereotyp2"],
+        "representation_notes": "..."
+    }},
+    "regional_influences": {{
+        "geography": "...",
+        "traditions": ["tradycja1", "tradycja2"],
+        "language_considerations": "..."
+    }},
+    "historical_context": {{
+        "era": "...",
+        "social_changes": ["zmiana1", "zmiana2"],
+        "political_context": "..."
+    }},
+    "authenticity_requirements": {{
+        "must_be_authentic": ["element1", "element2"],
+        "research_needed": ["obszar1", "obszar2"],
+        "consultation_recommended": true/false
+    }},
+    "cross_cultural_appeal": {{
+        "international_potential": 7,
+        "cultural_barriers": ["bariera1"],
+        "adaptation_needed": ["element1"]
+    }},
+    "cultural_richness_score": 7
+}}"""
     }
 }
 
@@ -911,6 +992,34 @@ class TITANAnalyzer:
             impact["spiritual_journey"] = meaning > 5
             impact["redemption_arc"] = "hope" in str(hope).lower() or meaning > 6
 
+        elif dimension == TITANDimension.CULTURAL_CONTEXT:
+            cross_cultural = output.get("cross_cultural_appeal", {})
+            sensitivities = output.get("cultural_sensitivities", {})
+            authenticity = output.get("authenticity_requirements", {})
+            richness = output.get("cultural_richness_score", 5)
+
+            impact["cultural_depth"] = "rich" if richness > 7 else "moderate" if richness > 4 else "light"
+            impact["international_appeal"] = cross_cultural.get("international_potential", 5) > 6
+            impact["research_required"] = len(authenticity.get("research_needed", [])) > 0
+            impact["sensitivity_level"] = len(sensitivities.get("topics_requiring_care", []))
+            impact["cultural_authenticity_check"] = authenticity.get("consultation_recommended", False)
+
+            # Regional specificity
+            regional = output.get("regional_influences", {})
+            if regional.get("geography"):
+                impact["geographic_specificity"] = True
+                impact["regional_traditions_count"] = len(regional.get("traditions", []))
+
+            # Historical context requirements
+            historical = output.get("historical_context", {})
+            if historical.get("era"):
+                impact["historical_research_needed"] = True
+                impact["historical_era"] = historical.get("era")
+
+            # Cultural symbols to incorporate
+            symbols = output.get("cultural_symbols", [])
+            impact["cultural_symbols_count"] = len(symbols)
+
         return impact
 
     def _calculate_complexity(self, analysis: TITANAnalysis) -> float:
@@ -948,6 +1057,9 @@ class TITANAnalyzer:
                 uniqueness_factors.append(output.get("subversion_potential", 5) / 10)
             elif dim == TITANDimension.NARRATIVE_PROMISE:
                 uniqueness_factors.append(output.get("mystery_quotient", 5) / 10)
+            elif dim == TITANDimension.CULTURAL_CONTEXT:
+                # Cultural richness adds to uniqueness
+                uniqueness_factors.append(output.get("cultural_richness_score", 5) / 10)
 
         if uniqueness_factors:
             return sum(uniqueness_factors) / len(uniqueness_factors)

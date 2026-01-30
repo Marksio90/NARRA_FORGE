@@ -12,6 +12,8 @@ from app.config import settings
 from app.database import init_db
 from app.api import projects, health
 from app.api import auth, payments, series, publishing
+from app.api import mirix  # MIRIX Memory System - NarraForge 3.0
+from app.api import emotional  # Emotional Resonance Engine - NarraForge 3.0
 
 # Configure logging
 logging.basicConfig(
@@ -101,6 +103,20 @@ app.include_router(
     publishing.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Publishing"]
+)
+
+# MIRIX Memory System - NarraForge 3.0
+app.include_router(
+    mirix.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["MIRIX Memory"]
+)
+
+# Emotional Resonance Engine - NarraForge 3.0
+app.include_router(
+    emotional.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Emotional Resonance"]
 )
 
 

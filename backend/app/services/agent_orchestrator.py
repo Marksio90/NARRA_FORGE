@@ -38,6 +38,13 @@ from app.models.chapter import Chapter, ChapterStatus
 from app.services.ai_service import get_ai_service, ModelTier
 from app.config import settings
 
+# MIRIX Memory System - NarraForge 3.0
+from app.services.mirix_memory_system import (
+    get_mirix_system,
+    MIRIXMemorySystem,
+    MemoryType
+)
+
 logger = logging.getLogger(__name__)
 
 # Import new pipeline components
@@ -142,6 +149,9 @@ class AgentOrchestrator:
         # Reset AI service metrics for this project
         self.ai_service.reset_metrics()
 
+        # MIRIX Memory System - NarraForge 3.0
+        self.mirix = get_mirix_system()
+
         logger.info(f"🎬 Orchestrator initialized for project {project.id}: '{project.name}'")
 
     async def generate_complete_book(self) -> Dict[str, Any]:
@@ -170,6 +180,11 @@ class AgentOrchestrator:
 
             # STEP 1-2: Initialize (already done in simulation)
             await self._update_progress(1, "Inicjalizacja projektu")
+
+            # Initialize MIRIX Memory System for this project
+            await self.mirix.initialize_project(str(self.project.id), self.project.genre)
+            logger.info(f"🧠 MIRIX Memory System initialized for project {self.project.id}")
+
             await asyncio.sleep(0.5)  # Brief pause
             await self._update_progress(2, "Walidacja parametrów")
             await asyncio.sleep(0.5)
@@ -178,12 +193,43 @@ class AgentOrchestrator:
             await self._update_progress(3, "Generowanie World Bible (AI)")
             world_bible = await self._generate_world_bible(title_analysis, params)
 
+            # Store World Bible in MIRIX Memory
+            world_bible_dict = {
+                'geography': world_bible.geography,
+                'history': world_bible.history,
+                'systems': world_bible.systems,
+                'cultures': world_bible.cultures,
+                'rules': world_bible.rules,
+                'themes': params.get('title_analysis', {}).get('themes', [])
+            }
+            mirix_counts = await self.mirix.extract_and_store_from_world_bible(
+                str(self.project.id), world_bible_dict
+            )
+            logger.info(f"🧠 MIRIX: Stored {mirix_counts} from World Bible")
+
             # STEP 4-5: Create Characters
             await self._update_progress(4, "Kreacja postaci głównych (AI)")
             characters = await self._generate_characters(world_bible, title_analysis, params)
 
             await self._update_progress(5, "Kreacja postaci pobocznych (AI)")
             # (included in above - supporting characters)
+
+            # Store Characters in MIRIX Memory
+            characters_data_for_mirix = [
+                {
+                    'name': c.name,
+                    'role': c.role.value,
+                    'profile': c.profile,
+                    'arc': c.arc,
+                    'archetype': c.profile.get('archetype', '') if c.profile else '',
+                    'relationships': c.relationships
+                }
+                for c in characters
+            ]
+            char_counts = await self.mirix.extract_and_store_from_characters(
+                str(self.project.id), characters_data_for_mirix
+            )
+            logger.info(f"🧠 MIRIX: Stored {char_counts} from Characters")
 
             # STEP 6-7: Create Plot Structure
             await self._update_progress(6, "Projektowanie struktury fabuły (AI)")
@@ -193,6 +239,18 @@ class AgentOrchestrator:
 
             await self._update_progress(7, "Projektowanie wątków pobocznych (AI)")
             # (included in plot structure - subplots)
+
+            # Store Plot themes in MIRIX Semantic Memory
+            if plot_structure.subplots:
+                for subplot in plot_structure.subplots:
+                    if isinstance(subplot, dict) and subplot.get('theme'):
+                        await self.mirix.store_concept(
+                            project_id=str(self.project.id),
+                            concept=subplot.get('theme', subplot.get('name', 'Subplot')),
+                            concept_type="subplot_theme",
+                            definition=subplot.get('description', '')
+                        )
+            logger.info(f"🧠 MIRIX: Stored semantic concepts from Plot Structure")
 
             # STEP 8-9: Chapter Planning
             await self._update_progress(8, "Planowanie rozdziałów")
@@ -245,6 +303,9 @@ class AgentOrchestrator:
                 logger.error(f"Failed to commit completion status: {e}", exc_info=True)
                 raise Exception(f"Nie udało się zapisać statusu zakończenia: {str(e)}")
 
+            # Get MIRIX memory statistics
+            mirix_stats = self.mirix.get_memory_statistics(str(self.project.id))
+
             # Generate report
             report = {
                 "success": True,
@@ -267,6 +328,10 @@ class AgentOrchestrator:
                     "average_chapter_quality": sum(
                         ch.get('quality_score', 0) for ch in chapters_data
                     ) / len(chapters_data) if chapters_data else 0
+                },
+                "mirix_memory": {
+                    "total_memory_items": mirix_stats.get("total_items", 0),
+                    "layers": mirix_stats.get("layers", {})
                 }
             }
 
@@ -274,7 +339,8 @@ class AgentOrchestrator:
                 f"✅ GENERATION COMPLETE! Project {self.project.id}\n"
                 f"   📊 Stats: {len(characters)} characters, {len(chapters_data)} chapters\n"
                 f"   💰 Cost: ${metrics.total_cost:.2f}\n"
-                f"   📝 Words: {report['statistics']['total_words']:,}"
+                f"   📝 Words: {report['statistics']['total_words']:,}\n"
+                f"   🧠 MIRIX Memory: {mirix_stats.get('total_items', 0)} items across 6 layers"
             )
 
             return report

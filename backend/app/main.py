@@ -24,6 +24,11 @@ from app.api import covers  # AI Cover Art - NarraForge 3.0 Phase 2
 from app.api import trailer  # Book Trailer Generator - NarraForge 3.0 Phase 2
 from app.api import interactive  # Interactive Reading - NarraForge 3.0 Phase 2
 from app.api import soundtrack  # Ambient Soundtrack - NarraForge 3.0 Phase 2
+from app.api import coherence  # QUANTUM Coherence Analyzer - NarraForge 3.0 Phase 3
+from app.api import psychology  # Reader Psychology Engine - NarraForge 3.0 Phase 3
+from app.api import cultural  # TITAN Cultural Intelligence - NarraForge 3.0 Phase 3
+from app.api import complexity  # Dynamic Complexity Adjustment - NarraForge 3.0 Phase 3
+from app.api import trends  # Trend-Adaptive Content - NarraForge 3.0 Phase 3
 
 # Configure logging
 logging.basicConfig(
@@ -197,6 +202,41 @@ app.include_router(
     soundtrack.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Ambient Soundtrack"]
+)
+
+# QUANTUM Narrative Coherence Analyzer - NarraForge 3.0 Phase 3
+app.include_router(
+    coherence.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["QUANTUM Coherence"]
+)
+
+# Predictive Reader Psychology Engine - NarraForge 3.0 Phase 3
+app.include_router(
+    psychology.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Reader Psychology"]
+)
+
+# TITAN Cultural Intelligence System - NarraForge 3.0 Phase 3
+app.include_router(
+    cultural.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["TITAN Cultural Intelligence"]
+)
+
+# Dynamic Complexity Adjustment - NarraForge 3.0 Phase 3
+app.include_router(
+    complexity.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Dynamic Complexity"]
+)
+
+# Trend-Adaptive Content Generation - NarraForge 3.0 Phase 3
+app.include_router(
+    trends.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Trend-Adaptive"]
 )
 
 

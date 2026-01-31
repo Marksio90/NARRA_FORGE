@@ -29,6 +29,11 @@ from app.api import psychology  # Reader Psychology Engine - NarraForge 3.0 Phas
 from app.api import cultural  # TITAN Cultural Intelligence - NarraForge 3.0 Phase 3
 from app.api import complexity  # Dynamic Complexity Adjustment - NarraForge 3.0 Phase 3
 from app.api import trends  # Trend-Adaptive Content - NarraForge 3.0 Phase 3
+from app.api import multilanguage  # Multi-Language Generation - NarraForge 3.0 Phase 4
+from app.api import collaborative  # Collaborative Writing - NarraForge 3.0 Phase 4
+from app.api import coach  # AI Writing Coach - NarraForge 3.0 Phase 4
+from app.api import platforms  # Publishing Integration - NarraForge 3.0 Phase 4
+from app.api import analytics  # Analytics Dashboard - NarraForge 3.0 Phase 4
 
 # Configure logging
 logging.basicConfig(
@@ -237,6 +242,41 @@ app.include_router(
     trends.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Trend-Adaptive"]
+)
+
+# Multi-Language Generation - NarraForge 3.0 Phase 4
+app.include_router(
+    multilanguage.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Multi-Language"]
+)
+
+# Collaborative Writing Tools - NarraForge 3.0 Phase 4
+app.include_router(
+    collaborative.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Collaborative Writing"]
+)
+
+# AI Writing Coach - NarraForge 3.0 Phase 4
+app.include_router(
+    coach.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["AI Writing Coach"]
+)
+
+# Publishing Platform Integration - NarraForge 3.0 Phase 4
+app.include_router(
+    platforms.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Publishing Platforms"]
+)
+
+# Analytics Dashboard - NarraForge 3.0 Phase 4
+app.include_router(
+    analytics.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Analytics"]
 )
 
 

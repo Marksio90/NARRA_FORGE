@@ -211,7 +211,7 @@ GENRE_COVER_PROFILES = {
         "typical_elements": ["skull", "haunted house", "shadows", "blood", "eyes"],
         "typography": "distressed, horror fonts, dripping text"
     },
-    GenreType.SCIFI: {
+    GenreType.SCI_FI: {
         "recommended_styles": [CoverStyle.ILLUSTRATED, CoverStyle.ABSTRACT, CoverStyle.LANDSCAPE],
         "moods": [CoverMood.INTENSE, CoverMood.DRAMATIC, CoverMood.MYSTERIOUS],
         "color_palettes": [ColorPalette.COOL, ColorPalette.NEON, ColorPalette.MONOCHROME],

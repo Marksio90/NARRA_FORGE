@@ -250,7 +250,7 @@ GENRE_MUSIC_PROFILES = {
         "typical_effects": [SoundEffectType.HORROR, SoundEffectType.WEATHER],
         "keys": ["D minor", "B minor", "F minor", "C minor"]
     },
-    GenreType.SCIFI: {
+    GenreType.SCI_FI: {
         "primary_genres": [MusicGenre.ELECTRONIC, MusicGenre.SYNTH, MusicGenre.CINEMATIC],
         "primary_moods": [MusicMood.EPIC, MusicMood.MYSTERIOUS, MusicMood.ACTION],
         "instruments": [Instrument.SYNTH, Instrument.PAD, Instrument.DRUMS],

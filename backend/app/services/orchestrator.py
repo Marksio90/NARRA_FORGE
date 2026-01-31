@@ -1,0 +1,899 @@
+"""
+Service Orchestrator - NarraForge 3.0 Phase 5
+Coordinates multi-service workflows and manages complex book generation pipelines
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any, Callable, Union
+from enum import Enum
+from datetime import datetime, timedelta
+import uuid
+import asyncio
+from collections import defaultdict
+
+
+class WorkflowStatus(Enum):
+    """Workflow execution status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    ROLLBACK = "rollback"
+
+
+class StepStatus(Enum):
+    """Individual step status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    RETRYING = "retrying"
+
+
+class StepType(Enum):
+    """Step execution types"""
+    SERVICE_CALL = "service_call"
+    PARALLEL = "parallel"
+    CONDITIONAL = "conditional"
+    LOOP = "loop"
+    WAIT = "wait"
+    HUMAN_APPROVAL = "human_approval"
+    CHECKPOINT = "checkpoint"
+
+
+class ServiceType(Enum):
+    """NarraForge service types"""
+    # Phase 1 - Foundation
+    MIRIX = "mirix"
+    EMOTIONAL = "emotional"
+    DIALOGUE = "dialogue"
+    CONSCIOUSNESS = "consciousness"
+    STYLE = "style"
+    PACING = "pacing"
+    # Phase 2 - Multimodal
+    ILLUSTRATIONS = "illustrations"
+    AUDIOBOOK = "audiobook"
+    COVERS = "covers"
+    TRAILER = "trailer"
+    INTERACTIVE = "interactive"
+    SOUNDTRACK = "soundtrack"
+    # Phase 3 - Intelligence
+    COHERENCE = "coherence"
+    PSYCHOLOGY = "psychology"
+    CULTURAL = "cultural"
+    COMPLEXITY = "complexity"
+    TRENDS = "trends"
+    # Phase 4 - Expansion
+    MULTILANGUAGE = "multilanguage"
+    COLLABORATIVE = "collaborative"
+    COACH = "coach"
+    PLATFORMS = "platforms"
+    ANALYTICS = "analytics"
+
+
+class RetryPolicy(Enum):
+    """Retry policies"""
+    NONE = "none"
+    FIXED = "fixed"
+    EXPONENTIAL = "exponential"
+    LINEAR = "linear"
+
+
+@dataclass
+class RetryConfig:
+    """Retry configuration"""
+    policy: RetryPolicy = RetryPolicy.EXPONENTIAL
+    max_retries: int = 3
+    initial_delay_seconds: int = 1
+    max_delay_seconds: int = 60
+    retry_on_errors: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "policy": self.policy.value,
+            "max_retries": self.max_retries,
+            "initial_delay_seconds": self.initial_delay_seconds,
+            "max_delay_seconds": self.max_delay_seconds
+        }
+
+
+@dataclass
+class WorkflowStep:
+    """Single step in a workflow"""
+    step_id: str
+    name: str
+    step_type: StepType
+    service: Optional[ServiceType] = None
+    action: str = ""
+    parameters: Dict[str, Any] = field(default_factory=dict)
+    dependencies: List[str] = field(default_factory=list)
+    condition: Optional[str] = None  # Expression for conditional execution
+    retry_config: RetryConfig = field(default_factory=RetryConfig)
+    timeout_seconds: int = 300
+    on_failure: str = "fail"  # fail, skip, continue
+    on_success: Optional[str] = None  # Next step override
+    parallel_steps: List["WorkflowStep"] = field(default_factory=list)
+    loop_items: Optional[str] = None  # Expression for loop items
+    checkpoint_name: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "step_id": self.step_id,
+            "name": self.name,
+            "step_type": self.step_type.value,
+            "service": self.service.value if self.service else None,
+            "action": self.action,
+            "parameters": self.parameters,
+            "dependencies": self.dependencies,
+            "condition": self.condition,
+            "retry_config": self.retry_config.to_dict(),
+            "timeout_seconds": self.timeout_seconds,
+            "on_failure": self.on_failure,
+            "metadata": self.metadata
+        }
+
+
+@dataclass
+class StepExecution:
+    """Step execution record"""
+    execution_id: str
+    step_id: str
+    status: StepStatus
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    retry_count: int = 0
+    input_data: Dict[str, Any] = field(default_factory=dict)
+    output_data: Dict[str, Any] = field(default_factory=dict)
+    error_message: Optional[str] = None
+    duration_ms: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "execution_id": self.execution_id,
+            "step_id": self.step_id,
+            "status": self.status.value,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "retry_count": self.retry_count,
+            "output_data": self.output_data,
+            "error_message": self.error_message,
+            "duration_ms": self.duration_ms
+        }
+
+
+@dataclass
+class Workflow:
+    """Workflow definition"""
+    workflow_id: str
+    name: str
+    description: str
+    version: str = "1.0"
+    steps: List[WorkflowStep] = field(default_factory=list)
+    input_schema: Dict[str, Any] = field(default_factory=dict)
+    output_schema: Dict[str, Any] = field(default_factory=dict)
+    timeout_seconds: int = 3600
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    is_active: bool = True
+    tags: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "name": self.name,
+            "description": self.description,
+            "version": self.version,
+            "steps": [s.to_dict() for s in self.steps],
+            "input_schema": self.input_schema,
+            "output_schema": self.output_schema,
+            "timeout_seconds": self.timeout_seconds,
+            "created_at": self.created_at.isoformat(),
+            "is_active": self.is_active,
+            "tags": self.tags
+        }
+
+
+@dataclass
+class WorkflowExecution:
+    """Workflow execution instance"""
+    execution_id: str
+    workflow_id: str
+    status: WorkflowStatus
+    input_data: Dict[str, Any]
+    output_data: Dict[str, Any] = field(default_factory=dict)
+    context: Dict[str, Any] = field(default_factory=dict)  # Shared data between steps
+    step_executions: Dict[str, StepExecution] = field(default_factory=dict)
+    current_step_id: Optional[str] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    paused_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    checkpoints: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    user_id: Optional[str] = None
+    project_id: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "execution_id": self.execution_id,
+            "workflow_id": self.workflow_id,
+            "status": self.status.value,
+            "input_data": self.input_data,
+            "output_data": self.output_data,
+            "step_executions": {
+                k: v.to_dict() for k, v in self.step_executions.items()
+            },
+            "current_step_id": self.current_step_id,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "error_message": self.error_message,
+            "user_id": self.user_id,
+            "project_id": self.project_id
+        }
+
+
+@dataclass
+class WorkflowTemplate:
+    """Pre-built workflow template"""
+    template_id: str
+    name: str
+    description: str
+    category: str
+    workflow: Workflow
+    parameters: Dict[str, Any] = field(default_factory=dict)
+    example_input: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "template_id": self.template_id,
+            "name": self.name,
+            "description": self.description,
+            "category": self.category,
+            "workflow": self.workflow.to_dict(),
+            "parameters": self.parameters,
+            "example_input": self.example_input
+        }
+
+
+# Pre-built workflow templates
+WORKFLOW_TEMPLATES: Dict[str, Dict[str, Any]] = {
+    "full_book_generation": {
+        "name": "Full Book Generation",
+        "description": "Complete book generation with all phases",
+        "category": "book_creation",
+        "steps": [
+            {"name": "Initialize Project", "service": "mirix", "action": "initialize"},
+            {"name": "Analyze Trends", "service": "trends", "action": "analyze"},
+            {"name": "Create Outline", "service": "pacing", "action": "create_outline"},
+            {"name": "Develop Characters", "service": "consciousness", "action": "create_characters"},
+            {"name": "Generate Chapters", "service": "dialogue", "action": "generate", "type": "loop"},
+            {"name": "Apply Style", "service": "style", "action": "apply"},
+            {"name": "Add Emotional Resonance", "service": "emotional", "action": "enhance"},
+            {"name": "Check Coherence", "service": "coherence", "action": "analyze"},
+            {"name": "Cultural Adaptation", "service": "cultural", "action": "adapt"},
+            {"name": "Generate Cover", "service": "covers", "action": "generate"},
+            {"name": "Create Illustrations", "service": "illustrations", "action": "generate"},
+            {"name": "Generate Audiobook", "service": "audiobook", "action": "generate"},
+            {"name": "Prepare Publishing", "service": "platforms", "action": "prepare"},
+        ]
+    },
+    "translation_workflow": {
+        "name": "Book Translation",
+        "description": "Translate book to multiple languages",
+        "category": "translation",
+        "steps": [
+            {"name": "Analyze Source", "service": "multilanguage", "action": "analyze"},
+            {"name": "Create Glossary", "service": "multilanguage", "action": "create_glossary"},
+            {"name": "Translate Chapters", "service": "multilanguage", "action": "translate", "type": "loop"},
+            {"name": "Cultural Adaptation", "service": "cultural", "action": "adapt"},
+            {"name": "Quality Check", "service": "coherence", "action": "validate"},
+            {"name": "Generate Localized Cover", "service": "covers", "action": "localize"},
+        ]
+    },
+    "audiobook_production": {
+        "name": "Audiobook Production",
+        "description": "Full audiobook production pipeline",
+        "category": "multimodal",
+        "steps": [
+            {"name": "Text Preparation", "service": "audiobook", "action": "prepare_text"},
+            {"name": "Voice Selection", "service": "audiobook", "action": "select_voices"},
+            {"name": "Chapter Narration", "service": "audiobook", "action": "narrate", "type": "loop"},
+            {"name": "Add Soundtrack", "service": "soundtrack", "action": "generate"},
+            {"name": "Master Audio", "service": "audiobook", "action": "master"},
+            {"name": "Quality Check", "service": "audiobook", "action": "validate"},
+        ]
+    },
+    "marketing_package": {
+        "name": "Marketing Package",
+        "description": "Generate complete marketing materials",
+        "category": "marketing",
+        "steps": [
+            {"name": "Analyze Book", "service": "psychology", "action": "analyze_appeal"},
+            {"name": "Generate Cover Variants", "service": "covers", "action": "generate_variants"},
+            {"name": "Create Trailer", "service": "trailer", "action": "generate"},
+            {"name": "Generate Promo Text", "service": "style", "action": "generate_promo"},
+            {"name": "Social Media Assets", "service": "illustrations", "action": "social_assets"},
+        ]
+    }
+}
+
+
+class ServiceOrchestrator:
+    """
+    Service Orchestrator for NarraForge
+
+    Features:
+    - Multi-step workflow execution
+    - Parallel and sequential step execution
+    - Conditional branching
+    - Loop execution for batch processing
+    - Checkpoint and resume capability
+    - Rollback support
+    - Retry with exponential backoff
+    - Workflow templates
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+
+        # Workflow registry
+        self.workflows: Dict[str, Workflow] = {}
+
+        # Execution history
+        self.executions: Dict[str, WorkflowExecution] = {}
+
+        # Templates
+        self.templates: Dict[str, WorkflowTemplate] = {}
+
+        # Service handlers (simulated)
+        self.service_handlers: Dict[str, Callable] = {}
+
+        # Execution hooks
+        self.pre_step_hooks: List[Callable] = []
+        self.post_step_hooks: List[Callable] = []
+
+        # Metrics
+        self.metrics: Dict[str, Any] = {
+            "total_executions": 0,
+            "successful_executions": 0,
+            "failed_executions": 0,
+            "total_steps_executed": 0
+        }
+
+        self._register_default_templates()
+        self._initialized = True
+
+    def _register_default_templates(self):
+        """Register default workflow templates"""
+        for template_id, template_data in WORKFLOW_TEMPLATES.items():
+            steps = []
+            for i, step_data in enumerate(template_data["steps"]):
+                step = WorkflowStep(
+                    step_id=f"step_{i}",
+                    name=step_data["name"],
+                    step_type=StepType.LOOP if step_data.get("type") == "loop" else StepType.SERVICE_CALL,
+                    service=ServiceType(step_data["service"]),
+                    action=step_data["action"],
+                    dependencies=[f"step_{i-1}"] if i > 0 else []
+                )
+                steps.append(step)
+
+            workflow = Workflow(
+                workflow_id=template_id,
+                name=template_data["name"],
+                description=template_data["description"],
+                steps=steps,
+                tags=[template_data["category"]]
+            )
+
+            self.templates[template_id] = WorkflowTemplate(
+                template_id=template_id,
+                name=template_data["name"],
+                description=template_data["description"],
+                category=template_data["category"],
+                workflow=workflow
+            )
+
+    def create_workflow(
+        self,
+        name: str,
+        description: str,
+        steps: List[Dict[str, Any]],
+        timeout_seconds: int = 3600,
+        tags: Optional[List[str]] = None
+    ) -> Workflow:
+        """Create a new workflow"""
+        workflow_id = str(uuid.uuid4())
+
+        workflow_steps = []
+        for i, step_data in enumerate(steps):
+            step = WorkflowStep(
+                step_id=step_data.get("step_id", f"step_{i}"),
+                name=step_data["name"],
+                step_type=StepType(step_data.get("step_type", "service_call")),
+                service=ServiceType(step_data["service"]) if step_data.get("service") else None,
+                action=step_data.get("action", ""),
+                parameters=step_data.get("parameters", {}),
+                dependencies=step_data.get("dependencies", []),
+                condition=step_data.get("condition"),
+                timeout_seconds=step_data.get("timeout_seconds", 300),
+                on_failure=step_data.get("on_failure", "fail")
+            )
+            workflow_steps.append(step)
+
+        workflow = Workflow(
+            workflow_id=workflow_id,
+            name=name,
+            description=description,
+            steps=workflow_steps,
+            timeout_seconds=timeout_seconds,
+            tags=tags or []
+        )
+
+        self.workflows[workflow_id] = workflow
+        return workflow
+
+    def create_from_template(
+        self,
+        template_id: str,
+        customizations: Optional[Dict[str, Any]] = None
+    ) -> Workflow:
+        """Create workflow from template"""
+        if template_id not in self.templates:
+            raise ValueError(f"Template not found: {template_id}")
+
+        template = self.templates[template_id]
+        workflow = Workflow(
+            workflow_id=str(uuid.uuid4()),
+            name=template.workflow.name,
+            description=template.workflow.description,
+            steps=template.workflow.steps.copy(),
+            tags=template.workflow.tags.copy()
+        )
+
+        # Apply customizations
+        if customizations:
+            if "name" in customizations:
+                workflow.name = customizations["name"]
+            if "timeout_seconds" in customizations:
+                workflow.timeout_seconds = customizations["timeout_seconds"]
+
+        self.workflows[workflow.workflow_id] = workflow
+        return workflow
+
+    def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
+        """Get workflow by ID"""
+        return self.workflows.get(workflow_id)
+
+    def start_execution(
+        self,
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        user_id: Optional[str] = None,
+        project_id: Optional[str] = None
+    ) -> WorkflowExecution:
+        """Start workflow execution"""
+        workflow = self.workflows.get(workflow_id)
+        if not workflow:
+            raise ValueError(f"Workflow not found: {workflow_id}")
+
+        execution_id = str(uuid.uuid4())
+
+        execution = WorkflowExecution(
+            execution_id=execution_id,
+            workflow_id=workflow_id,
+            status=WorkflowStatus.PENDING,
+            input_data=input_data,
+            context=input_data.copy(),
+            user_id=user_id,
+            project_id=project_id
+        )
+
+        self.executions[execution_id] = execution
+        self.metrics["total_executions"] += 1
+
+        # Start execution
+        execution.status = WorkflowStatus.RUNNING
+        execution.started_at = datetime.now()
+
+        return execution
+
+    async def execute_workflow(
+        self,
+        execution_id: str
+    ) -> WorkflowExecution:
+        """Execute workflow steps"""
+        execution = self.executions.get(execution_id)
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        workflow = self.workflows.get(execution.workflow_id)
+        if not workflow:
+            raise ValueError(f"Workflow not found: {execution.workflow_id}")
+
+        try:
+            # Execute steps in order
+            for step in workflow.steps:
+                # Check dependencies
+                if not self._check_dependencies(execution, step):
+                    continue
+
+                # Check condition
+                if step.condition and not self._evaluate_condition(step.condition, execution.context):
+                    execution.step_executions[step.step_id] = StepExecution(
+                        execution_id=str(uuid.uuid4()),
+                        step_id=step.step_id,
+                        status=StepStatus.SKIPPED
+                    )
+                    continue
+
+                # Execute step
+                step_execution = await self._execute_step(step, execution)
+                execution.step_executions[step.step_id] = step_execution
+
+                if step_execution.status == StepStatus.FAILED:
+                    if step.on_failure == "fail":
+                        execution.status = WorkflowStatus.FAILED
+                        execution.error_message = step_execution.error_message
+                        break
+                    elif step.on_failure == "skip":
+                        continue
+
+            # Complete execution
+            if execution.status == WorkflowStatus.RUNNING:
+                execution.status = WorkflowStatus.COMPLETED
+                execution.output_data = execution.context.get("output", {})
+                self.metrics["successful_executions"] += 1
+
+            execution.completed_at = datetime.now()
+
+        except Exception as e:
+            execution.status = WorkflowStatus.FAILED
+            execution.error_message = str(e)
+            execution.completed_at = datetime.now()
+            self.metrics["failed_executions"] += 1
+
+        return execution
+
+    async def _execute_step(
+        self,
+        step: WorkflowStep,
+        execution: WorkflowExecution
+    ) -> StepExecution:
+        """Execute a single step"""
+        step_execution = StepExecution(
+            execution_id=str(uuid.uuid4()),
+            step_id=step.step_id,
+            status=StepStatus.RUNNING,
+            started_at=datetime.now(),
+            input_data=self._prepare_step_input(step, execution.context)
+        )
+
+        execution.current_step_id = step.step_id
+        self.metrics["total_steps_executed"] += 1
+
+        # Run pre-step hooks
+        for hook in self.pre_step_hooks:
+            await hook(step, execution, step_execution)
+
+        try:
+            if step.step_type == StepType.PARALLEL:
+                result = await self._execute_parallel_steps(step, execution)
+            elif step.step_type == StepType.LOOP:
+                result = await self._execute_loop(step, execution)
+            elif step.step_type == StepType.CHECKPOINT:
+                result = self._create_checkpoint(step, execution)
+            else:
+                result = await self._call_service(step, execution.context)
+
+            step_execution.status = StepStatus.COMPLETED
+            step_execution.output_data = result
+            execution.context.update(result)
+
+        except Exception as e:
+            # Retry logic
+            if step_execution.retry_count < step.retry_config.max_retries:
+                step_execution.retry_count += 1
+                step_execution.status = StepStatus.RETRYING
+                delay = self._calculate_retry_delay(step.retry_config, step_execution.retry_count)
+                await asyncio.sleep(delay)
+                return await self._execute_step(step, execution)
+            else:
+                step_execution.status = StepStatus.FAILED
+                step_execution.error_message = str(e)
+
+        step_execution.completed_at = datetime.now()
+        step_execution.duration_ms = (
+            step_execution.completed_at - step_execution.started_at
+        ).total_seconds() * 1000
+
+        # Run post-step hooks
+        for hook in self.post_step_hooks:
+            await hook(step, execution, step_execution)
+
+        return step_execution
+
+    async def _execute_parallel_steps(
+        self,
+        step: WorkflowStep,
+        execution: WorkflowExecution
+    ) -> Dict[str, Any]:
+        """Execute steps in parallel"""
+        tasks = []
+        for parallel_step in step.parallel_steps:
+            task = self._execute_step(parallel_step, execution)
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        combined_result = {}
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                raise result
+            combined_result[step.parallel_steps[i].step_id] = result.output_data
+
+        return combined_result
+
+    async def _execute_loop(
+        self,
+        step: WorkflowStep,
+        execution: WorkflowExecution
+    ) -> Dict[str, Any]:
+        """Execute step in a loop"""
+        items = self._get_loop_items(step, execution.context)
+        results = []
+
+        for i, item in enumerate(items):
+            loop_context = {**execution.context, "loop_item": item, "loop_index": i}
+            result = await self._call_service(step, loop_context)
+            results.append(result)
+
+        return {"loop_results": results}
+
+    async def _call_service(
+        self,
+        step: WorkflowStep,
+        context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Call a NarraForge service"""
+        if step.service is None:
+            return {}
+
+        # Simulated service call - in production, this would call actual services
+        service_name = step.service.value
+        action = step.action
+        parameters = self._prepare_step_input(step, context)
+
+        # Simulate processing
+        await asyncio.sleep(0.1)
+
+        return {
+            "service": service_name,
+            "action": action,
+            "success": True,
+            "result": f"Executed {service_name}.{action}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+    def _check_dependencies(
+        self,
+        execution: WorkflowExecution,
+        step: WorkflowStep
+    ) -> bool:
+        """Check if step dependencies are satisfied"""
+        for dep_id in step.dependencies:
+            dep_execution = execution.step_executions.get(dep_id)
+            if not dep_execution or dep_execution.status != StepStatus.COMPLETED:
+                return False
+        return True
+
+    def _evaluate_condition(
+        self,
+        condition: str,
+        context: Dict[str, Any]
+    ) -> bool:
+        """Evaluate step condition"""
+        # Simple condition evaluation - in production, use a proper expression engine
+        try:
+            return eval(condition, {"__builtins__": {}}, context)
+        except Exception:
+            return False
+
+    def _prepare_step_input(
+        self,
+        step: WorkflowStep,
+        context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Prepare input data for step"""
+        input_data = {}
+        for key, value in step.parameters.items():
+            if isinstance(value, str) and value.startswith("$"):
+                # Variable reference
+                var_name = value[1:]
+                input_data[key] = context.get(var_name)
+            else:
+                input_data[key] = value
+        return input_data
+
+    def _get_loop_items(
+        self,
+        step: WorkflowStep,
+        context: Dict[str, Any]
+    ) -> List[Any]:
+        """Get items for loop execution"""
+        if step.loop_items:
+            if step.loop_items.startswith("$"):
+                var_name = step.loop_items[1:]
+                items = context.get(var_name, [])
+                return items if isinstance(items, list) else [items]
+        return context.get("items", [])
+
+    def _calculate_retry_delay(
+        self,
+        config: RetryConfig,
+        retry_count: int
+    ) -> float:
+        """Calculate delay for retry"""
+        if config.policy == RetryPolicy.FIXED:
+            return config.initial_delay_seconds
+        elif config.policy == RetryPolicy.LINEAR:
+            return min(
+                config.initial_delay_seconds * retry_count,
+                config.max_delay_seconds
+            )
+        elif config.policy == RetryPolicy.EXPONENTIAL:
+            return min(
+                config.initial_delay_seconds * (2 ** (retry_count - 1)),
+                config.max_delay_seconds
+            )
+        return 0
+
+    def _create_checkpoint(
+        self,
+        step: WorkflowStep,
+        execution: WorkflowExecution
+    ) -> Dict[str, Any]:
+        """Create execution checkpoint"""
+        checkpoint_name = step.checkpoint_name or f"checkpoint_{step.step_id}"
+        execution.checkpoints[checkpoint_name] = {
+            "context": execution.context.copy(),
+            "step_executions": {
+                k: v.to_dict() for k, v in execution.step_executions.items()
+            },
+            "created_at": datetime.now().isoformat()
+        }
+        return {"checkpoint": checkpoint_name}
+
+    def pause_execution(self, execution_id: str) -> WorkflowExecution:
+        """Pause workflow execution"""
+        execution = self.executions.get(execution_id)
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        if execution.status == WorkflowStatus.RUNNING:
+            execution.status = WorkflowStatus.PAUSED
+            execution.paused_at = datetime.now()
+
+        return execution
+
+    def resume_execution(self, execution_id: str) -> WorkflowExecution:
+        """Resume paused execution"""
+        execution = self.executions.get(execution_id)
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        if execution.status == WorkflowStatus.PAUSED:
+            execution.status = WorkflowStatus.RUNNING
+
+        return execution
+
+    def cancel_execution(self, execution_id: str) -> WorkflowExecution:
+        """Cancel workflow execution"""
+        execution = self.executions.get(execution_id)
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        execution.status = WorkflowStatus.CANCELLED
+        execution.completed_at = datetime.now()
+
+        return execution
+
+    def restore_from_checkpoint(
+        self,
+        execution_id: str,
+        checkpoint_name: str
+    ) -> WorkflowExecution:
+        """Restore execution from checkpoint"""
+        execution = self.executions.get(execution_id)
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        checkpoint = execution.checkpoints.get(checkpoint_name)
+        if not checkpoint:
+            raise ValueError(f"Checkpoint not found: {checkpoint_name}")
+
+        execution.context = checkpoint["context"]
+        execution.status = WorkflowStatus.RUNNING
+
+        return execution
+
+    def get_execution(self, execution_id: str) -> Optional[WorkflowExecution]:
+        """Get execution by ID"""
+        return self.executions.get(execution_id)
+
+    def get_executions(
+        self,
+        user_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+        status: Optional[WorkflowStatus] = None,
+        limit: int = 100
+    ) -> List[WorkflowExecution]:
+        """Get executions with filters"""
+        executions = list(self.executions.values())
+
+        if user_id:
+            executions = [e for e in executions if e.user_id == user_id]
+
+        if project_id:
+            executions = [e for e in executions if e.project_id == project_id]
+
+        if status:
+            executions = [e for e in executions if e.status == status]
+
+        return sorted(
+            executions,
+            key=lambda e: e.started_at or datetime.min,
+            reverse=True
+        )[:limit]
+
+    def get_templates(
+        self,
+        category: Optional[str] = None
+    ) -> List[WorkflowTemplate]:
+        """Get workflow templates"""
+        templates = list(self.templates.values())
+
+        if category:
+            templates = [t for t in templates if t.category == category]
+
+        return templates
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get orchestrator metrics"""
+        running_count = len([
+            e for e in self.executions.values()
+            if e.status == WorkflowStatus.RUNNING
+        ])
+
+        return {
+            **self.metrics,
+            "workflows_count": len(self.workflows),
+            "templates_count": len(self.templates),
+            "running_executions": running_count,
+            "total_executions_stored": len(self.executions)
+        }
+
+    def add_pre_step_hook(self, hook: Callable):
+        """Add hook to run before each step"""
+        self.pre_step_hooks.append(hook)
+
+    def add_post_step_hook(self, hook: Callable):
+        """Add hook to run after each step"""
+        self.post_step_hooks.append(hook)
+
+
+# Singleton instance
+service_orchestrator = ServiceOrchestrator()

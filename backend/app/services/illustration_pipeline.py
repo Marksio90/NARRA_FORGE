@@ -309,7 +309,7 @@ GENRE_VISUAL_PROFILES: Dict[GenreType, Dict[str, Any]] = {
         "artistic_influences": ["Zdzisław Beksiński", "H.R. Giger", "Junji Ito"],
         "negative_prompts": ["cheerful", "bright", "cute"]
     },
-    GenreType.SCIFI: {
+    GenreType.SCI_FI: {
         "recommended_style": IllustrationStyle.DIGITAL_ART,
         "color_palette": ["neon blue", "chrome", "deep space black", "holographic"],
         "mood": "futuristic and sleek",

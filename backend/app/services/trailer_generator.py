@@ -227,7 +227,7 @@ GENRE_TRAILER_PROFILES = {
         "text_style": "questions, cryptic hints",
         "transitions": [TransitionType.DISSOLVE, TransitionType.FADE]
     },
-    GenreType.SCIFI: {
+    GenreType.SCI_FI: {
         "style": TrailerStyle.CINEMATIC,
         "music_mood": "electronic, futuristic, epic",
         "pacing": "building to spectacle",

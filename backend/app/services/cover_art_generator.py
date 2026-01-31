@@ -224,13 +224,6 @@ GENRE_COVER_PROFILES = {
         "color_palettes": [ColorPalette.DARK_ACADEMIA, ColorPalette.MONOCHROME, ColorPalette.EARTHY],
         "typical_elements": ["magnifying glass", "old book", "key", "shadows", "vintage"],
         "typography": "classic serif, vintage feel"
-    },
-    GenreType.HISTORICAL: {
-        "recommended_styles": [CoverStyle.ILLUSTRATED, CoverStyle.PHOTOGRAPHIC, CoverStyle.CHARACTER_FOCUSED],
-        "moods": [CoverMood.ELEGANT, CoverMood.DRAMATIC, CoverMood.SERENE],
-        "color_palettes": [ColorPalette.EARTHY, ColorPalette.WARM, ColorPalette.DARK_ACADEMIA],
-        "typical_elements": ["period costume", "historical building", "antique objects", "battlefield"],
-        "typography": "period-appropriate serif fonts"
     }
 }
 

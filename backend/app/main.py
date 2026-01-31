@@ -34,6 +34,11 @@ from app.api import collaborative  # Collaborative Writing - NarraForge 3.0 Phas
 from app.api import coach  # AI Writing Coach - NarraForge 3.0 Phase 4
 from app.api import platforms  # Publishing Integration - NarraForge 3.0 Phase 4
 from app.api import analytics  # Analytics Dashboard - NarraForge 3.0 Phase 4
+from app.api import gateway  # API Gateway - NarraForge 3.0 Phase 5
+from app.api import orchestrator  # Service Orchestrator - NarraForge 3.0 Phase 5
+from app.api import events  # Event Bus - NarraForge 3.0 Phase 5
+from app.api import cache  # Cache Layer - NarraForge 3.0 Phase 5
+from app.api import monitoring  # Monitoring & Health - NarraForge 3.0 Phase 5
 
 # Configure logging
 logging.basicConfig(
@@ -277,6 +282,41 @@ app.include_router(
     analytics.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Analytics"]
+)
+
+# API Gateway - NarraForge 3.0 Phase 5
+app.include_router(
+    gateway.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["API Gateway"]
+)
+
+# Service Orchestrator - NarraForge 3.0 Phase 5
+app.include_router(
+    orchestrator.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Service Orchestrator"]
+)
+
+# Event Bus - NarraForge 3.0 Phase 5
+app.include_router(
+    events.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Event Bus"]
+)
+
+# Cache Layer - NarraForge 3.0 Phase 5
+app.include_router(
+    cache.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Cache"]
+)
+
+# Monitoring & Health - NarraForge 3.0 Phase 5
+app.include_router(
+    monitoring.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Monitoring"]
 )
 
 

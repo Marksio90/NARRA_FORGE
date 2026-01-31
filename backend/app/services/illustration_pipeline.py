@@ -324,14 +324,6 @@ GENRE_VISUAL_PROFILES: Dict[GenreType, Dict[str, Any]] = {
         "lighting": "foggy, dim streetlights",
         "artistic_influences": ["classic detective illustrations", "Edward Hopper"],
         "negative_prompts": ["bright", "cheerful", "fantasy"]
-    },
-    GenreType.HISTORICAL: {
-        "recommended_style": IllustrationStyle.PAINTERLY,
-        "color_palette": ["sepia", "aged gold", "deep burgundy", "forest green"],
-        "mood": "historical and authentic",
-        "lighting": "period-appropriate, candlelight",
-        "artistic_influences": ["historical painters", "period illustrations"],
-        "negative_prompts": ["modern", "anachronistic", "technology"]
     }
 }
 

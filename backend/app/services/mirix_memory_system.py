@@ -73,7 +73,7 @@ class EmotionalValence(str, Enum):
 @dataclass
 class MemoryItem(ABC):
     """Base class for all memory items"""
-    id: str
+    id: str = ""
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_accessed: datetime = field(default_factory=datetime.utcnow)
     access_count: int = 0
@@ -102,8 +102,8 @@ class CoreMemoryItem(MemoryItem):
     - Character birth traits (eye color, birth date)
     - Geographic constants
     """
-    fact: str
-    category: str  # "world_rule", "physical_law", "magic_system", "history", "geography"
+    fact: str = ""
+    category: str = ""  # "world_rule", "physical_law", "magic_system", "history", "geography"
     entities: List[str] = field(default_factory=list)
     source: str = ""
     confidence: float = 1.0
@@ -137,9 +137,9 @@ class EpisodicMemoryItem(MemoryItem):
     - What changed (state transitions)
     - Sensory details (sights, sounds, smells)
     """
-    scene_id: str
-    chapter: int
-    summary: str
+    scene_id: str = ""
+    chapter: int = 0
+    summary: str = ""
     characters_present: List[str] = field(default_factory=list)
     location: str = ""
     time_in_story: str = ""
@@ -203,9 +203,9 @@ class SemanticMemoryItem(MemoryItem):
     - Conceptual relationships
     - Narrative patterns
     """
-    concept: str
-    concept_type: str  # "theme", "motif", "symbol", "archetype", "pattern"
-    definition: str
+    concept: str = ""
+    concept_type: str = ""  # "theme", "motif", "symbol", "archetype", "pattern"
+    definition: str = ""
 
     # Relationships to other concepts
     related_concepts: List[Tuple[str, str, float]] = field(default_factory=list)  # (concept, relation_type, strength)
@@ -251,9 +251,9 @@ class ProceduralMemoryItem(MemoryItem):
     - Genre conventions
     - Effective formulas
     """
-    technique_name: str
-    technique_type: str  # "style", "pacing", "dialogue", "description", "structure"
-    description: str
+    technique_name: str = ""
+    technique_type: str = ""  # "style", "pacing", "dialogue", "description", "structure"
+    description: str = ""
 
     # How to apply
     when_to_use: List[str] = field(default_factory=list)
@@ -301,8 +301,8 @@ class ResourceMemoryItem(MemoryItem):
     - Sensory descriptions
     - Emotional expressions
     """
-    resource_type: str  # "metaphor", "simile", "quote", "description", "expression"
-    content: str
+    resource_type: str = ""  # "metaphor", "simile", "quote", "description", "expression"
+    content: str = ""
 
     # Context
     emotional_context: List[str] = field(default_factory=list)
@@ -351,9 +351,9 @@ class KnowledgeVaultItem(MemoryItem):
     - Event chronicles
     - Cultural details
     """
-    entry_type: str  # "character", "location", "object", "event", "culture", "organization"
-    name: str
-    full_content: str
+    entry_type: str = ""  # "character", "location", "object", "event", "culture", "organization"
+    name: str = ""
+    full_content: str = ""
 
     # Structured data
     attributes: Dict[str, Any] = field(default_factory=dict)

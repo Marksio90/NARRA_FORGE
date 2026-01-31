@@ -311,7 +311,7 @@ GENRE_PACING_PROFILES = {
             NarrativePhase.RESOLUTION: 0.4
         }
     },
-    GenreType.SCIFI: {
+    GenreType.SCI_FI: {
         "baseline_pacing": 0.6,
         "pacing_variance": 0.25,
         "tension_floor": 0.3,

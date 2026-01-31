@@ -1140,3 +1140,7 @@ def get_multilang_generator() -> MultiLanguageGenerator:
     if _multilang_generator is None:
         _multilang_generator = MultiLanguageGenerator()
     return _multilang_generator
+
+
+# Module-level instance for API imports
+multi_language_generator = get_multilang_generator()

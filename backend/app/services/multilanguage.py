@@ -78,6 +78,16 @@ class GrammaticalFeature(Enum):
     HONORIFICS = "honorifics"
 
 
+class FileFormat(Enum):
+    """Export file formats"""
+    DOCX = "docx"
+    PDF = "pdf"
+    EPUB = "epub"
+    TXT = "txt"
+    HTML = "html"
+    MARKDOWN = "md"
+
+
 # =============================================================================
 # DATA CLASSES
 # =============================================================================

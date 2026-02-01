@@ -787,3 +787,7 @@ def get_publishing_integration() -> PublishingIntegration:
     if _publishing_integration is None:
         _publishing_integration = PublishingIntegration()
     return _publishing_integration
+
+
+# Singleton instance for API usage
+publishing_integration = get_publishing_integration()

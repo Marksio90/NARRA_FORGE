@@ -963,3 +963,7 @@ def get_analytics_dashboard() -> AnalyticsDashboard:
     if _analytics_dashboard is None:
         _analytics_dashboard = AnalyticsDashboard()
     return _analytics_dashboard
+
+
+# Singleton instance for API usage
+analytics_dashboard = get_analytics_dashboard()

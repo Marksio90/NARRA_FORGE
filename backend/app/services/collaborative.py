@@ -976,3 +976,559 @@ def get_collab_system() -> CollaborativeWritingSystem:
     if _collab_system is None:
         _collab_system = CollaborativeWritingSystem()
     return _collab_system
+
+
+# =============================================================================
+# API-COMPATIBLE WRAPPER
+# =============================================================================
+
+class CollaborativeWritingSystemAPI:
+    """
+    API-compatible wrapper for CollaborativeWritingSystem.
+
+    This wrapper provides the interface expected by the collaborative API endpoints.
+    """
+
+    def __init__(self):
+        self._system = get_collab_system()
+        self._documents: Dict[str, str] = {}  # session_id -> content
+        self._locks: Dict[str, Dict[str, Any]] = {}  # session_id -> {lock_id -> lock_info}
+
+    def create_session(
+        self,
+        project_id: str,
+        document_id: str,
+        title: str,
+        initial_content: str = ""
+    ) -> 'CollaborationSession':
+        """Create a new collaboration session."""
+        import asyncio
+
+        # Create session using the underlying system
+        loop = asyncio.new_event_loop()
+        try:
+            session = loop.run_until_complete(
+                self._system.create_session(
+                    project_id=project_id,
+                    creator_user_id="system",
+                    creator_name="System"
+                )
+            )
+        finally:
+            loop.close()
+
+        # Store document content
+        self._documents[session.session_id] = initial_content
+        session.settings["document_id"] = document_id
+        session.settings["title"] = title
+
+        return session
+
+    def get_session(self, session_id: str) -> Optional['CollaborationSession']:
+        """Get a collaboration session by ID."""
+        return self._system.get_session(session_id)
+
+    def join_session(
+        self,
+        session_id: str,
+        user_id: str,
+        username: str,
+        role: CollaboratorRole
+    ) -> 'Collaborator':
+        """Join an existing collaboration session."""
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            collaborator = loop.run_until_complete(
+                self._system.add_collaborator(
+                    session_id=session_id,
+                    user_id=user_id,
+                    name=username,
+                    role=role
+                )
+            )
+        finally:
+            loop.close()
+
+        return collaborator
+
+    def leave_session(self, session_id: str, user_id: str) -> None:
+        """Leave a collaboration session."""
+        session = self._system.get_session(session_id)
+        if session:
+            session.collaborators = [
+                c for c in session.collaborators if c.user_id != user_id
+            ]
+            if user_id in session.current_editors:
+                session.current_editors.remove(user_id)
+
+    def get_collaborators(self, session_id: str) -> List['Collaborator']:
+        """Get all collaborators in a session."""
+        session = self._system.get_session(session_id)
+        if session:
+            return session.collaborators
+        return []
+
+    def make_change(
+        self,
+        session_id: str,
+        user_id: str,
+        change_type: ChangeType,
+        position: int,
+        content: str = "",
+        old_content: str = "",
+        length: int = 0
+    ) -> tuple:
+        """Make a text change in the document."""
+        import asyncio
+
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        doc_content = self._documents.get(session_id, "")
+
+        # Apply the change
+        if change_type == ChangeType.INSERT:
+            new_doc = doc_content[:position] + content + doc_content[position:]
+            old_text = ""
+            new_text = content
+        elif change_type == ChangeType.DELETE:
+            old_text = doc_content[position:position + length]
+            new_doc = doc_content[:position] + doc_content[position + length:]
+            new_text = ""
+        elif change_type == ChangeType.REPLACE:
+            old_text = old_content
+            new_doc = doc_content[:position] + content + doc_content[position + len(old_content):]
+            new_text = content
+        else:
+            old_text = ""
+            new_text = ""
+            new_doc = doc_content
+
+        self._documents[session_id] = new_doc
+
+        # Record the change
+        loop = asyncio.new_event_loop()
+        try:
+            change = loop.run_until_complete(
+                self._system.record_change(
+                    session_id=session_id,
+                    author_id=user_id,
+                    chapter=session.active_chapter,
+                    change_type=change_type,
+                    start_pos=position,
+                    end_pos=position + len(new_text),
+                    old_text=old_text,
+                    new_text=new_text
+                )
+            )
+
+            # Create a version snapshot
+            version = loop.run_until_complete(
+                self._system.create_version(
+                    session_id=session_id,
+                    chapter=session.active_chapter,
+                    content=new_doc,
+                    author_id=user_id,
+                    message=f"Change: {change_type.value}"
+                )
+            )
+        finally:
+            loop.close()
+
+        return change, version
+
+    def get_current_content(self, session_id: str) -> str:
+        """Get the current document content."""
+        return self._documents.get(session_id, "")
+
+    def get_version_history(
+        self,
+        session_id: str,
+        limit: int = 50
+    ) -> List['Version']:
+        """Get version history for a session."""
+        session = self._system.get_session(session_id)
+        if not session:
+            return []
+
+        all_versions = []
+        for chapter_versions in session.versions.values():
+            all_versions.extend(chapter_versions)
+
+        all_versions.sort(key=lambda v: v.created_at, reverse=True)
+        return all_versions[:limit]
+
+    def get_version(
+        self,
+        session_id: str,
+        version_id: str
+    ) -> Optional['Version']:
+        """Get a specific version."""
+        session = self._system.get_session(session_id)
+        if not session:
+            return None
+
+        for chapter_versions in session.versions.values():
+            for version in chapter_versions:
+                if version.version_id == version_id:
+                    return version
+
+        return None
+
+    def restore_version(
+        self,
+        session_id: str,
+        version_id: str,
+        user_id: str
+    ) -> 'Version':
+        """Restore document to a previous version."""
+        import asyncio
+
+        version = self.get_version(session_id, version_id)
+        if not version:
+            raise ValueError("Version not found")
+
+        # Update document content
+        self._documents[session_id] = version.content
+
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        # Create a new version for the restore
+        loop = asyncio.new_event_loop()
+        try:
+            new_version = loop.run_until_complete(
+                self._system.create_version(
+                    session_id=session_id,
+                    chapter=version.chapter,
+                    content=version.content,
+                    author_id=user_id,
+                    message=f"Restored to version {version.version_number}",
+                    tags=["restored"]
+                )
+            )
+        finally:
+            loop.close()
+
+        return new_version
+
+    def create_suggestion(
+        self,
+        session_id: str,
+        user_id: str,
+        start_position: int,
+        end_position: int,
+        original_text: str,
+        suggested_text: str,
+        reason: str = ""
+    ) -> 'Suggestion':
+        """Create a text suggestion for review."""
+        import asyncio
+
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        loop = asyncio.new_event_loop()
+        try:
+            suggestion = loop.run_until_complete(
+                self._system.create_suggestion(
+                    session_id=session_id,
+                    author_id=user_id,
+                    chapter=session.active_chapter,
+                    start_pos=start_position,
+                    end_pos=end_position,
+                    original_text=original_text,
+                    suggested_text=suggested_text,
+                    reason=reason
+                )
+            )
+        finally:
+            loop.close()
+
+        return suggestion
+
+    def get_suggestions(
+        self,
+        session_id: str,
+        status: Optional[SuggestionStatus] = None,
+        user_id: Optional[str] = None
+    ) -> List['Suggestion']:
+        """Get all suggestions for a session."""
+        session = self._system.get_session(session_id)
+        if not session:
+            return []
+
+        suggestions = session.suggestions
+
+        if status:
+            suggestions = [s for s in suggestions if s.status == status]
+
+        if user_id:
+            suggestions = [s for s in suggestions if s.author_id == user_id]
+
+        return suggestions
+
+    def accept_suggestion(
+        self,
+        session_id: str,
+        suggestion_id: str,
+        reviewer_id: str
+    ) -> 'Suggestion':
+        """Accept a suggestion and apply it."""
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            suggestion = loop.run_until_complete(
+                self._system.resolve_suggestion(
+                    session_id=session_id,
+                    suggestion_id=suggestion_id,
+                    resolver_id=reviewer_id,
+                    accept=True
+                )
+            )
+        finally:
+            loop.close()
+
+        # Apply the suggestion to the document
+        doc_content = self._documents.get(session_id, "")
+        new_content = (
+            doc_content[:suggestion.start_position] +
+            suggestion.suggested_text +
+            doc_content[suggestion.end_position:]
+        )
+        self._documents[session_id] = new_content
+
+        return suggestion
+
+    def reject_suggestion(
+        self,
+        session_id: str,
+        suggestion_id: str,
+        reviewer_id: str,
+        reason: str = ""
+    ) -> 'Suggestion':
+        """Reject a suggestion."""
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            suggestion = loop.run_until_complete(
+                self._system.resolve_suggestion(
+                    session_id=session_id,
+                    suggestion_id=suggestion_id,
+                    resolver_id=reviewer_id,
+                    accept=False,
+                    response=reason
+                )
+            )
+        finally:
+            loop.close()
+
+        return suggestion
+
+    def add_comment(
+        self,
+        session_id: str,
+        user_id: str,
+        content: str,
+        comment_type: CommentType,
+        start_position: Optional[int] = None,
+        end_position: Optional[int] = None,
+        parent_id: Optional[str] = None
+    ) -> 'Comment':
+        """Add a comment to the document."""
+        import asyncio
+
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        position = start_position if start_position is not None else 0
+        selected_text = None
+        if start_position is not None and end_position is not None:
+            doc_content = self._documents.get(session_id, "")
+            if start_position < len(doc_content) and end_position <= len(doc_content):
+                selected_text = doc_content[start_position:end_position]
+
+        loop = asyncio.new_event_loop()
+        try:
+            comment = loop.run_until_complete(
+                self._system.add_comment(
+                    session_id=session_id,
+                    author_id=user_id,
+                    chapter=session.active_chapter,
+                    position=position,
+                    content=content,
+                    comment_type=comment_type,
+                    selection_start=start_position,
+                    selection_end=end_position,
+                    selected_text=selected_text,
+                    thread_id=parent_id
+                )
+            )
+        finally:
+            loop.close()
+
+        return comment
+
+    def get_comments(
+        self,
+        session_id: str,
+        resolved: Optional[bool] = None,
+        comment_type: Optional[CommentType] = None
+    ) -> List['Comment']:
+        """Get all comments for a session."""
+        session = self._system.get_session(session_id)
+        if not session:
+            return []
+
+        comments = session.comments
+
+        if resolved is not None:
+            comments = [c for c in comments if c.resolved == resolved]
+
+        if comment_type:
+            comments = [c for c in comments if c.comment_type == comment_type]
+
+        return comments
+
+    def resolve_comment(
+        self,
+        session_id: str,
+        comment_id: str,
+        resolver_id: str
+    ) -> 'Comment':
+        """Mark a comment as resolved."""
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        for comment in session.comments:
+            if comment.comment_id == comment_id:
+                comment.resolved = True
+                return comment
+
+        raise ValueError("Comment not found")
+
+    def get_conflicts(self, session_id: str) -> List['Conflict']:
+        """Get all unresolved conflicts."""
+        session = self._system.get_session(session_id)
+        if not session:
+            return []
+
+        return [c for c in session.conflicts if not c.resolved]
+
+    def resolve_conflict(
+        self,
+        session_id: str,
+        conflict_id: str,
+        resolution: ConflictResolution,
+        merged_content: Optional[str] = None
+    ) -> 'Conflict':
+        """Resolve a conflict."""
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            conflict = loop.run_until_complete(
+                self._system.resolve_conflict(
+                    session_id=session_id,
+                    conflict_id=conflict_id,
+                    resolution=resolution,
+                    resolved_text=merged_content
+                )
+            )
+        finally:
+            loop.close()
+
+        return conflict
+
+    def get_ai_contribution(
+        self,
+        session_id: str,
+        contribution_type: str,
+        context: str,
+        parameters: Optional[Dict[str, Any]] = None
+    ) -> 'AIContribution':
+        """Request AI assistance for collaborative writing."""
+        session = self._system.get_session(session_id)
+        if not session:
+            raise ValueError("Session not found")
+
+        contribution = AIContribution(
+            contribution_id=str(uuid.uuid4()),
+            contribution_type=contribution_type,
+            chapter=session.active_chapter,
+            content=f"[AI {contribution_type}]: Generated content based on: {context[:100]}...",
+            context=context,
+            confidence=0.8,
+            accepted=None,
+            human_feedback=None,
+            created_at=datetime.now()
+        )
+
+        if session_id not in self._system.ai_contributions:
+            self._system.ai_contributions[session_id] = []
+        self._system.ai_contributions[session_id].append(contribution)
+
+        return contribution
+
+    def get_session_stats(self, session_id: str) -> Dict[str, Any]:
+        """Get collaboration statistics for a session."""
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            stats = loop.run_until_complete(
+                self._system.get_collaboration_stats(session_id)
+            )
+        finally:
+            loop.close()
+
+        return stats
+
+    def lock_section(
+        self,
+        session_id: str,
+        user_id: str,
+        start_position: int,
+        end_position: int
+    ) -> Dict[str, Any]:
+        """Lock a section for exclusive editing."""
+        if session_id not in self._locks:
+            self._locks[session_id] = {}
+
+        lock_id = str(uuid.uuid4())
+        lock = {
+            "lock_id": lock_id,
+            "user_id": user_id,
+            "start_position": start_position,
+            "end_position": end_position,
+            "locked_at": datetime.now().isoformat()
+        }
+
+        self._locks[session_id][lock_id] = lock
+
+        return lock
+
+    def unlock_section(
+        self,
+        session_id: str,
+        user_id: str,
+        lock_id: str
+    ) -> None:
+        """Unlock a previously locked section."""
+        if session_id in self._locks and lock_id in self._locks[session_id]:
+            lock = self._locks[session_id][lock_id]
+            if lock["user_id"] == user_id:
+                del self._locks[session_id][lock_id]
+
+
+# Singleton instance for API usage
+collaborative_writing_system = CollaborativeWritingSystemAPI()

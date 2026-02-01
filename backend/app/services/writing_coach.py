@@ -1347,3 +1347,7 @@ def get_writing_coach() -> AIWritingCoach:
     if _writing_coach is None:
         _writing_coach = AIWritingCoach()
     return _writing_coach
+
+
+# Singleton instance for API usage
+ai_writing_coach = get_writing_coach()

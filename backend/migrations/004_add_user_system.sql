@@ -117,11 +117,11 @@ BEGIN
                 name, tier, price_monthly, price_yearly,
                 books_per_month, max_words_per_book,
                 series_support, priority_generation, cover_generation,
-                deep_editing, all_export_formats, display_order
+                deep_editing, all_export_formats, is_active, display_order
             ) VALUES
-            ('Free', 'FREE', 0, 0, 1, 50000, FALSE, FALSE, FALSE, FALSE, FALSE, 1),
-            ('Pro', 'PRO', 29.00, 290.00, 5, 150000, TRUE, FALSE, TRUE, TRUE, TRUE, 2),
-            ('Premium', 'PREMIUM', 79.00, 790.00, 999999, 200000, TRUE, TRUE, TRUE, TRUE, TRUE, 3);
+            ('Free', 'FREE', 0, 0, 1, 50000, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 1),
+            ('Pro', 'PRO', 29.00, 290.00, 5, 150000, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, 2),
+            ('Premium', 'PREMIUM', 79.00, 790.00, 999999, 200000, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, 3);
         END IF;
     END IF;
 END$$;

@@ -172,8 +172,8 @@ class SubscriptionPlan(Base):
     stripe_price_id_yearly = Column(String(255), nullable=True)
 
     # Status
-    is_active = Column(Boolean, default=True, nullable=False)
-    display_order = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, server_default='true', nullable=False)
+    display_order = Column(Integer, default=0, server_default='0', nullable=False)
 
     # Timestamps
     created_at = Column(DateTime, server_default=func.now(), nullable=False)

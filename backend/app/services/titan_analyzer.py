@@ -40,6 +40,7 @@ class TITANDimension(str, Enum):
 class ImpliedCharacter:
     """A character implied by the title's semantics"""
     essence: str  # Who this character IS based on title
+    gender: str  # male/female/neutral - CRITICAL for Polish family terms
     role_in_story: str  # protagonist, antagonist, etc.
     title_connection: str  # How they connect to the title
     archetypal_function: str  # Their narrative function
@@ -103,6 +104,7 @@ class TITANAnalysis:
                 "character_seeds": [
                     {
                         "essence": c.essence,
+                        "gender": c.gender,
                         "role": c.role_in_story,
                         "title_connection": c.title_connection,
                         "archetypal_function": c.archetypal_function,
@@ -155,12 +157,30 @@ Przeanalizuj każde słowo tytułu:
 
 ## CZĘŚĆ 3: IMPLIKOWANE POSTACIE
 Nawet jeśli tytuł NIE wymienia postaci, ZAWSZE implikuje pewne postacie.
+
+⚠️ KRYTYCZNE DLA POLSKICH TERMINÓW RODZINNYCH:
+- "Tata", "Tatuś", "Tatko" → ZAWSZE mężczyzna (ojciec)
+- "Mama", "Mamusia", "Mamcia" → ZAWSZE kobieta (matka)
+- "Ojciec" → ZAWSZE mężczyzna
+- "Matka" → ZAWSZE kobieta
+- "Syn" → ZAWSZE mężczyzna
+- "Córka" → ZAWSZE kobieta
+- "Brat" → ZAWSZE mężczyzna
+- "Siostra" → ZAWSZE kobieta
+- "Dziadek", "Dziadzia" → ZAWSZE mężczyzna (dziadek)
+- "Babcia", "Babunia" → ZAWSZE kobieta (babcia)
+- "Wujek", "Wuj", "Stryj" → ZAWSZE mężczyzna (wujek)
+- "Ciocia", "Ciotka" → ZAWSZE kobieta (ciocia)
+
+NIE MIESZAJ PŁCI! Te terminy mają wbudowaną płeć w języku polskim!
+
 Dla każdej implikowanej postaci określ:
 - KIM musi być ta postać by PASOWAĆ do tytułu?
+- JAKA JEST PŁEĆ tej postaci (SZCZEGÓLNIE dla polskich terminów rodzinnych - patrz lista powyżej!)
 - DLACZEGO tytuł wymaga tej postaci?
 - Jaka jest jej FUNKCJA NARRACYJNA w kontekście tytułu?
 - Jakie cechy MUSI posiadać?
-- Jakie imię by PASOWAŁO do esencji tytułu (nie losowe - pasujące semantycznie!)
+- Jakie imię by PASOWAŁO do esencji tytułu (nie losowe - pasujące semantycznie i płciowo!)
 
 ## CZĘŚĆ 4: IMPLIKOWANY ŚWIAT
 - Jaki świat MUSI istnieć by tytuł miał sens?
@@ -194,6 +214,7 @@ Odpowiedz w formacie JSON:
     "implied_characters": [
         {{
             "essence": "Kim ta postać JEST w kontekście tytułu",
+            "gender": "male/female/neutral - KRYTYCZNE: dla polskich terminów rodzinnych (tata=male, mama=female, etc.)",
             "role": "protagonist/antagonist/mentor/catalyst/etc",
             "title_connection": "Jak KONKRETNIE łączy się z tytułem",
             "function": "Funkcja narracyjna",
@@ -207,7 +228,7 @@ Odpowiedz w formacie JSON:
                 "fear": "Strach - związany z tytułem"
             }},
             "name_suggestions": ["imię1", "imię2", "imię3"],
-            "name_reasoning": "Dlaczego te imiona pasują do tytułu"
+            "name_reasoning": "Dlaczego te imiona pasują do tytułu I płci postaci"
         }}
     ],
     "world_seeds": {{
@@ -329,6 +350,22 @@ Odpowiedz w formacie JSON:
 KRYTYCZNE: Nawet jeśli tytuł NIE ZAWIERA imion, ZAWSZE implikuje pewne postacie.
 TWÓRZ postacie które MUSZĄ ISTNIEĆ by tytuł miał sens - nie generyczne, ale WYNIKAJĄCE z tytułu.
 
+⚠️ ABSOLUTNIE KRYTYCZNE DLA POLSKICH TERMINÓW RODZINNYCH - NIGDY NIE POMYL PŁCI:
+• "Tata", "Tatuś", "Tatko", "Tato" → ZAWSZE MĘŻCZYZNA (ojciec)
+• "Mama", "Mamusia", "Mamcia", "Mamo" → ZAWSZE KOBIETA (matka)
+• "Ojciec" → ZAWSZE MĘŻCZYZNA
+• "Matka" → ZAWSZE KOBIETA
+• "Syn" → ZAWSZE MĘŻCZYZNA
+• "Córka" → ZAWSZE KOBIETA
+• "Brat", "Braciszek" → ZAWSZE MĘŻCZYZNA
+• "Siostra", "Siostrzyczka" → ZAWSZE KOBIETA
+• "Dziadek", "Dziadzia" → ZAWSZE MĘŻCZYZNA
+• "Babcia", "Babunia" → ZAWSZE KOBIETA
+• "Wujek", "Wuj", "Stryj" → ZAWSZE MĘŻCZYZNA
+• "Ciocia", "Ciotka" → ZAWSZE KOBIETA
+
+Te terminy mają WBUDOWANĄ płeć w języku polskim - NIE MIESZAJ ICH!
+
 Dla KAŻDEJ implikowanej postaci określ:
 
 1. PROTAGONIST - Kto MUSI być bohaterem by tytuł miał sens?
@@ -354,14 +391,16 @@ Odpowiedz w formacie JSON:
 {{
     "protagonist": {{
         "essence": "Kim MUSI być protagonista w świetle tytułu",
+        "gender": "male/female/neutral - OBOWIĄZKOWE! Dla polskich terminów rodzinnych patrz lista powyżej",
         "title_connection": "Jak bezpośrednio łączy się z tytułem",
         "must_embody": ["temat1 z tytułu", "temat2 z tytułu"],
         "psychological_wound": "Rana związana z tytułem",
         "name_suggestions": ["imię1", "imię2", "imię3"],
-        "name_reasoning": "Dlaczego te imiona pasują do tytułu"
+        "name_reasoning": "Dlaczego te imiona pasują do tytułu I płci"
     }},
     "antagonist": {{
         "essence": "Kim/czym MUSI być antagonista",
+        "gender": "male/female/neutral/not_applicable - OBOWIĄZKOWE jeśli postać!",
         "type": "person/force/idea/internal",
         "title_connection": "Jak łączy się z tytułem",
         "must_embody": ["przeciwieństwo tematu1", "ciemna strona"],
@@ -375,6 +414,7 @@ Odpowiedz w formacie JSON:
     "supporting_cast": [
         {{
             "essence": "Kim jest ta postać",
+            "gender": "male/female/neutral - OBOWIĄZKOWE!",
             "function": "mentor/ally/mirror/etc",
             "title_connection": "Związek z tytułem",
             "must_embody": ["aspekt tytułu"]
@@ -565,6 +605,7 @@ KRYTYCZNE: Nie zakładaj domyślnie kultury zachodniej. Tytuł sam może sugerow
    - Klimat/geografia sugerowana przez tytuł
    - Tradycje regionalne
    - Dialekty/język
+   - SZCZEGÓLNIE dla tytułów polskich: rozpoznaj rodzinne terminy (tata/mama/syn/córka) i ich płeć!
 
 5. HISTORICAL_CULTURAL_CONTEXT: Jaki kontekst historyczno-kulturowy?
    - Epoka historyczna sugerowana
@@ -702,6 +743,7 @@ class TITANAnalyzer:
                 psych = char_data.get("psychological_core", {})
                 character_seeds.append(ImpliedCharacter(
                     essence=char_data.get("essence", ""),
+                    gender=char_data.get("gender", "neutral"),  # CRITICAL: Gender for Polish family terms
                     role_in_story=char_data.get("role", ""),
                     title_connection=char_data.get("title_connection", ""),
                     archetypal_function=char_data.get("function", ""),

@@ -702,27 +702,134 @@ def _analyze_title(title: str, genre: str) -> dict:
     words = title.split()
 
     # Detect character-focused titles (names, relationships)
+    # COMPREHENSIVE Polish + English family relationship dictionary
+    # Includes both formal and informal terms to work perfectly with ANY title
     relationship_keywords = {
+        # POLISH - Parents (formal + informal)
         "córka": {"role": "córka", "gender": "female", "theme": "rodzina"},
         "syn": {"role": "syn", "gender": "male", "theme": "rodzina"},
         "matka": {"role": "matka", "gender": "female", "theme": "rodzina"},
         "ojciec": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "tata": {"role": "ojciec", "gender": "male", "theme": "rodzina"},  # FIX: Added informal "dad"
+        "tatuś": {"role": "ojciec", "gender": "male", "theme": "rodzina"},  # daddy
+        "tatko": {"role": "ojciec", "gender": "male", "theme": "rodzina"},  # daddy
+        "tato": {"role": "ojciec", "gender": "male", "theme": "rodzina"},  # dad (vocative)
+        "mama": {"role": "matka", "gender": "female", "theme": "rodzina"},  # FIX: Added informal "mom"
+        "mamusia": {"role": "matka", "gender": "female", "theme": "rodzina"},  # mommy
+        "mamcia": {"role": "matka", "gender": "female", "theme": "rodzina"},  # mommy
+        "mamo": {"role": "matka", "gender": "female", "theme": "rodzina"},  # mom (vocative)
+        "rodzic": {"role": "rodzic", "gender": "neutral", "theme": "rodzina"},  # parent
+        "rodzice": {"role": "rodzice", "gender": "neutral", "theme": "rodzina"},  # parents
+
+        # POLISH - Grandparents
+        "dziadek": {"role": "dziadek", "gender": "male", "theme": "rodzina"},
+        "babcia": {"role": "babcia", "gender": "female", "theme": "rodzina"},
+        "dziadzia": {"role": "dziadek", "gender": "male", "theme": "rodzina"},  # informal grandpa
+        "babunia": {"role": "babcia", "gender": "female", "theme": "rodzina"},  # informal grandma
+        "dziadkowie": {"role": "dziadkowie", "gender": "neutral", "theme": "rodzina"},  # grandparents
+
+        # POLISH - Grandchildren
+        "wnuk": {"role": "wnuk", "gender": "male", "theme": "rodzina"},
+        "wnuczka": {"role": "wnuczka", "gender": "female", "theme": "rodzina"},
+
+        # POLISH - Siblings
+        "siostra": {"role": "siostra", "gender": "female", "theme": "rodzina"},
+        "brat": {"role": "brat", "gender": "male", "theme": "rodzina"},
+        "siostrzyczka": {"role": "siostra", "gender": "female", "theme": "rodzina"},  # little sister
+        "braciszek": {"role": "brat", "gender": "male", "theme": "rodzina"},  # little brother
+        "rodzeństwo": {"role": "rodzeństwo", "gender": "neutral", "theme": "rodzina"},  # siblings
+
+        # POLISH - Extended family
+        "wujek": {"role": "wujek", "gender": "male", "theme": "rodzina"},  # uncle (mother's brother)
+        "wuj": {"role": "wujek", "gender": "male", "theme": "rodzina"},  # uncle (informal)
+        "ciocia": {"role": "ciocia", "gender": "female", "theme": "rodzina"},  # aunt
+        "ciotka": {"role": "ciocia", "gender": "female", "theme": "rodzina"},  # aunt (formal)
+        "stryj": {"role": "stryj", "gender": "male", "theme": "rodzina"},  # uncle (father's brother)
+        "stryjek": {"role": "stryj", "gender": "male", "theme": "rodzina"},  # uncle (father's brother)
+        "kuzyn": {"role": "kuzyn", "gender": "male", "theme": "rodzina"},  # cousin (male)
+        "kuzynka": {"role": "kuzynka", "gender": "female", "theme": "rodzina"},  # cousin (female)
+        "bratanek": {"role": "bratanek", "gender": "male", "theme": "rodzina"},  # nephew (brother's son)
+        "bratanica": {"role": "bratanica", "gender": "female", "theme": "rodzina"},  # niece (brother's daughter)
+        "siostrzeniec": {"role": "siostrzeniec", "gender": "male", "theme": "rodzina"},  # nephew (sister's son)
+        "siostrzenica": {"role": "siostrzenica", "gender": "female", "theme": "rodzina"},  # niece (sister's daughter)
+
+        # POLISH - Marriage & Partnership
+        "żona": {"role": "żona", "gender": "female", "theme": "małżeństwo"},
+        "mąż": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
+        "małżonek": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},  # spouse (male)
+        "małżonka": {"role": "żona", "gender": "female", "theme": "małżeństwo"},  # spouse (female)
+        "mąż": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
+        "narzeczony": {"role": "narzeczony", "gender": "male", "theme": "małżeństwo"},  # fiancé
+        "narzeczona": {"role": "narzeczona", "gender": "female", "theme": "małżeństwo"},  # fiancée
+        "żonka": {"role": "żona", "gender": "female", "theme": "małżeństwo"},  # wife (informal)
+
+        # POLISH - Loss & Tragedy
+        "wdowa": {"role": "wdowa", "gender": "female", "theme": "strata"},
+        "wdowiec": {"role": "wdowiec", "gender": "male", "theme": "strata"},  # widower
+        "sierota": {"role": "sierota", "gender": "neutral", "theme": "strata"},
+
+        # POLISH - In-laws
+        "teść": {"role": "teść", "gender": "male", "theme": "rodzina"},  # father-in-law
+        "teściowa": {"role": "teściowa", "gender": "female", "theme": "rodzina"},  # mother-in-law
+        "zięć": {"role": "zięć", "gender": "male", "theme": "rodzina"},  # son-in-law
+        "synowa": {"role": "synowa", "gender": "female", "theme": "rodzina"},  # daughter-in-law
+
+        # ENGLISH - Core family
         "daughter": {"role": "córka", "gender": "female", "theme": "rodzina"},
         "son": {"role": "syn", "gender": "male", "theme": "rodzina"},
         "mother": {"role": "matka", "gender": "female", "theme": "rodzina"},
         "father": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "dad": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "daddy": {"role": "ojciec", "gender": "male", "theme": "rodzina"},
+        "mom": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "mommy": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "mum": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "mummy": {"role": "matka", "gender": "female", "theme": "rodzina"},
+        "parent": {"role": "rodzic", "gender": "neutral", "theme": "rodzina"},
+        "parents": {"role": "rodzice", "gender": "neutral", "theme": "rodzina"},
+
+        # ENGLISH - Grandparents
+        "grandfather": {"role": "dziadek", "gender": "male", "theme": "rodzina"},
+        "grandmother": {"role": "babcia", "gender": "female", "theme": "rodzina"},
+        "grandpa": {"role": "dziadek", "gender": "male", "theme": "rodzina"},
+        "grandma": {"role": "babcia", "gender": "female", "theme": "rodzina"},
+        "gramps": {"role": "dziadek", "gender": "male", "theme": "rodzina"},
+        "granny": {"role": "babcia", "gender": "female", "theme": "rodzina"},
+        "grandparents": {"role": "dziadkowie", "gender": "neutral", "theme": "rodzina"},
+
+        # ENGLISH - Grandchildren
+        "grandson": {"role": "wnuk", "gender": "male", "theme": "rodzina"},
+        "granddaughter": {"role": "wnuczka", "gender": "female", "theme": "rodzina"},
+
+        # ENGLISH - Siblings
         "sister": {"role": "siostra", "gender": "female", "theme": "rodzina"},
-        "siostra": {"role": "siostra", "gender": "female", "theme": "rodzina"},
         "brother": {"role": "brat", "gender": "male", "theme": "rodzina"},
-        "brat": {"role": "brat", "gender": "male", "theme": "rodzina"},
+        "siblings": {"role": "rodzeństwo", "gender": "neutral", "theme": "rodzina"},
+
+        # ENGLISH - Extended family
+        "uncle": {"role": "wujek", "gender": "male", "theme": "rodzina"},
+        "aunt": {"role": "ciocia", "gender": "female", "theme": "rodzina"},
+        "cousin": {"role": "kuzyn", "gender": "neutral", "theme": "rodzina"},
+        "nephew": {"role": "bratanek", "gender": "male", "theme": "rodzina"},
+        "niece": {"role": "bratanica", "gender": "female", "theme": "rodzina"},
+
+        # ENGLISH - Marriage
         "wife": {"role": "żona", "gender": "female", "theme": "małżeństwo"},
-        "żona": {"role": "żona", "gender": "female", "theme": "małżeństwo"},
         "husband": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
-        "mąż": {"role": "mąż", "gender": "male", "theme": "małżeństwo"},
+        "spouse": {"role": "małżonek", "gender": "neutral", "theme": "małżeństwo"},
+        "fiancé": {"role": "narzeczony", "gender": "male", "theme": "małżeństwo"},
+        "fiancée": {"role": "narzeczona", "gender": "female", "theme": "małżeństwo"},
+
+        # ENGLISH - Loss
         "widow": {"role": "wdowa", "gender": "female", "theme": "strata"},
-        "wdowa": {"role": "wdowa", "gender": "female", "theme": "strata"},
+        "widower": {"role": "wdowiec", "gender": "male", "theme": "strata"},
         "orphan": {"role": "sierota", "gender": "neutral", "theme": "strata"},
-        "sierota": {"role": "sierota", "gender": "neutral", "theme": "strata"},
+
+        # ENGLISH - In-laws
+        "father-in-law": {"role": "teść", "gender": "male", "theme": "rodzina"},
+        "mother-in-law": {"role": "teściowa", "gender": "female", "theme": "rodzina"},
+        "son-in-law": {"role": "zięć", "gender": "male", "theme": "rodzina"},
+        "daughter-in-law": {"role": "synowa", "gender": "female", "theme": "rodzina"},
     }
 
     # Detect setting keywords (English + Polish)
@@ -800,12 +907,79 @@ def _analyze_title(title: str, genre: str) -> dict:
         "cud": "niezwykłe okoliczności narodzin/poczęcia",
     }
 
+    # Polish affectionate/diminutive terms that could appear in titles
+    # These are merged into relationship_keywords for comprehensive coverage
+    affectionate_terms = {
+        # Children - affectionate
+        "dziecko": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "dzieciątko": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "dziecię": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "maleństwo": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "dziecina": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+
+        # Boys - affectionate
+        "chłopiec": {"role": "syn", "gender": "male", "theme": "rodzina"},
+        "chłopczyk": {"role": "syn", "gender": "male", "theme": "rodzina"},
+        "synek": {"role": "syn", "gender": "male", "theme": "rodzina"},
+
+        # Girls - affectionate
+        "dziewczynka": {"role": "córka", "gender": "female", "theme": "rodzina"},
+        "córeczka": {"role": "córka", "gender": "female", "theme": "rodzina"},
+        "córunia": {"role": "córka", "gender": "female", "theme": "rodzina"},
+
+        # Babies
+        "niemowlę": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "niemowlak": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "noworodek": {"role": "dziecko", "gender": "male", "theme": "rodzina"},
+        "noworodka": {"role": "dziecko", "gender": "female", "theme": "rodzina"},
+        "bobas": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "maluch": {"role": "dziecko", "gender": "male", "theme": "rodzina"},
+        "maluszek": {"role": "dziecko", "gender": "male", "theme": "rodzina"},
+
+        # Friends
+        "przyjaciel": {"role": "przyjaciel", "gender": "male", "theme": "przyjaźń"},
+        "przyjaciółka": {"role": "przyjaciel", "gender": "female", "theme": "przyjaźń"},
+        "przyjaciele": {"role": "przyjaciele", "gender": "neutral", "theme": "przyjaźń"},
+        "kumpel": {"role": "przyjaciel", "gender": "male", "theme": "przyjaźń"},
+        "koleżanka": {"role": "przyjaciel", "gender": "female", "theme": "przyjaźń"},
+        "kolega": {"role": "przyjaciel", "gender": "male", "theme": "przyjaźń"},
+
+        # Lovers/romantic
+        "ukochany": {"role": "ukochany", "gender": "male", "theme": "romans"},
+        "ukochana": {"role": "ukochany", "gender": "female", "theme": "romans"},
+        "kochanek": {"role": "kochanek", "gender": "male", "theme": "romans"},
+        "kochanka": {"role": "kochanek", "gender": "female", "theme": "romans"},
+        "ukochany": {"role": "partner", "gender": "male", "theme": "romans"},
+        "ukochana": {"role": "partner", "gender": "female", "theme": "romans"},
+
+        # English children terms
+        "child": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "children": {"role": "dzieci", "gender": "neutral", "theme": "rodzina"},
+        "baby": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "infant": {"role": "niemowlę", "gender": "neutral", "theme": "rodzina"},
+        "boy": {"role": "syn", "gender": "male", "theme": "rodzina"},
+        "girl": {"role": "córka", "gender": "female", "theme": "rodzina"},
+        "kid": {"role": "dziecko", "gender": "neutral", "theme": "rodzina"},
+        "kids": {"role": "dzieci", "gender": "neutral", "theme": "rodzina"},
+
+        # English friends
+        "friend": {"role": "przyjaciel", "gender": "neutral", "theme": "przyjaźń"},
+        "friends": {"role": "przyjaciele", "gender": "neutral", "theme": "przyjaźń"},
+        "lover": {"role": "kochanek", "gender": "neutral", "theme": "romans"},
+        "beloved": {"role": "ukochany", "gender": "neutral", "theme": "romans"},
+    }
+
+    # Merge affectionate terms into relationship_keywords
+    relationship_keywords.update(affectionate_terms)
+
     # Age pattern detection for character role classification
     age_patterns = [
         (r'(\d+)[,.]?\s*(?:roczn[ayi]|letni[aey]|miesi[ęe]czn[ayi])', 'child_age'),
         (r'niemowl[ęe]', 'infant'),
         (r'noworod(?:ek|ka)', 'newborn'),
         (r'maluch|malutk[aiy]', 'toddler'),
+        (r'bobas', 'baby'),
+        (r'dziecko|dziecię|dzieciątko', 'child'),
     ]
 
     # Detect parent names from pattern "córka/syn X i Y" (e.g., "córka Hanny i Mateusza")

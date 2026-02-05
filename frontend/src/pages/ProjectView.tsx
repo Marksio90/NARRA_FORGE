@@ -429,9 +429,9 @@ const ProjectView: React.FC = () => {
             </div>
           </div>
 
-          {/* ADVANCED ANALYSIS - 10 New Dimensions */}
+          {/* ADVANCED ANALYSIS - Multi-dimensional Analysis */}
           <div className="mt-6 pt-6 border-t border-purple-700">
-            <h4 className="text-lg font-bold text-white mb-4">🔮 Zaawansowana Analiza (10 Wymiarów)</h4>
+            <h4 className="text-lg font-bold text-white mb-4">🔮 Zaawansowana Analiza (13-Wymiarowa)</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* Cultural/Mythological Depth */}

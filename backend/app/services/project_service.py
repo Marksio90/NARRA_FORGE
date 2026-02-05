@@ -419,6 +419,57 @@ Przykłady:
     "archetypal_patterns": ["archetyp 1", "archetyp 2"]
   }},
 
+  "cultural_analysis": {{
+    "cultural_context": "Kontekst kulturowy tytułu",
+    "mythological_references": ["mit 1", "mit 2"],
+    "archetypal_patterns": ["archetyp 1", "archetyp 2"],
+    "symbolic_depth": "Głębokość symboliczna"
+  }},
+
+  "magic_system": {{
+    "magic_type": "typ magii wynikający z tytułu (lub 'brak' jeśli nie ma magii)",
+    "power_source": "źródło mocy",
+    "limitations": "ograniczenia systemu magii",
+    "scope": "zasięg magii"
+  }},
+
+  "tone_and_maturity": {{
+    "maturity_level": "Poziom dojrzałości treści (młodzieżowy/dorosły/mature)",
+    "violence_level": "Poziom przemocy (niski/średni/wysoki)",
+    "moral_complexity": "Złożoność moralna (prosta/średnia/złożona)",
+    "emotional_intensity": "Intensywność emocjonalna (niska/średnia/wysoka)"
+  }},
+
+  "subgenre": {{
+    "primary": "Główny podgatunek",
+    "secondary": ["podgatunek 2", "podgatunek 3"],
+    "magic_level": "niski/średni/wysoki (lub 'brak')",
+    "focus": "character-driven/plot-driven/world-driven"
+  }},
+
+  "pacing_suggestions": {{
+    "overall_pace": "szybkie/średnie/wolne",
+    "structure_type": "3-akt/Hero's Journey/Save the Cat/inna",
+    "darkest_act": "Który akt najciemniejszy?",
+    "tension_curve": "Jak narasta napięcie?"
+  }},
+
+  "antagonist_predictions": [
+    {{
+      "type": "osoba/siła/idea/wewnętrzny/okoliczności",
+      "motivation": "Co nim kieruje?",
+      "opposition_nature": "Jak się sprzeciwia?"
+    }}
+  ],
+
+  "character_arc": {{
+    "starting_point": "Kim protagonista jest na początku?",
+    "midpoint_shift": "Jaka zmiana w połowie?",
+    "climax_challenge": "Najciemniejsza noc duszy",
+    "transformation": "Kim się staje?",
+    "arc_type": "pozytywny/negatywny/płaski"
+  }},
+
   "setting_analysis": {{
     "environment": "Gdzie się dzieje?",
     "time_period": "Kiedy?",
@@ -469,8 +520,17 @@ Przykłady:
   "reader_promise": "Co obiecujesz czytelnikowi który wybierze tę książkę?"
 }}
 
+⚠️ KRYTYCZNE WYMAGANIA:
+1. WSZYSTKIE pola JSON MUSZĄ być wypełnione - nie pomijaj żadnego!
+2. Jeśli jakiś element nie pasuje do tytułu (np. magic_system dla dramatu rodzinnego),
+   NADAL wypełnij pole ale zaznacz "brak" lub "nie dotyczy"
+3. "cultural_analysis" i "cultural_depth" to DWA RÓŻNE pola - wypełnij OBA!
+4. "antagonist_predictions" (lista) i "antagonist_analysis" (obiekt) - wypełnij OBA!
+5. "character_arc" (obiekt) i "character_arcs" (obiekt z protagonist_arc) - wypełnij OBA!
+
 BĄDŹ MAKSYMALNIE SZCZEGÓŁOWY. Każde pole wypełnij KONKRETNĄ, BOGATĄ treścią.
-To musi być analiza na poziomie profesjonalnego redaktora z wydawnictwa Big Five!"""
+To musi być analiza na poziomie profesjonalnego redaktora z wydawnictwa Big Five!
+System oczekuje 13 WYMIARÓW ANALIZY - dostarcz je wszystkie!"""
 
     try:
         response = await ai_service.generate(

@@ -39,6 +39,9 @@ from app.api import orchestrator  # Service Orchestrator - NarraForge 3.0 Phase 
 from app.api import events  # Event Bus - NarraForge 3.0 Phase 5
 from app.api import cache  # Cache Layer - NarraForge 3.0 Phase 5
 from app.api import monitoring  # Monitoring & Health - NarraForge 3.0 Phase 5
+from app.api import genre_blending  # Dynamic Genre Blending - NarraForge 3.0 Advanced
+from app.api import theme_weaving  # Subconscious Theme Weaving - NarraForge 3.0 Advanced
+from app.api import style_marketplace  # Style Marketplace - NarraForge 3.0 Advanced
 
 # Configure logging
 logging.basicConfig(
@@ -317,6 +320,27 @@ app.include_router(
     monitoring.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Monitoring"]
+)
+
+# Dynamic Genre Blending - NarraForge 3.0 Advanced
+app.include_router(
+    genre_blending.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Genre Blending"]
+)
+
+# Subconscious Theme Weaving - NarraForge 3.0 Advanced
+app.include_router(
+    theme_weaving.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Theme Weaving"]
+)
+
+# Style Marketplace - NarraForge 3.0 Advanced
+app.include_router(
+    style_marketplace.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Style Marketplace"]
 )
 
 

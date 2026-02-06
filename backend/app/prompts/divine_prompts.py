@@ -263,7 +263,8 @@ Każda scena: minimum 3-4 zmysły.
 Każda scena realizuje strukturę:
 **Goal → Conflict → Disaster → Reaction → Dilemma → Decision**
 
-1. Hook na początku (NIGDY opis pogody!)
+1. Hook na początku — ZRÓŻNICUJ typ: akcja / dialog / obraz zmysłowy / myśl bohatera
+   (NIGDY opis pogody! NIE zaczynaj KAŻDEJ sceny od dialogu — zmieniaj!)
 2. Rozwój z mikro-napięciem w KAŻDYM akapicie
 3. Punkt kulminacyjny
 4. Cliffhanger/hak na następną scenę
@@ -381,7 +382,8 @@ Cały świat widziany JEGO/JEJ oczami. Rana KOLORUJE percepcję.
 • Zero klisz, zero filter words
 
 ### STRUKTURA:
-1. Mocne otwarcie (akcja/dialog/obraz - NIGDY opis pogody!)
+1. Mocne otwarcie — ZRÓŻNICUJ: akcja LUB dialog LUB obraz zmysłowy LUB myśl bohatera
+   UWAGA: NIE zaczynaj każdej sceny od dialogu (—)! Zmieniaj typ otwarcia co scenę!
 2. Realizacja beatów z Beat Sheet
 3. Punkt kulminacyjny sceny
 4. Hak na następną scenę

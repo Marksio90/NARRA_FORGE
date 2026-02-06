@@ -1062,11 +1062,49 @@ def _analyze_title(title: str, genre: str) -> dict:
         # Polish genitive: Hanny (from Hanna), Mateusza (from Mateusz)
         # Try to convert from genitive to nominative
         def genitive_to_nominative(name: str) -> str:
-            if name.endswith('y') or name.endswith('i'):
-                # Hanny -> Hanna, Ani -> Ania
-                return name[:-1] + 'a'
-            elif name.endswith('a'):
+            # Known irregular genitive->nominative mappings
+            irregular = {
+                "pawła": "Paweł", "pawla": "Paweł",
+                "piotra": "Piotr",
+                "jakuba": "Jakub",
+                "józefa": "Józef", "jozefa": "Józef",
+                "michała": "Michał", "michala": "Michał",
+                "rafała": "Rafał", "rafala": "Rafał",
+                "gabriela": "Gabriel",
+                "krzysztofa": "Krzysztof",
+                "stanisława": "Stanisław", "stanislawa": "Stanisław",
+            }
+            if name.lower() in irregular:
+                return irregular[name.lower()]
+
+            # Pattern-based rules (ordered by specificity)
+            if name.endswith('szy') or name.endswith('dzy'):
+                # Grzegorzy -> doesn't happen, skip
+                pass
+            elif name.endswith('usza') or name.endswith('asza'):
                 # Mateusza -> Mateusz, Tomasza -> Tomasz
+                return name[:-2]
+            elif name.endswith('ła') or name.endswith('la'):
+                # Pawła -> Paweł (handled by irregular above)
+                # Generic: Karola -> Karol
+                return name[:-1]
+            elif name.endswith('ny'):
+                # Hanny -> Hanna
+                return name[:-1] + 'a'
+            elif name.endswith('y') and len(name) > 3:
+                # Anny -> Anna (doubled consonant), Ewy -> Ewa
+                if len(name) > 2 and name[-3] == name[-2]:
+                    # Hanny -> Hanna (double consonant + y)
+                    return name[:-1] + 'a'
+                else:
+                    # Ewy -> Ewa, Katarzyny -> Katarzyna
+                    return name[:-1] + 'a'
+            elif name.endswith('i') and len(name) > 3:
+                # Ani -> Ania, Zosi -> Zosia
+                return name[:-1] + 'a'
+            elif name.endswith('a') and len(name) > 3:
+                # Mateusza -> Mateusz (already handled above)
+                # Adama -> Adam
                 return name[:-1]
             return name
 
@@ -1509,17 +1547,21 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
     Uses model tier config to determine which model for each step,
     then estimates token usage and calculates cost.
 
-    FIXED (2026-01-25): Accurate estimation based on:
+    FIXED (2026-02-06): Accurate estimation based on:
     - Polish text: ~1.5 tokens per word (not 1.33)
     - Scene-by-scene architecture: 5 scenes per chapter
-    - Beat Sheet calls for Divine Prompt System
-    - Proper input token accounting (context pack ~12K per scene)
+    - Context reuse model: system prompt cached, ~40% context overlap between scenes
+    - world_detail and style_complexity affect token estimates
+    - Parallelization-aware duration estimation
+    - Title analysis cost included
     """
     chapter_count = ai_decisions.get("chapter_count", 25)
     target_words = ai_decisions.get("target_word_count", 90000)
     main_chars = ai_decisions.get("main_character_count", 5)
     supporting_chars = ai_decisions.get("supporting_character_count", 10)
     subplots = ai_decisions.get("subplot_count", 3)
+    world_detail = ai_decisions.get("world_detail_level", "medium")
+    style_complexity = ai_decisions.get("style_complexity", "medium")
 
     # Scene-by-scene architecture parameters
     SCENES_PER_CHAPTER = 5
@@ -1528,12 +1570,27 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
     # Token estimation constants (Polish text)
     TOKENS_PER_WORD_POLISH = 1.5  # Polish inflection = more tokens
 
-    # Context sizes per scene (input tokens)
+    # Context sizes per scene (input tokens) - with REUSE MODEL
+    # First scene in chapter: full context pack (11K tokens)
+    # Subsequent scenes: system prompt cached, ~40% context overlap
     SYSTEM_PROMPT_TOKENS = 2000
     CONTEXT_PACK_TOKENS = 8000
     BEAT_SHEET_TOKENS = 500
     PREVIOUS_CONTENT_TOKENS = 500
-    INPUT_PER_SCENE = SYSTEM_PROMPT_TOKENS + CONTEXT_PACK_TOKENS + BEAT_SHEET_TOKENS + PREVIOUS_CONTENT_TOKENS
+    FULL_INPUT_PER_SCENE = SYSTEM_PROMPT_TOKENS + CONTEXT_PACK_TOKENS + BEAT_SHEET_TOKENS + PREVIOUS_CONTENT_TOKENS
+    # Subsequent scenes reuse ~60% of context (system prompt cached + overlapping context)
+    REUSE_INPUT_PER_SCENE = int(CONTEXT_PACK_TOKENS * 0.4 + BEAT_SHEET_TOKENS + PREVIOUS_CONTENT_TOKENS + 500)
+    # Effective average: 1 full + 4 reused per chapter
+    EFFECTIVE_INPUT_PER_SCENE = (FULL_INPUT_PER_SCENE + (SCENES_PER_CHAPTER - 1) * REUSE_INPUT_PER_SCENE) // SCENES_PER_CHAPTER
+
+    # World detail multiplier: high detail = more tokens for world-building and context
+    world_detail_multiplier = {"high": 1.3, "medium": 1.0, "low": 0.8}.get(world_detail, 1.0)
+    # Style complexity multiplier: affects polishing and prose output
+    style_complexity_multiplier = {"high": 1.2, "medium": 1.0, "low": 0.85}.get(style_complexity, 1.0)
+
+    # Title analysis cost (GPT-4o call for semantic analysis, ~2K in / ~3K out)
+    TITLE_ANALYSIS_INPUT = 2000
+    TITLE_ANALYSIS_OUTPUT = 3000
 
     steps = [
         {
@@ -1554,22 +1611,22 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "step": 3,
             "name": "Generowanie World Bible",
             "task_type": "world_building",
-            "estimated_tokens_in": 2000,
-            "estimated_tokens_out": 4000,
+            "estimated_tokens_in": int(2000 * world_detail_multiplier),
+            "estimated_tokens_out": int(4000 * world_detail_multiplier),
         },
         {
             "step": 4,
             "name": "Kreacja Postaci Głównych",
             "task_type": "character_creation",
-            "estimated_tokens_in": 2000 * main_chars,  # Each character needs full context
-            "estimated_tokens_out": 3000 * main_chars,
+            "estimated_tokens_in": int(2000 * main_chars * world_detail_multiplier),
+            "estimated_tokens_out": int(3000 * main_chars),
         },
         {
             "step": 5,
             "name": "Kreacja Postaci Pobocznych",
             "task_type": "character_creation",
-            "estimated_tokens_in": 1500 * supporting_chars,
-            "estimated_tokens_out": 1500 * supporting_chars,
+            "estimated_tokens_in": int(1500 * supporting_chars * world_detail_multiplier),
+            "estimated_tokens_out": int(1500 * supporting_chars),
         },
         {
             "step": 6,
@@ -1587,14 +1644,14 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
         },
         {
             "step": 8,
-            "name": "Chapter Breakdown",
+            "name": "Podział na Rozdziały",
             "task_type": "plot_structure",
             "estimated_tokens_in": 3000,
             "estimated_tokens_out": 600 * chapter_count,
         },
         {
             "step": 9,
-            "name": "Scene Detailing (Beat Sheets)",
+            "name": "Detale Scen (Beat Sheets)",
             "task_type": "simple_outline",
             # Beat Sheet for each scene: ~2000 in, ~1500 out
             "estimated_tokens_in": 2000 * total_scenes,
@@ -1602,22 +1659,22 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
         },
         {
             "step": 10,
-            "name": "Pre-Writing Validation",
+            "name": "Walidacja Przed Pisaniem",
             "task_type": "validation",
             "estimated_tokens_in": 5000,
             "estimated_tokens_out": 2000,
         },
         {
             "step": 11,
-            "name": "Prose Generation - Wszystkie Rozdziały",
+            "name": "Generowanie Prozy - Wszystkie Rozdziały",
             "task_type": "prose_writing",
-            # FIXED: Scene-by-scene input + proper Polish token ratio
-            "estimated_tokens_in": INPUT_PER_SCENE * total_scenes,
-            "estimated_tokens_out": int(target_words * TOKENS_PER_WORD_POLISH),
+            # Context reuse model: first scene/chapter = full context, subsequent = ~40% new
+            "estimated_tokens_in": EFFECTIVE_INPUT_PER_SCENE * total_scenes,
+            "estimated_tokens_out": int(target_words * TOKENS_PER_WORD_POLISH * style_complexity_multiplier),
         },
         {
             "step": 12,
-            "name": "Continuity Check (wszystkie rozdziały)",
+            "name": "Weryfikacja Spójności (wszystkie rozdziały)",
             "task_type": "validation",
             # RAG-based validation: ~2000 tokens per chapter
             "estimated_tokens_in": 2000 * chapter_count,
@@ -1625,22 +1682,22 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
         },
         {
             "step": 13,
-            "name": "Style Polishing (sample chapters)",
+            "name": "Polerowanie Stylu (wybrane rozdziały)",
             "task_type": "style_polish",
-            # Style pass on ~20% of chapters (critical scenes)
-            "estimated_tokens_in": int(target_words * 0.2 * TOKENS_PER_WORD_POLISH),
-            "estimated_tokens_out": int(target_words * 0.05 * TOKENS_PER_WORD_POLISH),
+            # Style pass on ~20% of chapters (more for high complexity)
+            "estimated_tokens_in": int(target_words * 0.2 * TOKENS_PER_WORD_POLISH * style_complexity_multiplier),
+            "estimated_tokens_out": int(target_words * 0.05 * TOKENS_PER_WORD_POLISH * style_complexity_multiplier),
         },
         {
             "step": 14,
-            "name": "Genre Compliance Audit",
+            "name": "Audyt Zgodności Gatunkowej",
             "task_type": "validation",
             "estimated_tokens_in": 3000,
             "estimated_tokens_out": 1000,
         },
         {
             "step": 15,
-            "name": "Final Assembly & Export",
+            "name": "Końcowy Montaż i Eksport",
             "task_type": "formatting",
             "estimated_tokens_in": 2000,
             "estimated_tokens_out": 1000,
@@ -1678,6 +1735,13 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
         tokens_per_min = {1: 10000, 2: 8000, 3: 5000}[tier]
         duration = max(1, int((step_data["estimated_tokens_in"] + step_data["estimated_tokens_out"]) / tokens_per_min))
 
+        # Parallelization factor: steps processing multiple independent items
+        # (characters, chapters, scenes) can be partially parallelized
+        parallelizable_steps = {4, 5, 7, 9, 11, 12}  # Independent items per step
+        if step_data["step"] in parallelizable_steps:
+            # Assume ~3x parallelization (Celery concurrency=4, minus overhead)
+            duration = max(1, int(duration / 3))
+
         estimated_steps.append({
             "step": step_data["step"],
             "name": step_data["name"],
@@ -1689,6 +1753,19 @@ def _calculate_step_costs(ai_decisions: dict, genre: str) -> List[dict]:
             "estimated_duration_minutes": duration,
             "description": f"Model: {model_name} | ~{step_data['estimated_tokens_out']//1000}K tokens output"
         })
+
+    # Add title analysis cost as a pre-step (GPT-4o call)
+    title_analysis_cost = round(
+        (TITLE_ANALYSIS_INPUT / 1_000_000) * settings.TIER2_INPUT_COST +
+        (TITLE_ANALYSIS_OUTPUT / 1_000_000) * settings.TIER2_OUTPUT_COST,
+        4
+    )
+    # Add to step 2 (Parametryzacja) since title analysis happens during simulation
+    for step in estimated_steps:
+        if step["step"] == 2:
+            step["estimated_cost"] = round(step["estimated_cost"] + title_analysis_cost, 4)
+            step["description"] += f" + analiza tytułu (${title_analysis_cost:.4f})"
+            break
 
     return estimated_steps
 

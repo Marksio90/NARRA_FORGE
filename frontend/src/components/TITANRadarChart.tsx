@@ -1,7 +1,7 @@
 /**
  * TITAN Radar Chart Component for NarraForge 2.0
  *
- * Visualizes the 12-dimensional TITAN analysis as a radar/spider chart.
+ * Visualizes the 13-dimensional TITAN analysis as a radar/spider chart.
  */
 
 import React, { useMemo } from 'react';

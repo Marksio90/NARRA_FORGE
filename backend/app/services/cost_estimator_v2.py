@@ -182,7 +182,7 @@ class AccurateCostEstimator:
         # 1. TITAN Analysis
         titan = self.STEP_COSTS["titan_analysis"]
         breakdown["titan_analysis"] = CostBreakdown(
-            step_name="Analiza TITAN (12 wymiarów)",
+            step_name="Analiza TITAN (13 wymiarów)",
             calls=titan["calls"],
             input_tokens=titan["calls"] * titan["input_per_call"],
             output_tokens=titan["calls"] * titan["output_per_call"],

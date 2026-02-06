@@ -99,6 +99,22 @@ FORBIDDEN_CLICHES = [
     r"poczuł[ao]?,? (że|jak)",
     r"zauważył[ao]?,? (że|jak)",
     r"obserwował[ao]?,? (że|jak)",
+
+    # Repeated metaphor patterns (from generation analysis)
+    r"serce obijało się o żebra",
+    r"niczym ptak w klatce",
+    r"jak uwięziony ptak",
+    r"jak ptak szukający wyjścia",
+    r"jakby próbował",
+    r"był[ao]? gotow[ay]? na wszystko",
+    r"był[ao]? gotow[ay]?,? by",
+    r"musiał działać",
+    r"czas działać",
+    r"nie mógł się cofnąć",
+    r"nie było odwrotu",
+    r"decyzja została podjęta",
+    r"nowy początek",
+    r"był[ao]? to początek",
 ]
 
 FORBIDDEN_DIALOGUE_PATTERNS = [
@@ -257,29 +273,26 @@ Model ma tendencję do wybierania "bezpiecznych" opcji. Musisz to przełamać.
 
 ### ZASADY PERPLEXITY:
 
-1. **Unikalne metafory**:
-   ❌ "serce biło jak młot" (klisze)
-   ✅ "serce obijało się o żebra jak uwięziony ptak szukający wyjścia"
+1. **Unikalne metafory**: KAŻDA metafora musi być ORYGINALNA i nigdy wcześniej nieużyta.
+   Zamiast klisz (serce jak młot, ptak w klatce, zimny pot) — stwórz porównania
+   specyficzne dla TEGO bohatera, JEGO zawodu, JEGO doświadczeń.
 
-2. **Zaskakujące porównania**:
-   ❌ "zimny jak lód"
-   ✅ "zimny jak wnętrze opuszczonego kościoła w styczniu"
+2. **Zaskakujące porównania**: Łącz domeny, które normalnie nie idą w parze.
+   Porównuj emocje do konkretnych, zmysłowych doświadczeń z życia postaci.
 
-3. **Konkretność zamiast abstrakcji**:
-   ❌ "czuł strach" (abstrakcja)
-   ✅ "jego palce zdrętwiały, a gardło — gardło było za ciasne na oddech" (konkret)
+3. **Konkretność zamiast abstrakcji**: NIGDY nie pisz "czuł strach/radość/smutek".
+   Pokaż FIZYCZNE objawy w ciele, w zmysłach, w działaniach postaci.
 
-4. **Sensoryka nieoczekiwana**:
-   ❌ "pachniało lasem" (przewidywalne)
-   ✅ "powietrze smakowało żywicą i czymś starszym — kurzem stuleci" (zaskakujące)
+4. **Sensoryka nieoczekiwana**: Każdy zmysłowy opis musi być SPECYFICZNY.
+   Nie "pachniało" — CZYM pachniało? Skąd ten zapach? Co przypomina postaci?
 
 ### TECHNIKA ZASTĄPIENIA KLISZ:
 
 Gdy chcesz użyć kliszy, zatrzymaj się i zadaj pytanie:
 "Jak by to opisał KONKRETNIE bohater z JEGO doświadczeniem życiowym?"
 
-Żołnierz nie powie "serce mi wali". Powie "puls jak przed szturmem".
-Kucharz nie powie "krew się zlała". Powie "jak czerwone wino na białym obrusie".
+ZASADA: Nigdy nie powtarzaj metafory, która pojawiła się wcześniej w tekście.
+Każda scena wymaga NOWYCH, ORYGINALNYCH porównań.
 """
 
 

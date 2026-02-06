@@ -37,6 +37,10 @@ from app.prompts.narrative_anti_patterns import (
     get_full_anti_pattern_prompt,
     FORBIDDEN_TROPES
 )
+from app.prompts.genre_excellence_prompts import (
+    get_genre_excellence_prompt,
+    GenreType
+)
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +154,7 @@ class SceneWriterAgent:
         # Previous scene content and summary for continuity
         previous_content = ""
         previous_scene_summary = ""
+        used_metaphors: List[str] = []  # Track metaphors to prevent cross-scene repetition
 
         for scene_num in range(1, num_scenes + 1):
             logger.info(f"🎬 Processing scene {scene_num}/{num_scenes}...")
@@ -178,6 +183,14 @@ class SceneWriterAgent:
                 logger.info(f"✅ Beat Sheet created: {beat_sheet.total_beats} beats")
 
             # KROK 2: WIRTUOZ PIÓRA - generuj scenę
+            # Inject used metaphors ban into context to prevent repetition
+            enhanced_context = context_text
+            if used_metaphors:
+                metaphor_ban = "\n\n## ZAKAZ POWTÓRZEŃ - te metafory/porównania BYŁY JUŻ UŻYTE (NIE POWTARZAJ!):\n"
+                metaphor_ban += "\n".join(f"- ❌ \"{m}\"" for m in used_metaphors[-15:])  # Last 15
+                metaphor_ban += "\nStwórz CAŁKOWICIE NOWE, ORYGINALNE metafory!"
+                enhanced_context += metaphor_ban
+
             scene_result = await self._generate_scene_with_divine_prompt(
                 chapter_number=chapter_number,
                 scene_number=scene_num,
@@ -186,7 +199,7 @@ class SceneWriterAgent:
                 pov_character=pov_character,
                 book_title=book_title,
                 target_words=words_per_scene,
-                context_text=context_text,
+                context_text=enhanced_context,
                 previous_content=previous_content,
                 chapter_outline=chapter_outline,
                 beat_sheet_text=beat_sheet_text,
@@ -194,22 +207,60 @@ class SceneWriterAgent:
                 tier=tier
             )
 
-            # KROK 3: WALIDATOR - sprawdź anty-wzorce (jeśli włączony)
+            # KROK 3: WALIDATOR - sprawdź anty-wzorce i REGENERUJ jeśli zbyt niski score
+            max_retries = 2
             if self.validate_output and self.anti_pattern_validator:
-                validation = self.anti_pattern_validator.validate(scene_result.content)
-                validation_scores.append(validation['score'])
-                if not validation['passed']:
+                for attempt in range(max_retries + 1):
+                    validation = self.anti_pattern_validator.validate(scene_result.content)
+
+                    if validation['passed'] or attempt == max_retries:
+                        validation_scores.append(validation['score'])
+                        if not validation['passed']:
+                            logger.warning(
+                                f"⚠️ Scene {scene_num} accepted after {max_retries} retries: "
+                                f"{validation['score']}/100, {validation['critical_count']} critical"
+                            )
+                        else:
+                            logger.info(f"✅ Scene {scene_num} validated: {validation['score']}/100"
+                                        f"{' (retry ' + str(attempt) + ')' if attempt > 0 else ''}")
+                        break
+
+                    # Regenerate scene with explicit anti-pattern feedback
+                    repair_hints = self.anti_pattern_validator.get_repair_suggestions(validation['issues'])
                     logger.warning(
-                        f"⚠️ Scene {scene_num} validation: {validation['score']}/100, "
-                        f"{validation['critical_count']} critical, {validation['warning_count']} warnings"
+                        f"🔄 Scene {scene_num} FAILED validation ({validation['score']}/100), "
+                        f"retrying ({attempt + 1}/{max_retries})... Issues: {repair_hints[:3]}"
                     )
-                else:
-                    logger.info(f"✅ Scene {scene_num} validated: {validation['score']}/100")
+                    # Append repair hints to context to guide regeneration
+                    enhanced_previous = previous_content + (
+                        f"\n\n## REDAKTOR: POPRAW te problemy w tej scenie:\n"
+                        + "\n".join(f"- {h}" for h in repair_hints[:5])
+                    )
+                    scene_result = await self._generate_scene_with_divine_prompt(
+                        chapter_number=chapter_number,
+                        scene_number=scene_num,
+                        total_scenes=num_scenes,
+                        genre=genre,
+                        pov_character=pov_character,
+                        book_title=book_title,
+                        target_words=words_per_scene,
+                        context_text=context_text,
+                        previous_content=enhanced_previous,
+                        chapter_outline=chapter_outline,
+                        beat_sheet_text=beat_sheet_text,
+                        active_characters=active_characters,
+                        tier=tier
+                    )
+                    total_cost += scene_result.cost
 
             scene_results.append(scene_result)
             total_cost += scene_result.cost + architect_cost
             previous_content = scene_result.content[-500:]  # Last 500 chars for continuity
             previous_scene_summary = self._summarize_scene(scene_result.content)
+
+            # Extract and track metaphors/similes to prevent cross-scene repetition
+            new_metaphors = self._extract_metaphors(scene_result.content)
+            used_metaphors.extend(new_metaphors)
 
             # Update location if beat_sheet indicates change
             if beat_sheet and beat_sheet.beats:
@@ -293,6 +344,31 @@ class SceneWriterAgent:
             return " ".join(words[-200:])
         return content
 
+    @staticmethod
+    def _extract_metaphors(text: str) -> List[str]:
+        """Extract similes and metaphors from text to prevent cross-scene repetition."""
+        import re
+        metaphors = []
+        # Polish simile patterns: "jak X", "niczym X", "jakby X", "niczym X"
+        patterns = [
+            r'(?:jak|niczym|jakby|niby)\s+([^,.!?;:—\n]{5,50})',
+        ]
+        for pattern in patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for m in matches:
+                cleaned = m.strip()
+                if len(cleaned.split()) >= 2:  # At least 2 words
+                    metaphors.append(cleaned)
+        # Deduplicate and limit
+        seen = set()
+        unique = []
+        for m in metaphors:
+            m_lower = m.lower()
+            if m_lower not in seen:
+                seen.add(m_lower)
+                unique.append(m)
+        return unique[:10]  # Max 10 per scene
+
     async def _generate_scene_with_divine_prompt(
         self,
         chapter_number: int,
@@ -319,12 +395,32 @@ class SceneWriterAgent:
         # Get active character names for Character Lock
         char_names = [c.get('name', 'Unknown') for c in active_characters]
 
-        # Build Divine Prompt
+        # Build Divine Prompt with genre-specific excellence standards
         system_prompt = get_writer_system_prompt(genre)
+
+        # Inject genre excellence standards (CRITICAL for genre-specific content)
+        genre_type_map = {
+            "fantasy": GenreType.FANTASY,
+            "sci-fi": GenreType.SCI_FI,
+            "thriller": GenreType.THRILLER,
+            "horror": GenreType.HORROR,
+            "romance": GenreType.ROMANCE,
+            "drama": GenreType.DRAMA,
+            "comedy": GenreType.COMEDY,
+            "mystery": GenreType.MYSTERY,
+            "religious": GenreType.RELIGIOUS,
+        }
+        genre_enum = genre_type_map.get(genre.lower())
+        if genre_enum:
+            genre_excellence = get_genre_excellence_prompt(genre_enum)
+            system_prompt += f"\n\n## STANDARDY DOSKONAŁOŚCI GATUNKOWEJ ({genre.upper()})\n\n{genre_excellence}"
 
         # If no beat sheet, create a simple structure
         if not beat_sheet_text:
             beat_sheet_text = self._create_simple_beat_sheet(scene_number, total_scenes, chapter_outline)
+
+        # Inject used metaphors ban if available (passed via context_text suffix)
+        # This prevents cross-scene metaphor repetition
 
         prompt = get_writer_prompt(
             scene_number=scene_number,
@@ -545,12 +641,22 @@ FORMAT:
             return ""
 
     def _assemble_chapter(self, chapter_number: int, scenes: List[SceneResult]) -> str:
-        """Assemble full chapter from scenes"""
+        """Assemble full chapter from scenes, deduplicating headers"""
+        import re
         parts = [f"Rozdział {chapter_number}\n"]
 
+        # Pattern to detect chapter headers the AI may have generated
+        header_pattern = re.compile(
+            rf'^\s*(?:#{1,3}\s*)?Rozdział\s+{chapter_number}\b.*$',
+            re.MULTILINE | re.IGNORECASE
+        )
+
         for scene in scenes:
-            parts.append(scene.content)
-            parts.append("")  # Empty line between scenes
+            # Strip any AI-generated chapter headers to avoid duplication
+            cleaned = header_pattern.sub('', scene.content).strip()
+            if cleaned:
+                parts.append(cleaned)
+                parts.append("")  # Empty line between scenes
 
         return "\n\n".join(parts)
 

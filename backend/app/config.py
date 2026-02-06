@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str  # REQUIRED - No default (set in .env)
     GPT_4O_MINI: str = "gpt-4o-mini"
     GPT_4O: str = "gpt-4o"
-    GPT_4: str = "gpt-4"
+    GPT_4: str = "gpt-4-turbo"
     GPT_O1: str = "o1"
     DEFAULT_MODEL_TIER: int = 1
 
@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     TIER1_OUTPUT_COST: float = 0.60
     TIER2_INPUT_COST: float = 2.50
     TIER2_OUTPUT_COST: float = 10.0
-    TIER3_INPUT_COST: float = 30.0
-    TIER3_OUTPUT_COST: float = 60.0
+    TIER3_INPUT_COST: float = 10.0   # gpt-4-turbo pricing per 1M tokens
+    TIER3_OUTPUT_COST: float = 30.0  # gpt-4-turbo pricing per 1M tokens
     
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]

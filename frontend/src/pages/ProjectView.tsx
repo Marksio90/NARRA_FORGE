@@ -354,7 +354,7 @@ const ProjectView: React.FC = () => {
           </h3>
           <p className="text-gray-400 mb-6">
             AI przeanalizuje wybrany gatunek i podejmie wszystkie decyzje dotyczące struktury książki,
-            następnie przedstawi szczegółową symulację kosztów dla wszystkich 15 kroków procesu generacji.
+            następnie przedstawi szczegółową symulację kosztów dla wszystkich kroków procesu generacji.
           </p>
           <button
             onClick={handleSimulate}
@@ -851,7 +851,7 @@ const ProjectView: React.FC = () => {
       {simulation && (
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-6">
-            15 Kroków Pipeline - Szczegółowa Symulacja
+            {simulation?.estimated_steps?.length || 15} Kroków Pipeline - Szczegółowa Symulacja
           </h3>
           <div className="space-y-4">
             {simulation.estimated_steps.map((step) => (
@@ -902,12 +902,12 @@ const ProjectView: React.FC = () => {
           <div className="w-full bg-gray-700 rounded-full h-4 mb-4">
             <div
               className="bg-gradient-to-r from-indigo-600 to-purple-600 h-4 rounded-full transition-all duration-500"
-              style={{ width: `${(project.current_step / 15) * 100}%` }}
+              style={{ width: `${(project.current_step / (simulation?.estimated_steps?.length || 15)) * 100}%` }}
             />
           </div>
           <div className="flex items-center justify-between mb-2">
             <div className="text-gray-300 text-sm">
-              Krok {project.current_step} z 15
+              Krok {project.current_step} z {simulation?.estimated_steps?.length || 15}
             </div>
             <div className="text-green-400 text-sm font-semibold">
               Aktualny koszt: ${project.actual_cost?.toFixed(2) || '0.00'}

@@ -9,7 +9,10 @@ from enum import Enum
 from datetime import datetime, timedelta
 import uuid
 import asyncio
+import logging
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowStatus(Enum):
@@ -358,8 +361,36 @@ class ServiceOrchestrator:
         # Templates
         self.templates: Dict[str, WorkflowTemplate] = {}
 
-        # Service handlers (simulated)
-        self.service_handlers: Dict[str, Callable] = {}
+        # Real service instances (lazy-loaded)
+        self._service_instances: Dict[str, Any] = {}
+
+        # Service action whitelist - only these methods can be called per service
+        self._allowed_actions: Dict[str, List[str]] = {
+            "mirix": ["initialize", "query_all_layers", "store_core_fact", "store_episode",
+                       "get_context_for_scene", "check_consistency", "get_memory_statistics"],
+            "emotional": ["analyze_emotional_resonance", "predict_reader_state",
+                          "optimize_emotional_impact"],
+            "coherence": ["analyze_full_story", "analyze_chapter", "check_proposed_change"],
+            "style": ["apply", "analyze"],
+            "pacing": ["create_outline", "analyze"],
+            "consciousness": ["create_characters"],
+            "dialogue": ["generate"],
+            "covers": ["generate", "generate_variants", "localize"],
+            "illustrations": ["generate", "social_assets"],
+            "audiobook": ["prepare_text", "select_voices", "narrate", "master", "validate"],
+            "trailer": ["generate"],
+            "soundtrack": ["generate"],
+            "interactive": ["generate"],
+            "multilanguage": ["analyze", "create_glossary", "translate"],
+            "cultural": ["adapt"],
+            "psychology": ["analyze_appeal"],
+            "complexity": ["analyze"],
+            "trends": ["analyze"],
+            "collaborative": ["sync"],
+            "coach": ["advise"],
+            "platforms": ["prepare"],
+            "analytics": ["report"],
+        }
 
         # Execution hooks
         self.pre_step_hooks: List[Callable] = []
@@ -375,6 +406,50 @@ class ServiceOrchestrator:
 
         self._register_default_templates()
         self._initialized = True
+
+    def _get_service_instance(self, service_name: str) -> Any:
+        """Lazy-load and return a real service instance."""
+        if service_name in self._service_instances:
+            return self._service_instances[service_name]
+
+        instance = None
+        try:
+            if service_name == "mirix":
+                from app.services.mirix_memory_system import get_mirix_system
+                instance = get_mirix_system()
+            elif service_name == "emotional":
+                from app.services.emotional_resonance_engine import get_emotional_resonance_engine
+                instance = get_emotional_resonance_engine()
+            elif service_name == "coherence":
+                from app.services.quantum_coherence import get_coherence_analyzer
+                instance = get_coherence_analyzer()
+            elif service_name == "style":
+                from app.agents.prose_writer_agent import ProseWriterAgent
+                instance = ProseWriterAgent()
+            elif service_name == "consciousness":
+                from app.agents.character_creator_agent import CharacterCreatorAgent
+                instance = CharacterCreatorAgent()
+            elif service_name == "pacing":
+                from app.agents.plot_architect_agent import PlotArchitectAgent
+                instance = PlotArchitectAgent()
+            elif service_name == "dialogue":
+                from app.agents.prose_writer_agent import ProseWriterAgent
+                instance = ProseWriterAgent()
+            else:
+                logger.warning(
+                    f"Service '{service_name}' has no registered implementation yet. "
+                    f"Using stub fallback."
+                )
+                return None
+        except ImportError as e:
+            logger.warning(f"Could not import service '{service_name}': {e}")
+            return None
+
+        if instance:
+            self._service_instances[service_name] = instance
+            logger.info(f"Loaded service instance: {service_name} ({type(instance).__name__})")
+
+        return instance
 
     def _register_default_templates(self):
         """Register default workflow templates"""
@@ -668,25 +743,96 @@ class ServiceOrchestrator:
         step: WorkflowStep,
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Call a NarraForge service"""
+        """Call a real NarraForge service.
+
+        Dispatches to actual service instances with action whitelisting.
+        Falls back to stub response for unimplemented services.
+        """
         if step.service is None:
             return {}
 
-        # Simulated service call - in production, this would call actual services
         service_name = step.service.value
         action = step.action
         parameters = self._prepare_step_input(step, context)
 
-        # Simulate processing
-        await asyncio.sleep(0.1)
+        # Validate action against whitelist
+        allowed = self._allowed_actions.get(service_name, [])
+        if action and action not in allowed:
+            raise ValueError(
+                f"Action '{action}' is not allowed for service '{service_name}'. "
+                f"Allowed actions: {allowed}"
+            )
 
-        return {
+        # Get real service instance
+        service_instance = self._get_service_instance(service_name)
+
+        if service_instance is None:
+            # Stub fallback for unimplemented services
+            logger.warning(
+                f"Service '{service_name}' not implemented, returning stub response "
+                f"for action '{action}'"
+            )
+            return {
+                "service": service_name,
+                "action": action,
+                "success": True,
+                "stub": True,
+                "result": f"Stub: {service_name}.{action} (not yet implemented)",
+                "timestamp": datetime.now().isoformat()
+            }
+
+        # Resolve and call the method
+        if not action:
+            logger.warning(f"No action specified for service '{service_name}'")
+            return {"service": service_name, "success": True, "result": "No action specified"}
+
+        method = getattr(service_instance, action, None)
+        if method is None:
+            raise ValueError(
+                f"Service '{service_name}' ({type(service_instance).__name__}) "
+                f"has no method '{action}'"
+            )
+
+        if not callable(method):
+            raise ValueError(
+                f"'{action}' on service '{service_name}' is not callable"
+            )
+
+        logger.info(f"Calling {service_name}.{action}({list(parameters.keys())})")
+
+        # Call the real method
+        try:
+            if asyncio.iscoroutinefunction(method):
+                result = await method(**parameters)
+            else:
+                result = method(**parameters)
+        except TypeError as e:
+            # Parameter mismatch - try calling without params
+            logger.warning(
+                f"Parameter mismatch for {service_name}.{action}: {e}. "
+                f"Retrying with context-only call."
+            )
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = await method()
+                else:
+                    result = method()
+            except Exception:
+                raise
+
+        # Normalize result to dict
+        if not isinstance(result, dict):
+            result = {"result": result}
+
+        result.update({
             "service": service_name,
             "action": action,
             "success": True,
-            "result": f"Executed {service_name}.{action}",
             "timestamp": datetime.now().isoformat()
-        }
+        })
+
+        logger.info(f"Service {service_name}.{action} completed successfully")
+        return result
 
     def _check_dependencies(
         self,

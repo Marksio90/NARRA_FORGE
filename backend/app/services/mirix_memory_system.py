@@ -1028,6 +1028,196 @@ class KnowledgeVaultLayer(MemoryLayer):
 
 
 # =============================================================================
+# VECTOR MEMORY LAYER (Semantic Search via ChromaDB)
+# =============================================================================
+
+class VectorMemoryLayer:
+    """
+    Vector-based semantic search layer for MIRIX.
+
+    Uses ChromaDB for local embedding storage and retrieval.
+    This layer COMPLEMENTS (not replaces) the existing dict-based layers,
+    providing semantic similarity search for fuzzy queries like
+    "nawiązanie do koloru oczu matki z rozdziału 3".
+
+    Hybrid approach: keyword search (fast, deterministic) + semantic search (fuzzy, intelligent)
+    """
+
+    def __init__(self, collection_name: str = "narrative_memory"):
+        self._initialized = False
+        self._collection_name = collection_name
+        self._client = None
+        self._collection = None
+        self._openai_client = None
+
+    def _ensure_initialized(self) -> bool:
+        """Lazy initialization - only load ChromaDB when first needed."""
+        if self._initialized:
+            return True
+
+        try:
+            import chromadb
+            self._client = chromadb.Client()
+            self._collection = self._client.get_or_create_collection(
+                name=self._collection_name,
+                metadata={"hnsw:space": "cosine"}
+            )
+            self._initialized = True
+            logger.info(f"VectorMemoryLayer initialized: collection '{self._collection_name}'")
+            return True
+        except ImportError:
+            logger.warning(
+                "chromadb not installed. VectorMemoryLayer disabled. "
+                "Install with: pip install chromadb"
+            )
+            return False
+        except Exception as e:
+            logger.warning(f"VectorMemoryLayer init failed: {e}. Semantic search disabled.")
+            return False
+
+    async def _get_embedding(self, text: str) -> list:
+        """Generate embedding using OpenAI text-embedding-3-small.
+
+        Falls back to ChromaDB's built-in embeddings if OpenAI is unavailable.
+        """
+        try:
+            if self._openai_client is None:
+                from openai import AsyncOpenAI
+                self._openai_client = AsyncOpenAI()
+
+            response = await self._openai_client.embeddings.create(
+                input=text[:8000],  # Limit input length
+                model="text-embedding-3-small"
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            logger.debug(f"OpenAI embedding failed: {e}, using ChromaDB default embeddings")
+            return None  # ChromaDB will use its own embedding function
+
+    async def store(
+        self,
+        text: str,
+        metadata: dict,
+        doc_id: str
+    ) -> bool:
+        """Store a text with its embedding for semantic retrieval.
+
+        Args:
+            text: The text content to store and make searchable
+            metadata: Structured metadata (chapter, characters, type, etc.)
+            doc_id: Unique identifier for this document
+
+        Returns:
+            True if stored successfully
+        """
+        if not self._ensure_initialized():
+            return False
+
+        try:
+            # Clean metadata - ChromaDB only supports str/int/float/bool values
+            clean_metadata = {}
+            for k, v in metadata.items():
+                if isinstance(v, (str, int, float, bool)):
+                    clean_metadata[k] = v
+                elif isinstance(v, list):
+                    clean_metadata[k] = ", ".join(str(item) for item in v)
+                else:
+                    clean_metadata[k] = str(v)
+
+            # Try to get OpenAI embedding
+            embedding = await self._get_embedding(text)
+
+            if embedding:
+                self._collection.upsert(
+                    ids=[doc_id],
+                    documents=[text],
+                    metadatas=[clean_metadata],
+                    embeddings=[embedding]
+                )
+            else:
+                # Use ChromaDB's default embedding function
+                self._collection.upsert(
+                    ids=[doc_id],
+                    documents=[text],
+                    metadatas=[clean_metadata]
+                )
+
+            return True
+        except Exception as e:
+            logger.warning(f"VectorMemoryLayer.store failed: {e}")
+            return False
+
+    async def retrieve_relevant(
+        self,
+        query_text: str,
+        limit: int = 5,
+        where_filter: dict = None
+    ) -> list:
+        """Retrieve semantically similar documents.
+
+        Args:
+            query_text: The query to search for
+            limit: Maximum number of results
+            where_filter: Optional ChromaDB where filter (e.g. {"chapter": 3})
+
+        Returns:
+            List of dicts with 'text', 'metadata', 'distance' keys
+        """
+        if not self._ensure_initialized():
+            return []
+
+        try:
+            # Try OpenAI embedding for query
+            query_embedding = await self._get_embedding(query_text)
+
+            query_params = {"n_results": min(limit, self._collection.count() or 1)}
+
+            if where_filter:
+                query_params["where"] = where_filter
+
+            if query_embedding:
+                query_params["query_embeddings"] = [query_embedding]
+            else:
+                query_params["query_texts"] = [query_text]
+
+            results = self._collection.query(**query_params)
+
+            if not results or not results.get("documents"):
+                return []
+
+            # Format results
+            formatted = []
+            docs = results["documents"][0]
+            metas = results["metadatas"][0] if results.get("metadatas") else [{}] * len(docs)
+            distances = results["distances"][0] if results.get("distances") else [0.0] * len(docs)
+
+            for doc, meta, dist in zip(docs, metas, distances):
+                formatted.append({
+                    "text": doc,
+                    "metadata": meta,
+                    "distance": dist,
+                    "relevance": 1.0 - dist  # Convert distance to similarity
+                })
+
+            return formatted
+
+        except Exception as e:
+            logger.warning(f"VectorMemoryLayer.retrieve_relevant failed: {e}")
+            return []
+
+    def get_stats(self) -> dict:
+        """Get vector memory statistics."""
+        if not self._ensure_initialized():
+            return {"initialized": False, "count": 0}
+
+        return {
+            "initialized": True,
+            "collection": self._collection_name,
+            "count": self._collection.count()
+        }
+
+
+# =============================================================================
 # MAIN MIRIX MEMORY SYSTEM
 # =============================================================================
 
@@ -1060,6 +1250,9 @@ class MIRIXMemorySystem:
             MemoryType.KNOWLEDGE_VAULT: self.knowledge_vault
         }
 
+        # Vector memory layers per project (semantic search)
+        self._vector_layers: Dict[str, VectorMemoryLayer] = {}
+
         # Project-specific memory stores
         self.project_memories: Dict[str, Dict[MemoryType, MemoryLayer]] = {}
 
@@ -1067,11 +1260,47 @@ class MIRIXMemorySystem:
         self.global_procedural = ProceduralMemoryLayer()
         self.global_resources = ResourceMemoryLayer()
 
-        logger.info("MIRIX Memory System initialized with 6 layers")
+        logger.info("MIRIX Memory System initialized with 6 layers + vector search")
 
     # =========================================================================
     # PROJECT INITIALIZATION
     # =========================================================================
+
+    def _get_vector_layer(self, project_id: str) -> VectorMemoryLayer:
+        """Get or create vector memory layer for a project."""
+        if project_id not in self._vector_layers:
+            self._vector_layers[project_id] = VectorMemoryLayer(
+                collection_name=f"project_{project_id[:16]}"
+            )
+        return self._vector_layers[project_id]
+
+    async def semantic_search(
+        self,
+        project_id: str,
+        query: str,
+        limit: int = 10,
+        chapter_filter: int = None
+    ) -> List[Dict]:
+        """
+        Perform semantic (vector) search across all stored memories for a project.
+
+        This is the key improvement over keyword search - it finds semantically
+        similar content even without exact keyword matches.
+
+        Example: query "kolor oczu matki" will find "Jej oczy miały barwę bursztynu"
+
+        Args:
+            project_id: Project to search in
+            query: Natural language query
+            limit: Max results
+            chapter_filter: Optional - restrict to specific chapter
+
+        Returns:
+            List of relevant memory fragments with metadata
+        """
+        vector_layer = self._get_vector_layer(project_id)
+        where_filter = {"chapter": chapter_filter} if chapter_filter else None
+        return await vector_layer.retrieve_relevant(query, limit, where_filter)
 
     async def initialize_project(self, project_id: str, genre: GenreType) -> Dict:
         """Initialize MIRIX memory for a new project"""
@@ -1124,7 +1353,7 @@ class MIRIXMemorySystem:
         source: str = "",
         is_absolute: bool = True
     ) -> str:
-        """Store an immutable core fact"""
+        """Store an immutable core fact (dict + vector indexed)"""
         layer = self.get_project_layer(project_id, MemoryType.CORE)
         if not layer:
             await self.initialize_project(project_id, GenreType.FANTASY)  # Default
@@ -1140,7 +1369,22 @@ class MIRIXMemorySystem:
             priority=MemoryPriority.CRITICAL if is_absolute else MemoryPriority.HIGH
         )
 
-        return await layer.store(item)
+        item_id = await layer.store(item)
+
+        # Also index in vector layer for semantic search
+        vector_layer = self._get_vector_layer(project_id)
+        await vector_layer.store(
+            text=fact,
+            metadata={
+                "type": "core_fact",
+                "category": category,
+                "entities": ", ".join(entities),
+                "source": source
+            },
+            doc_id=f"core_{item_id}"
+        )
+
+        return item_id
 
     async def store_episode(
         self,
@@ -1152,7 +1396,7 @@ class MIRIXMemorySystem:
         location: str = "",
         emotional_data: Dict = None
     ) -> str:
-        """Store a scene as episodic memory"""
+        """Store a scene as episodic memory (dict + vector indexed)"""
         layer = self.get_project_layer(project_id, MemoryType.EPISODIC)
         if not layer:
             await self.initialize_project(project_id, GenreType.FANTASY)
@@ -1175,7 +1419,25 @@ class MIRIXMemorySystem:
             is_turning_point=emotional_data.get("is_turning_point", False)
         )
 
-        return await layer.store(item)
+        item_id = await layer.store(item)
+
+        # Also index in vector layer for semantic search
+        vector_layer = self._get_vector_layer(project_id)
+        search_text = f"{summary} Postacie: {', '.join(characters)}. Lokacja: {location}."
+        await vector_layer.store(
+            text=search_text,
+            metadata={
+                "type": "episode",
+                "chapter": chapter,
+                "scene_id": scene_id,
+                "characters": ", ".join(characters),
+                "location": location,
+                "emotion": emotional_data.get("dominant_emotion", "")
+            },
+            doc_id=f"episode_{item_id}"
+        )
+
+        return item_id
 
     async def store_concept(
         self,
@@ -1311,7 +1573,10 @@ class MIRIXMemorySystem:
         location: str,
         emotional_target: str
     ) -> Dict:
-        """Get comprehensive context for writing a scene"""
+        """Get comprehensive context for writing a scene.
+
+        Uses HYBRID approach: keyword indexes (fast) + vector semantic search (fuzzy).
+        """
         context = {
             "core_facts": [],
             "relevant_episodes": [],
@@ -1319,7 +1584,8 @@ class MIRIXMemorySystem:
             "applicable_techniques": [],
             "available_resources": [],
             "character_info": [],
-            "location_info": None
+            "location_info": None,
+            "semantic_matches": []  # NEW: vector search results
         }
 
         if project_id not in self.project_memories:
@@ -1368,6 +1634,25 @@ class MIRIXMemorySystem:
             loc_info = await kv_layer.get_location_details(location)
             if loc_info:
                 context["location_info"] = loc_info.to_dict()
+
+        # SEMANTIC VECTOR SEARCH - find contextually relevant memories
+        # Build a natural language query from scene parameters
+        query_parts = []
+        if characters:
+            query_parts.append(f"Postacie: {', '.join(characters)}")
+        if location:
+            query_parts.append(f"Lokacja: {location}")
+        if emotional_target:
+            query_parts.append(f"Emocja: {emotional_target}")
+        query_parts.append(f"Rozdział {chapter}")
+
+        semantic_query = ". ".join(query_parts)
+        semantic_results = await self.semantic_search(
+            project_id=project_id,
+            query=semantic_query,
+            limit=10
+        )
+        context["semantic_matches"] = semantic_results
 
         return context
 
@@ -1690,6 +1975,12 @@ Wyekstrahuj MAX 5 najważniejszych faktów. Jeśli nie ma nowych faktów, zwró�
             len(layer.items)
             for layer in self.project_memories[project_id].values()
         )
+
+        # Vector memory stats
+        if project_id in self._vector_layers:
+            stats["vector_memory"] = self._vector_layers[project_id].get_stats()
+        else:
+            stats["vector_memory"] = {"initialized": False, "count": 0}
 
         return stats
 

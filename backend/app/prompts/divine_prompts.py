@@ -215,6 +215,28 @@ Piszesz w klimacie najlepszych:
    - Nienaturalne wyostrzenie słuchu, tunelowe widzenie
    - Pot na kręgosłupie, gorąco w piersi, zimno w żołądku
 
+#### PRZYKŁADY SHOW DON'T TELL (Few-Shot):
+
+**❌ ZŁY TEKST (Tell):**
+"Marta była bardzo smutna po odejściu męża. Czuła ogromny ból i żal. Wiedziała, że życie już nigdy nie będzie takie samo."
+→ DLACZEGO ZŁE: Nazywa emocje zamiast je pokazywać. Czytelnik SŁYSZY o smutku, ale go nie CZUJE.
+
+**✅ DOBRY TEKST (Show):**
+"Marta stała przy oknie. Herbata w jej dłoniach dawno ostygła — beżowa otoczka tłuszczu na powierzchni, jak skóra na mleku. Ręka wyciągnęła się do telefonu, odruchowo, żeby napisać mu, że w Biedronce mają jego ulubione rogaliki, i dopiero wtedy uderzyło ją to znowu: pusta połowa łóżka, klucze, których nikt nie szukał po kieszeniach."
+→ DLACZEGO DOBRE: Smutek pokazany przez rutynowe gesty, które obnażają brak. Czytelnik SAM czuje stratę.
+
+**❌ ZŁY TEKST (Dialog bez głębi):**
+"— Musimy porozmawiać — powiedział Tomek.
+— Dobrze — odpowiedziała Anna.
+— Chodzi o nasze małżeństwo — kontynuował Tomek."
+→ DLACZEGO ZŁE: Mówiące głowy. Brak warstwy cielesnej i podtekstu.
+
+**✅ DOBRY TEKST (Dialog 3-warstwowy):**
+"— Musimy porozmawiać — Tomek obrócił obrączkę na palcu, tam i z powrotem, jak zawsze gdy kłamał.
+Anna nie oderwała wzroku od noża i cebuli. Łzy — wygodne, łatwe do wytłumaczenia łzy.
+— Domyślam się o czym — wypuściła powietrze przez nos. Cebula. Oczywiście, że cebula."
+→ DLACZEGO DOBRE: Słowa mówią jedno, ciało drugie, podtekst trzecie. Obrączka zdradza kłamstwo. Cebula daje alibi na łzy.
+
 ### DEEP POV (Głęboka perspektywa)
 ❌ "Zobaczył, że drzwi się otworzyły"
 ✅ "Drzwi otworzyły się z jękiem zawiasów"
@@ -251,6 +273,16 @@ Każda scena: minimum 3-4 zmysły.
 - Smak: metaliczny smak strachu, słodycz krwi, etc.
 
 ### RYTM I BURSTINESS
+
+#### PRZYKŁAD ZMIENNOŚCI RYTMU (Few-Shot):
+
+**❌ ZŁY RYTM (monotonny):**
+"Jan szedł przez las. Las był ciemny i gęsty. Gałęzie łamały się pod stopami. Wiatr szumiał w koronach drzew. Jan czuł się nieswojo. Musiał iść dalej mimo strachu."
+→ DLACZEGO ZŁE: Wszystkie zdania mają tę samą długość (5-7 słów). Monotonia usypia.
+
+**✅ DOBRY RYTM (zmienny, burstiness):**
+"Las gęstniał. Gałęzie sięgały po niego jak palce — suche, chciwe, oblepione mchem, który w świetle księżyca wyglądał jak szron na kościach topielca. Jan przystanął. Coś trzasnęło. Nie pod jego butem — głębiej, tam gdzie las jeszcze nie miał nazwy. Ruszył. Szybciej."
+→ DLACZEGO DOBRE: Krótkie zdania (2-3 słowa) budują napięcie. Długie zdanie z metaforą daje oddech. Krótkie na koniec — przyśpieszenie.
 
 {burstiness_rules}
 

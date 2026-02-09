@@ -21,6 +21,7 @@ Retrieve only what's needed for current chapter.
 """
 
 import logging
+import asyncio
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
@@ -343,38 +344,137 @@ class ContextPackBuilder:
         characters: List[Dict[str, Any]],
         canon_facts: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Filter canon facts relevant to this chapter"""
+        """Filter canon facts relevant to this chapter.
+
+        Uses a hybrid approach:
+        1. Keyword matching (fast, deterministic) for entity/setting matches
+        2. RAG semantic search (pgvector) for fuzzy thematic relevance
+        De-duplicates results, respects MAX_CANON_FACTS limit.
+        """
         if not canon_facts:
             return []
 
-        # Keywords to match
+        # --- Phase 1: Keyword matching (fast, deterministic) ---
         keywords = set()
-
-        # Add character names
         for char in characters:
             keywords.add(char.get('name', '').lower())
 
-        # Add setting
         setting = chapter_outline.get('setting', '').lower()
-        keywords.update(setting.split())
+        keywords.update(w for w in setting.split() if len(w) > 2)
 
-        # Filter facts
-        relevant = []
+        keyword_results = []
         for fact in canon_facts:
             fact_text = fact.get('fact', '').lower()
             related = fact.get('related_entity', '').lower()
 
             if any(kw in fact_text or kw in related for kw in keywords if len(kw) > 2):
-                relevant.append({
+                keyword_results.append({
                     "fact": fact.get('fact', ''),
                     "type": fact.get('fact_type', ''),
-                    "entity": fact.get('related_entity', '')
+                    "entity": fact.get('related_entity', ''),
+                    "source": "keyword",
                 })
 
-            if len(relevant) >= MAX_CANON_FACTS:
+            if len(keyword_results) >= MAX_CANON_FACTS:
                 break
 
-        return relevant
+        # --- Phase 2: RAG semantic search (fuzzy, pgvector) ---
+        rag_results = self._rag_search_facts(chapter_outline, characters)
+
+        # --- Merge & deduplicate ---
+        seen_facts = {f["fact"] for f in keyword_results}
+        for rag_fact in rag_results:
+            if rag_fact["fact"] not in seen_facts:
+                keyword_results.append(rag_fact)
+                seen_facts.add(rag_fact["fact"])
+
+        return keyword_results[:MAX_CANON_FACTS]
+
+    def _rag_search_facts(
+        self,
+        chapter_outline: Dict[str, Any],
+        characters: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """RAG: Use pgvector semantic search to find thematically relevant facts.
+
+        Builds a natural language query from the chapter context and searches
+        the mirix_vectors table for semantically similar content.
+        """
+        try:
+            from app.database import engine
+            from sqlalchemy import text as sa_text
+
+            # Build a natural language query from chapter context
+            query_parts = []
+            char_names = [c.get('name', '') for c in characters if c.get('name')]
+            if char_names:
+                query_parts.append(f"Postacie: {', '.join(char_names)}")
+            if chapter_outline.get('setting'):
+                query_parts.append(f"Miejsce: {chapter_outline['setting']}")
+            if chapter_outline.get('goal'):
+                query_parts.append(f"Cel: {chapter_outline['goal']}")
+            if chapter_outline.get('emotional_beat'):
+                query_parts.append(f"Emocja: {chapter_outline['emotional_beat']}")
+
+            if not query_parts:
+                return []
+
+            search_text = ". ".join(query_parts)
+
+            # Try embedding-based search first
+            try:
+                from openai import OpenAI
+                client = OpenAI()
+                resp = client.embeddings.create(
+                    input=search_text[:2000],
+                    model="text-embedding-3-small"
+                )
+                embedding = resp.data[0].embedding
+                embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
+
+                with engine.connect() as conn:
+                    result = conn.execute(sa_text("""
+                        SELECT content, metadata,
+                               embedding <=> :embedding::vector AS distance
+                        FROM mirix_vectors
+                        WHERE collection LIKE '%core%'
+                          AND embedding IS NOT NULL
+                        ORDER BY distance
+                        LIMIT 10
+                    """), {"embedding": embedding_str})
+
+                    rows = result.fetchall()
+            except Exception:
+                # Fallback: text similarity
+                with engine.connect() as conn:
+                    result = conn.execute(sa_text("""
+                        SELECT content, metadata, 0.5 AS distance
+                        FROM mirix_vectors
+                        WHERE collection LIKE '%core%'
+                          AND content ILIKE :query
+                        LIMIT 10
+                    """), {"query": f"%{search_text[:80]}%"})
+                    rows = result.fetchall()
+
+            rag_facts = []
+            for row in rows:
+                import json
+                meta = json.loads(row[1]) if isinstance(row[1], str) else row[1] or {}
+                rag_facts.append({
+                    "fact": row[0],
+                    "type": meta.get("category", "rag"),
+                    "entity": meta.get("entities", ""),
+                    "source": "rag",
+                    "relevance": max(0.0, 1.0 - float(row[2])),
+                })
+
+            # Sort by relevance
+            rag_facts.sort(key=lambda x: x.get("relevance", 0), reverse=True)
+            return rag_facts[:5]  # Top 5 RAG results
+
+        except Exception as e:
+            logger.debug(f"RAG search unavailable: {e}")
+            return []
 
     def _build_recap(
         self,
@@ -475,6 +575,76 @@ class ContextPackBuilder:
         if context_pack.canon_facts:
             facts = [f"• {f['fact']}" for f in context_pack.canon_facts[:10]]
             sections.append("## FAKTY KANONICZNE\n" + "\n".join(facts))
+
+        return "\n\n".join(sections)
+
+
+    def format_modular(self, context_pack: ContextPack, modules: List[str] = None) -> str:
+        """Format context pack with selectable modules.
+
+        Instead of always dumping the full context, callers can select
+        only the modules they need. This implements Dynamic Context Compression:
+        shorter prompts → better instruction following → lower cost.
+
+        Args:
+            context_pack: The built context pack
+            modules: List of module names to include. If None, includes all.
+                     Options: "recap", "characters", "plot", "foreshadowing",
+                              "facts", "world", "previous"
+        """
+        if modules is None:
+            return self.format_for_prompt(context_pack)
+
+        sections = []
+        module_set = set(modules)
+
+        if "previous" in module_set and context_pack.previous_chapter_summary:
+            sections.append(f"## POPRZEDNI ROZDZIAŁ\n{context_pack.previous_chapter_summary}")
+
+        if "recap" in module_set and context_pack.recap:
+            sections.append(f"## RECAP\n{context_pack.recap}")
+
+        if "characters" in module_set and context_pack.characters:
+            chars = []
+            for c in context_pack.characters:
+                char_str = f"**{c['name']}** ({c['role']})"
+                if c.get('wound'):
+                    char_str += f" | Rana: {c['wound']}"
+                if c.get('speechPatterns'):
+                    char_str += f" | Mowa: {c['speechPatterns']}"
+                chars.append(char_str)
+            sections.append("## POSTACIE W ROZDZIALE\n" + "\n".join(chars))
+
+        if "plot" in module_set and context_pack.plot_context:
+            pc = context_pack.plot_context
+            sections.append(
+                f"## KONTEKST FABULARNY\n"
+                f"Akt: {pc.get('act', '?')} | Napięcie: {pc.get('tension_level', 5)}/10\n"
+                f"Cel: {pc.get('chapter_goal', '')}\n"
+                f"Emocja: {pc.get('emotional_beat', '')}"
+            )
+
+        if "foreshadowing" in module_set and context_pack.foreshadowing:
+            fore = []
+            for f in context_pack.foreshadowing:
+                if f['type'] == 'plant':
+                    fore.append(f"ZASIEJ: {f['description']}")
+                else:
+                    fore.append(f"PAYOFF: {f['description']}")
+            sections.append("## FORESHADOWING\n" + "\n".join(fore))
+
+        if "facts" in module_set and context_pack.canon_facts:
+            facts = [f"- {f['fact']}" for f in context_pack.canon_facts[:10]]
+            sections.append("## FAKTY KANONICZNE\n" + "\n".join(facts))
+
+        if "world" in module_set and context_pack.world_context:
+            wc = context_pack.world_context
+            world_parts = [f"Typ: {wc.get('world_type', '?')}"]
+            if wc.get('setting'):
+                world_parts.append(f"Setting: {wc['setting']}")
+            if wc.get('magic_system'):
+                world_parts.append(f"Magia: {wc['magic_system']}")
+            sections.append("## ŚWIAT\n" + "\n".join(world_parts))
 
         return "\n\n".join(sections)
 

@@ -17,6 +17,80 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Distributed lock via Redis (for horizontal scaling)
+# ---------------------------------------------------------------------------
+
+class RedisDistributedLock:
+    """Redis-based distributed lock for multi-instance safety.
+
+    Uses SET NX EX pattern (atomic set-if-not-exists with TTL).
+    This ensures that only one backend instance can execute a given
+    workflow step at a time, even when scaled to N replicas.
+    """
+
+    def __init__(self, lock_timeout: int = 300):
+        self._redis = None
+        self._lock_timeout = lock_timeout  # seconds
+
+    def _get_redis(self):
+        if self._redis is None:
+            try:
+                import redis as redis_lib
+                from app.config import settings
+                self._redis = redis_lib.Redis.from_url(
+                    settings.REDIS_URL, decode_responses=True
+                )
+                self._redis.ping()
+            except Exception as e:
+                logger.warning(f"Redis distributed lock unavailable: {e}")
+                self._redis = None
+        return self._redis
+
+    def acquire(self, lock_name: str, holder_id: str) -> bool:
+        """Try to acquire a named lock. Returns True if acquired."""
+        r = self._get_redis()
+        if r is None:
+            return True  # Fallback: no lock when Redis unavailable
+
+        key = f"narraforge:lock:{lock_name}"
+        acquired = r.set(key, holder_id, nx=True, ex=self._lock_timeout)
+        if acquired:
+            logger.debug(f"Acquired distributed lock '{lock_name}' (holder={holder_id})")
+        return bool(acquired)
+
+    def release(self, lock_name: str, holder_id: str) -> bool:
+        """Release a lock, but only if we still own it."""
+        r = self._get_redis()
+        if r is None:
+            return True
+
+        key = f"narraforge:lock:{lock_name}"
+        # Lua script ensures atomic check-and-delete
+        lua = """
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+        else
+            return 0
+        end
+        """
+        result = r.eval(lua, 1, key, holder_id)
+        if result:
+            logger.debug(f"Released distributed lock '{lock_name}'")
+        return bool(result)
+
+    def is_locked(self, lock_name: str) -> bool:
+        """Check if a lock is currently held."""
+        r = self._get_redis()
+        if r is None:
+            return False
+        return r.exists(f"narraforge:lock:{lock_name}") > 0
+
+
+# Module-level distributed lock instance
+_distributed_lock = RedisDistributedLock(lock_timeout=600)  # 10 min TTL
+
+
+# ---------------------------------------------------------------------------
 # DB persistence helpers (store workflow state in PostgreSQL JSONB)
 # ---------------------------------------------------------------------------
 
@@ -683,7 +757,7 @@ class ServiceOrchestrator:
         self,
         execution_id: str
     ) -> WorkflowExecution:
-        """Execute workflow steps (with lock and DB persistence)"""
+        """Execute workflow steps (with local lock, distributed lock, and DB persistence)"""
         async with self._lock:
             execution = self.executions.get(execution_id)
             if not execution:
@@ -692,6 +766,17 @@ class ServiceOrchestrator:
             workflow = self.workflows.get(execution.workflow_id)
             if not workflow:
                 raise ValueError(f"Workflow not found: {execution.workflow_id}")
+
+        # Distributed lock: prevent two backend instances from running
+        # the same workflow execution simultaneously
+        lock_name = f"workflow:{execution_id}"
+        holder_id = str(uuid.uuid4())
+        if not _distributed_lock.acquire(lock_name, holder_id):
+            logger.warning(
+                f"Distributed lock already held for execution {execution_id}. "
+                f"Another instance is processing this workflow."
+            )
+            return execution
 
         try:
             # Execute steps in order
@@ -742,6 +827,9 @@ class ServiceOrchestrator:
             execution.error_message = str(e)
             execution.completed_at = datetime.now()
             self.metrics["failed_executions"] += 1
+        finally:
+            # Always release distributed lock
+            _distributed_lock.release(lock_name, holder_id)
 
         # Persist final state
         _persist_execution_to_db(execution)
@@ -905,12 +993,14 @@ class ServiceOrchestrator:
 
         logger.info(f"Calling {service_name}.{action}({list(parameters.keys())})")
 
-        # Call the real method
+        # Call the real method.
+        # Synchronous (CPU-bound) service calls are offloaded to a thread
+        # via asyncio.to_thread so they don't block the FastAPI event loop.
         try:
             if asyncio.iscoroutinefunction(method):
                 result = await method(**parameters)
             else:
-                result = method(**parameters)
+                result = await asyncio.to_thread(method, **parameters)
         except TypeError as e:
             # Parameter mismatch - try calling without params
             logger.warning(
@@ -921,7 +1011,7 @@ class ServiceOrchestrator:
                 if asyncio.iscoroutinefunction(method):
                     result = await method()
                 else:
-                    result = method()
+                    result = await asyncio.to_thread(method)
             except Exception:
                 raise
 

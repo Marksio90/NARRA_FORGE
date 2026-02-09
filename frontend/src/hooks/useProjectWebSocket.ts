@@ -107,6 +107,11 @@ const initialState: LivePreviewState = {
 // Batches rapid WebSocket chunks into a single React state update.
 const PROSE_THROTTLE_MS = 50;
 
+// Backpressure: if the WebSocket internal buffer exceeds this size (bytes),
+// we start dropping non-critical messages (prose tokens) until it drains.
+const BACKPRESSURE_THRESHOLD = 1024 * 64; // 64 KB
+const BACKPRESSURE_CHECK_INTERVAL = 500;  // ms
+
 export function useProjectWebSocket(projectId: number | null) {
   const [state, setState] = useState<LivePreviewState>(initialState);
   const wsRef = useRef<WebSocket | null>(null);
@@ -118,6 +123,12 @@ export function useProjectWebSocket(projectId: number | null) {
   // Accumulates tokens between flushes so we don't re-render on every chunk.
   const proseBufferRef = useRef<string>('');
   const proseFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Backpressure monitoring ---
+  // Tracks whether we're in a backpressure state (browser can't keep up).
+  const backpressuredRef = useRef<boolean>(false);
+  const backpressureTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const droppedTokensRef = useRef<number>(0);
 
   const flushProseBuffer = useCallback(() => {
     if (proseBufferRef.current.length > 0) {
@@ -146,6 +157,22 @@ export function useProjectWebSocket(projectId: number | null) {
       console.log('WebSocket connected for project:', projectId);
       reconnectAttemptsRef.current = 0;
       setState(prev => ({ ...prev, isConnected: true }));
+
+      // Start backpressure monitoring: check bufferedAmount periodically
+      if (backpressureTimerRef.current) clearInterval(backpressureTimerRef.current);
+      backpressureTimerRef.current = setInterval(() => {
+        if (!wsRef.current) return;
+        const buffered = wsRef.current.bufferedAmount;
+        const wasPressured = backpressuredRef.current;
+        backpressuredRef.current = buffered > BACKPRESSURE_THRESHOLD;
+
+        if (backpressuredRef.current && !wasPressured) {
+          console.warn(`WebSocket backpressure: buffered=${buffered} bytes. Throttling prose tokens.`);
+        } else if (!backpressuredRef.current && wasPressured) {
+          console.info(`WebSocket backpressure relieved. Dropped ${droppedTokensRef.current} tokens.`);
+          droppedTokensRef.current = 0;
+        }
+      }, BACKPRESSURE_CHECK_INTERVAL);
     };
 
     ws.onmessage = (event) => {
@@ -257,6 +284,13 @@ export function useProjectWebSocket(projectId: number | null) {
           };
 
         case 'prose_stream': {
+          // Backpressure: if the browser can't keep up with WebSocket data,
+          // drop prose tokens to prevent memory growth and UI freeze.
+          if (backpressuredRef.current) {
+            droppedTokensRef.current++;
+            return prev;
+          }
+
           // Throttled: accumulate tokens in a ref buffer and flush at PROSE_THROTTLE_MS intervals.
           // This prevents render-thrashing when the backend streams tokens rapidly.
           const token = event.data.token || event.data.chunk || '';
@@ -348,7 +382,13 @@ export function useProjectWebSocket(projectId: number | null) {
       clearTimeout(proseFlushTimerRef.current);
       proseFlushTimerRef.current = null;
     }
+    if (backpressureTimerRef.current) {
+      clearInterval(backpressureTimerRef.current);
+      backpressureTimerRef.current = null;
+    }
     proseBufferRef.current = '';
+    backpressuredRef.current = false;
+    droppedTokensRef.current = 0;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;

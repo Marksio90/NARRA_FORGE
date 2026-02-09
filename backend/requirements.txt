@@ -66,8 +66,8 @@ Pillow==10.1.0
 # Text Analysis (Deep Editor)
 textstat==0.7.3
 
-# Vector Memory (MIRIX Semantic Search)
-chromadb==0.4.22
+# Vector Memory - uses pgvector (already in PostgreSQL stack)
+# chromadb removed: pgvector eliminates redundant vector DB dependency
 
 # Data Processing
 numpy==1.26.3

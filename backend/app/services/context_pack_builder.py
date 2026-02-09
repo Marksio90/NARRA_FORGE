@@ -410,19 +410,26 @@ class ContextPackBuilder:
         foreshadowing: List[Dict[str, Any]],
         prev_summary: str
     ) -> int:
-        """Estimate token count for context pack"""
-        # Rough estimation: 1 token ≈ 4 characters in English, 3 in Polish
-        chars = 0
+        """Estimate token count for context pack using tiktoken when available."""
+        # Concatenate all text for accurate counting
+        parts = [
+            str(facts) if facts else "",
+            recap or "",
+            str(characters) if characters else "",
+            str(world) if world else "",
+            str(plot) if plot else "",
+            str(foreshadowing) if foreshadowing else "",
+            prev_summary or "",
+        ]
+        full_text = " ".join(parts)
 
-        chars += len(str(facts)) if facts else 0
-        chars += len(recap) if recap else 0
-        chars += len(str(characters)) if characters else 0
-        chars += len(str(world)) if world else 0
-        chars += len(str(plot)) if plot else 0
-        chars += len(str(foreshadowing)) if foreshadowing else 0
-        chars += len(prev_summary) if prev_summary else 0
-
-        return chars // 3  # Polish has slightly less chars per token
+        try:
+            import tiktoken
+            enc = tiktoken.get_encoding("cl100k_base")
+            return len(enc.encode(full_text))
+        except (ImportError, Exception):
+            # Fallback: Polish text ≈ 3 chars/token
+            return len(full_text) // 3
 
     def format_for_prompt(self, context_pack: ContextPack) -> str:
         """Format context pack for inclusion in prompt"""

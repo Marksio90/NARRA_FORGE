@@ -9,10 +9,97 @@ from enum import Enum
 from datetime import datetime, timedelta
 import uuid
 import asyncio
+import json
 import logging
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# DB persistence helpers (store workflow state in PostgreSQL JSONB)
+# ---------------------------------------------------------------------------
+
+def _persist_execution_to_db(execution: "WorkflowExecution") -> bool:
+    """Persist workflow execution state to the database (generation_logs).
+
+    Uses the existing GenerationLog model to store workflow snapshots so that
+    active workflows survive process restarts.  Runs synchronously because
+    Celery workers don't have an async DB driver – we open a short-lived
+    session, upsert, and close.
+    """
+    try:
+        from app.database import SessionLocal
+        from app.models.generation_log import GenerationLog
+
+        db = SessionLocal()
+        try:
+            # Look for existing log entry for this execution
+            log_entry = (
+                db.query(GenerationLog)
+                .filter(GenerationLog.step_name == f"workflow_{execution.execution_id}")
+                .first()
+            )
+
+            snapshot = {
+                "execution_id": execution.execution_id,
+                "workflow_id": execution.workflow_id,
+                "status": execution.status.value,
+                "current_step_id": execution.current_step_id,
+                "context": _safe_json(execution.context),
+                "step_executions": {
+                    k: v.to_dict() for k, v in execution.step_executions.items()
+                },
+                "checkpoints": execution.checkpoints,
+                "input_data": _safe_json(execution.input_data),
+                "output_data": _safe_json(execution.output_data),
+                "error_message": execution.error_message,
+                "user_id": execution.user_id,
+                "project_id": execution.project_id,
+                "started_at": execution.started_at.isoformat() if execution.started_at else None,
+                "completed_at": execution.completed_at.isoformat() if execution.completed_at else None,
+            }
+
+            if log_entry is None:
+                from app.services.ai_service import ModelTier
+                log_entry = GenerationLog(
+                    project_id=int(execution.project_id) if execution.project_id and str(execution.project_id).isdigit() else None,
+                    step=0,
+                    step_name=f"workflow_{execution.execution_id}",
+                    agent_name="ServiceOrchestrator",
+                    model_tier=ModelTier.TIER_1,
+                    model_name="orchestrator",
+                    tokens_in=0,
+                    tokens_out=0,
+                    cost=0.0,
+                    success=1 if execution.status != WorkflowStatus.FAILED else 0,
+                    error_message=json.dumps(snapshot, default=str),
+                )
+                db.add(log_entry)
+            else:
+                log_entry.error_message = json.dumps(snapshot, default=str)
+                log_entry.success = 1 if execution.status != WorkflowStatus.FAILED else 0
+
+            db.commit()
+            return True
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(f"Failed to persist workflow execution to DB: {e}")
+        return False
+
+
+def _safe_json(obj: Any) -> Any:
+    """Make an object JSON-safe by converting non-serializable types."""
+    if isinstance(obj, dict):
+        return {k: _safe_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_safe_json(v) for v in obj]
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, Enum):
+        return obj.value
+    return obj
 
 
 class WorkflowStatus(Enum):
@@ -392,6 +479,9 @@ class ServiceOrchestrator:
             "analytics": ["report"],
         }
 
+        # Concurrency lock – prevents race conditions on shared state
+        self._lock = asyncio.Lock()
+
         # Execution hooks
         self.pre_step_hooks: List[Callable] = []
         self.post_step_hooks: List[Callable] = []
@@ -560,7 +650,7 @@ class ServiceOrchestrator:
         user_id: Optional[str] = None,
         project_id: Optional[str] = None
     ) -> WorkflowExecution:
-        """Start workflow execution"""
+        """Start workflow execution (thread-safe with DB persistence)"""
         workflow = self.workflows.get(workflow_id)
         if not workflow:
             raise ValueError(f"Workflow not found: {workflow_id}")
@@ -584,20 +674,24 @@ class ServiceOrchestrator:
         execution.status = WorkflowStatus.RUNNING
         execution.started_at = datetime.now()
 
+        # Persist initial state to DB
+        _persist_execution_to_db(execution)
+
         return execution
 
     async def execute_workflow(
         self,
         execution_id: str
     ) -> WorkflowExecution:
-        """Execute workflow steps"""
-        execution = self.executions.get(execution_id)
-        if not execution:
-            raise ValueError(f"Execution not found: {execution_id}")
+        """Execute workflow steps (with lock and DB persistence)"""
+        async with self._lock:
+            execution = self.executions.get(execution_id)
+            if not execution:
+                raise ValueError(f"Execution not found: {execution_id}")
 
-        workflow = self.workflows.get(execution.workflow_id)
-        if not workflow:
-            raise ValueError(f"Workflow not found: {execution.workflow_id}")
+            workflow = self.workflows.get(execution.workflow_id)
+            if not workflow:
+                raise ValueError(f"Workflow not found: {execution.workflow_id}")
 
         try:
             # Execute steps in order
@@ -616,8 +710,15 @@ class ServiceOrchestrator:
                     continue
 
                 # Execute step
+                async with self._lock:
+                    execution.current_step_id = step.step_id
                 step_execution = await self._execute_step(step, execution)
-                execution.step_executions[step.step_id] = step_execution
+
+                async with self._lock:
+                    execution.step_executions[step.step_id] = step_execution
+
+                # Persist progress after each step
+                _persist_execution_to_db(execution)
 
                 if step_execution.status == StepStatus.FAILED:
                     if step.on_failure == "fail":
@@ -628,18 +729,22 @@ class ServiceOrchestrator:
                         continue
 
             # Complete execution
-            if execution.status == WorkflowStatus.RUNNING:
-                execution.status = WorkflowStatus.COMPLETED
-                execution.output_data = execution.context.get("output", {})
-                self.metrics["successful_executions"] += 1
+            async with self._lock:
+                if execution.status == WorkflowStatus.RUNNING:
+                    execution.status = WorkflowStatus.COMPLETED
+                    execution.output_data = execution.context.get("output", {})
+                    self.metrics["successful_executions"] += 1
 
-            execution.completed_at = datetime.now()
+                execution.completed_at = datetime.now()
 
         except Exception as e:
             execution.status = WorkflowStatus.FAILED
             execution.error_message = str(e)
             execution.completed_at = datetime.now()
             self.metrics["failed_executions"] += 1
+
+        # Persist final state
+        _persist_execution_to_db(execution)
 
         return execution
 

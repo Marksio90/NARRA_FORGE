@@ -24,6 +24,13 @@ from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
+try:
+    import tiktoken
+    _TIKTOKEN_AVAILABLE = True
+except ImportError:
+    tiktoken = None
+    _TIKTOKEN_AVAILABLE = False
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -123,6 +130,38 @@ class AIService:
         self.metrics = GenerationMetrics()
 
         logger.info("AI Service initialized")
+
+    # ---- Accurate token counting via tiktoken ----
+
+    _tiktoken_encodings: Dict[str, Any] = {}
+
+    def count_tokens(self, text: str, model: str = "gpt-4o") -> int:
+        """Count tokens accurately using tiktoken (falls back to chars//4).
+
+        Args:
+            text: Text to count tokens for
+            model: Model name to use for encoding
+
+        Returns:
+            Token count
+        """
+        if not _TIKTOKEN_AVAILABLE:
+            # Fallback: rough estimation (Polish text ≈ 3 chars/token)
+            return len(text) // 3
+
+        try:
+            # Cache encodings per model for performance
+            if model not in self._tiktoken_encodings:
+                try:
+                    self._tiktoken_encodings[model] = tiktoken.encoding_for_model(model)
+                except KeyError:
+                    # Unknown model – use cl100k_base (GPT-4 family)
+                    self._tiktoken_encodings[model] = tiktoken.get_encoding("cl100k_base")
+
+            enc = self._tiktoken_encodings[model]
+            return len(enc.encode(text))
+        except Exception:
+            return len(text) // 3
 
     def _get_model_for_tier(self, tier: ModelTier, prefer_anthropic: bool = False) -> Tuple[str, ModelProvider]:
         """Get model name and provider for a given tier"""
@@ -264,9 +303,9 @@ class AIService:
         """
         model, provider = self._get_model_for_tier(tier, prefer_anthropic)
 
-        # Estimate prompt tokens (rough: 1 token ≈ 4 characters)
-        prompt_chars = len(prompt) + len(system_prompt or "")
-        estimated_prompt_tokens = prompt_chars // 4
+        # Accurate token counting via tiktoken (with fallback)
+        full_prompt_text = (system_prompt or "") + prompt
+        estimated_prompt_tokens = self.count_tokens(full_prompt_text, model)
 
         # Calculate safe max_tokens that respects model context limits
         safe_max_tokens = self.calculate_safe_max_tokens(

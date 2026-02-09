@@ -1028,58 +1028,74 @@ class KnowledgeVaultLayer(MemoryLayer):
 
 
 # =============================================================================
-# VECTOR MEMORY LAYER (Semantic Search via ChromaDB)
+# VECTOR MEMORY LAYER (Semantic Search via pgvector)
 # =============================================================================
 
 class VectorMemoryLayer:
     """
     Vector-based semantic search layer for MIRIX.
 
-    Uses ChromaDB for local embedding storage and retrieval.
-    This layer COMPLEMENTS (not replaces) the existing dict-based layers,
-    providing semantic similarity search for fuzzy queries like
-    "nawiązanie do koloru oczu matki z rozdziału 3".
+    Uses pgvector (PostgreSQL extension) for embedding storage and retrieval.
+    This eliminates the ChromaDB dependency and keeps everything in the
+    existing PostgreSQL infrastructure.
 
     Hybrid approach: keyword search (fast, deterministic) + semantic search (fuzzy, intelligent)
     """
 
+    # OpenAI text-embedding-3-small returns 1536 dimensions
+    EMBEDDING_DIM = 1536
+
     def __init__(self, collection_name: str = "narrative_memory"):
         self._initialized = False
         self._collection_name = collection_name
-        self._client = None
-        self._collection = None
         self._openai_client = None
+        self._item_count = 0
 
     def _ensure_initialized(self) -> bool:
-        """Lazy initialization - only load ChromaDB when first needed."""
+        """Lazy initialization – create the pgvector table if it doesn't exist."""
         if self._initialized:
             return True
 
         try:
-            import chromadb
-            self._client = chromadb.Client()
-            self._collection = self._client.get_or_create_collection(
-                name=self._collection_name,
-                metadata={"hnsw:space": "cosine"}
-            )
+            from app.database import engine
+            from sqlalchemy import text as sa_text
+
+            with engine.connect() as conn:
+                conn.execute(sa_text("""
+                    CREATE TABLE IF NOT EXISTS mirix_vectors (
+                        id TEXT PRIMARY KEY,
+                        collection TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        metadata JSONB DEFAULT '{}',
+                        embedding vector(1536),
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )
+                """))
+                conn.execute(sa_text("""
+                    CREATE INDEX IF NOT EXISTS idx_mirix_vectors_collection
+                    ON mirix_vectors (collection)
+                """))
+                # Use ivfflat index for fast approximate nearest-neighbor search
+                # (only works once we have enough rows, but CREATE INDEX IF NOT EXISTS is safe)
+                try:
+                    conn.execute(sa_text("""
+                        CREATE INDEX IF NOT EXISTS idx_mirix_vectors_embedding
+                        ON mirix_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10)
+                    """))
+                except Exception:
+                    # ivfflat needs rows to build; skip on empty table
+                    pass
+                conn.commit()
+
             self._initialized = True
-            logger.info(f"VectorMemoryLayer initialized: collection '{self._collection_name}'")
+            logger.info(f"VectorMemoryLayer (pgvector) initialized: collection '{self._collection_name}'")
             return True
-        except ImportError:
-            logger.warning(
-                "chromadb not installed. VectorMemoryLayer disabled. "
-                "Install with: pip install chromadb"
-            )
-            return False
         except Exception as e:
-            logger.warning(f"VectorMemoryLayer init failed: {e}. Semantic search disabled.")
+            logger.warning(f"VectorMemoryLayer pgvector init failed: {e}. Semantic search disabled.")
             return False
 
     async def _get_embedding(self, text: str) -> list:
-        """Generate embedding using OpenAI text-embedding-3-small.
-
-        Falls back to ChromaDB's built-in embeddings if OpenAI is unavailable.
-        """
+        """Generate embedding using OpenAI text-embedding-3-small."""
         try:
             if self._openai_client is None:
                 from openai import AsyncOpenAI
@@ -1091,8 +1107,8 @@ class VectorMemoryLayer:
             )
             return response.data[0].embedding
         except Exception as e:
-            logger.debug(f"OpenAI embedding failed: {e}, using ChromaDB default embeddings")
-            return None  # ChromaDB will use its own embedding function
+            logger.debug(f"OpenAI embedding failed: {e}")
+            return None
 
     async def store(
         self,
@@ -1114,7 +1130,7 @@ class VectorMemoryLayer:
             return False
 
         try:
-            # Clean metadata - ChromaDB only supports str/int/float/bool values
+            # Clean metadata for JSONB
             clean_metadata = {}
             for k, v in metadata.items():
                 if isinstance(v, (str, int, float, bool)):
@@ -1124,24 +1140,45 @@ class VectorMemoryLayer:
                 else:
                     clean_metadata[k] = str(v)
 
-            # Try to get OpenAI embedding
             embedding = await self._get_embedding(text)
 
-            if embedding:
-                self._collection.upsert(
-                    ids=[doc_id],
-                    documents=[text],
-                    metadatas=[clean_metadata],
-                    embeddings=[embedding]
-                )
-            else:
-                # Use ChromaDB's default embedding function
-                self._collection.upsert(
-                    ids=[doc_id],
-                    documents=[text],
-                    metadatas=[clean_metadata]
-                )
+            from app.database import engine
+            from sqlalchemy import text as sa_text
 
+            with engine.connect() as conn:
+                if embedding:
+                    embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
+                    conn.execute(sa_text("""
+                        INSERT INTO mirix_vectors (id, collection, content, metadata, embedding)
+                        VALUES (:id, :collection, :content, :metadata, :embedding::vector)
+                        ON CONFLICT (id) DO UPDATE SET
+                            content = EXCLUDED.content,
+                            metadata = EXCLUDED.metadata,
+                            embedding = EXCLUDED.embedding
+                    """), {
+                        "id": doc_id,
+                        "collection": self._collection_name,
+                        "content": text,
+                        "metadata": json.dumps(clean_metadata),
+                        "embedding": embedding_str,
+                    })
+                else:
+                    # Store without embedding (text-only fallback)
+                    conn.execute(sa_text("""
+                        INSERT INTO mirix_vectors (id, collection, content, metadata)
+                        VALUES (:id, :collection, :content, :metadata)
+                        ON CONFLICT (id) DO UPDATE SET
+                            content = EXCLUDED.content,
+                            metadata = EXCLUDED.metadata
+                    """), {
+                        "id": doc_id,
+                        "collection": self._collection_name,
+                        "content": text,
+                        "metadata": json.dumps(clean_metadata),
+                    })
+                conn.commit()
+
+            self._item_count += 1
             return True
         except Exception as e:
             logger.warning(f"VectorMemoryLayer.store failed: {e}")
@@ -1153,50 +1190,84 @@ class VectorMemoryLayer:
         limit: int = 5,
         where_filter: dict = None
     ) -> list:
-        """Retrieve semantically similar documents.
+        """Retrieve semantically similar documents via pgvector cosine distance.
 
         Args:
             query_text: The query to search for
             limit: Maximum number of results
-            where_filter: Optional ChromaDB where filter (e.g. {"chapter": 3})
+            where_filter: Optional filter dict (e.g. {"chapter": 3})
 
         Returns:
-            List of dicts with 'text', 'metadata', 'distance' keys
+            List of dicts with 'text', 'metadata', 'distance', 'relevance' keys
         """
         if not self._ensure_initialized():
             return []
 
         try:
-            # Try OpenAI embedding for query
             query_embedding = await self._get_embedding(query_text)
 
-            query_params = {"n_results": min(limit, self._collection.count() or 1)}
+            from app.database import engine
+            from sqlalchemy import text as sa_text
 
-            if where_filter:
-                query_params["where"] = where_filter
+            with engine.connect() as conn:
+                if query_embedding:
+                    # Cosine distance search via pgvector <=> operator
+                    embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
-            if query_embedding:
-                query_params["query_embeddings"] = [query_embedding]
-            else:
-                query_params["query_texts"] = [query_text]
+                    where_clause = "collection = :collection AND embedding IS NOT NULL"
+                    params = {
+                        "collection": self._collection_name,
+                        "embedding": embedding_str,
+                        "limit": limit,
+                    }
 
-            results = self._collection.query(**query_params)
+                    # Apply metadata filters
+                    if where_filter:
+                        for key, value in where_filter.items():
+                            where_clause += f" AND metadata->>'{key}' = :filter_{key}"
+                            params[f"filter_{key}"] = str(value)
 
-            if not results or not results.get("documents"):
-                return []
+                    result = conn.execute(sa_text(f"""
+                        SELECT content, metadata, embedding <=> :embedding::vector AS distance
+                        FROM mirix_vectors
+                        WHERE {where_clause}
+                        ORDER BY distance
+                        LIMIT :limit
+                    """), params)
 
-            # Format results
+                    rows = result.fetchall()
+                else:
+                    # Fallback: text similarity search (no embedding available)
+                    where_clause = "collection = :collection"
+                    params = {
+                        "collection": self._collection_name,
+                        "query": f"%{query_text[:100]}%",
+                        "limit": limit,
+                    }
+
+                    if where_filter:
+                        for key, value in where_filter.items():
+                            where_clause += f" AND metadata->>'{key}' = :filter_{key}"
+                            params[f"filter_{key}"] = str(value)
+
+                    result = conn.execute(sa_text(f"""
+                        SELECT content, metadata, 0.5 AS distance
+                        FROM mirix_vectors
+                        WHERE {where_clause} AND content ILIKE :query
+                        LIMIT :limit
+                    """), params)
+
+                    rows = result.fetchall()
+
             formatted = []
-            docs = results["documents"][0]
-            metas = results["metadatas"][0] if results.get("metadatas") else [{}] * len(docs)
-            distances = results["distances"][0] if results.get("distances") else [0.0] * len(docs)
-
-            for doc, meta, dist in zip(docs, metas, distances):
+            for row in rows:
+                meta = row[1] if isinstance(row[1], dict) else json.loads(row[1]) if row[1] else {}
+                dist = float(row[2])
                 formatted.append({
-                    "text": doc,
+                    "text": row[0],
                     "metadata": meta,
                     "distance": dist,
-                    "relevance": 1.0 - dist  # Convert distance to similarity
+                    "relevance": max(0.0, 1.0 - dist),
                 })
 
             return formatted
@@ -1208,13 +1279,26 @@ class VectorMemoryLayer:
     def get_stats(self) -> dict:
         """Get vector memory statistics."""
         if not self._ensure_initialized():
-            return {"initialized": False, "count": 0}
+            return {"initialized": False, "count": 0, "backend": "pgvector"}
 
-        return {
-            "initialized": True,
-            "collection": self._collection_name,
-            "count": self._collection.count()
-        }
+        try:
+            from app.database import engine
+            from sqlalchemy import text as sa_text
+
+            with engine.connect() as conn:
+                result = conn.execute(sa_text(
+                    "SELECT COUNT(*) FROM mirix_vectors WHERE collection = :col"
+                ), {"col": self._collection_name})
+                count = result.scalar() or 0
+
+            return {
+                "initialized": True,
+                "backend": "pgvector",
+                "collection": self._collection_name,
+                "count": count,
+            }
+        except Exception:
+            return {"initialized": True, "backend": "pgvector", "count": self._item_count}
 
 
 # =============================================================================

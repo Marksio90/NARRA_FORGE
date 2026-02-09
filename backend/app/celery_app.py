@@ -31,4 +31,14 @@ celery_app.conf.update(
     task_time_limit=21600,       # 6 hours max per task (hard kill)
     task_soft_time_limit=21000,  # 5h 50min soft limit (warning before hard kill)
     worker_prefetch_multiplier=1,
+
+    # --- Reliability: acks_late + reject on worker lost ---
+    # Acknowledge tasks AFTER they complete (not before), so if the worker
+    # crashes mid-task, the message returns to the queue for retry.
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+
+    # --- Result expiry ---
+    # Clean up completed task results after 48 hours
+    result_expires=172800,
 )

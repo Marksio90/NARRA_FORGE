@@ -58,7 +58,21 @@ def run_full_pipeline(self, project_id: int):
         if not project:
             return {"success": False, "error": "Project not found"}
 
-        logger.info(f"🚀 Starting AI-POWERED generation for project {project_id}: {project.name}")
+        # --- Idempotency guard ---
+        # With acks_late enabled, a crashed worker causes the task to be
+        # redelivered.  If the project is already mid-generation or done,
+        # skip to avoid duplicate work.
+        if project.status == ProjectStatus.GENERATING:
+            logger.warning(
+                f"Project {project_id} is already GENERATING (possible redelivery). Skipping."
+            )
+            return {"success": True, "skipped": True, "reason": "already_generating"}
+
+        if project.status == ProjectStatus.COMPLETED:
+            logger.info(f"Project {project_id} is already COMPLETED. Skipping.")
+            return {"success": True, "skipped": True, "reason": "already_completed"}
+
+        logger.info(f"Starting AI-POWERED generation for project {project_id}: {project.name}")
 
         # Create orchestrator
         orchestrator = AgentOrchestrator(db, project)

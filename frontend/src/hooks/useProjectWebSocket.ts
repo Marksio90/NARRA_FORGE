@@ -4,7 +4,7 @@
  * Real-time streaming of book generation progress.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export type EventType =
   | 'titan_analysis_start'
@@ -103,12 +103,33 @@ const initialState: LivePreviewState = {
   finalResult: null,
 };
 
+// Throttle interval for prose_stream updates (ms).
+// Batches rapid WebSocket chunks into a single React state update.
+const PROSE_THROTTLE_MS = 50;
+
 export function useProjectWebSocket(projectId: number | null) {
   const [state, setState] = useState<LivePreviewState>(initialState);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+
+  // --- Prose stream throttle buffer ---
+  // Accumulates tokens between flushes so we don't re-render on every chunk.
+  const proseBufferRef = useRef<string>('');
+  const proseFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const flushProseBuffer = useCallback(() => {
+    if (proseBufferRef.current.length > 0) {
+      const chunk = proseBufferRef.current;
+      proseBufferRef.current = '';
+      setState(prev => ({
+        ...prev,
+        proseBuffer: prev.proseBuffer + chunk,
+      }));
+    }
+    proseFlushTimerRef.current = null;
+  }, []);
 
   const connect = useCallback(() => {
     if (!projectId) return;
@@ -235,15 +256,32 @@ export function useProjectWebSocket(projectId: number | null) {
             proseBuffer: ''
           };
 
-        case 'prose_stream':
-          return {
-            ...prev,
-            proseBuffer: prev.proseBuffer + (event.data.token || event.data.chunk || '')
-          };
+        case 'prose_stream': {
+          // Throttled: accumulate tokens in a ref buffer and flush at PROSE_THROTTLE_MS intervals.
+          // This prevents render-thrashing when the backend streams tokens rapidly.
+          const token = event.data.token || event.data.chunk || '';
+          proseBufferRef.current += token;
 
-        case 'scene_complete':
+          if (!proseFlushTimerRef.current) {
+            proseFlushTimerRef.current = setTimeout(flushProseBuffer, PROSE_THROTTLE_MS);
+          }
+
+          // Return prev unchanged – the flush callback will batch-update state.
+          return prev;
+        }
+
+        case 'scene_complete': {
+          // Flush any remaining buffered tokens before clearing
+          if (proseFlushTimerRef.current) {
+            clearTimeout(proseFlushTimerRef.current);
+            proseFlushTimerRef.current = null;
+          }
+          const finalProse = prev.proseBuffer + proseBufferRef.current;
+          proseBufferRef.current = '';
+
           return {
             ...prev,
+            proseBuffer: '',  // Reset for next scene
             completedScenes: [
               ...prev.completedScenes,
               {
@@ -253,8 +291,8 @@ export function useProjectWebSocket(projectId: number | null) {
                 qualityScore: event.data.quality_score
               }
             ],
-            proseBuffer: ''
           };
+        }
 
         case 'chapter_complete':
           return {
@@ -306,6 +344,11 @@ export function useProjectWebSocket(projectId: number | null) {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
+    if (proseFlushTimerRef.current) {
+      clearTimeout(proseFlushTimerRef.current);
+      proseFlushTimerRef.current = null;
+    }
+    proseBufferRef.current = '';
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;

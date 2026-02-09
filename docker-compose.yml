@@ -12,6 +12,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-narraforge}"]
       interval: 10s
@@ -55,8 +57,8 @@ services:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set in .env}
+      - DEBUG=${DEBUG:-false}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     volumes:
       - ./backend:/app
@@ -82,7 +84,7 @@ services:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set in .env}
     volumes:
       - ./backend:/app
       - ./output:/app/output
@@ -109,7 +111,7 @@ services:
       - CELERY_BROKER_URL=redis://narraforge-redis:6379/1
       - CELERY_RESULT_BACKEND=redis://narraforge-redis:6379/2
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set in .env}
     depends_on:
       - narraforge-redis
       - narraforge-celery

@@ -70,29 +70,43 @@ class ChapterResult:
 
 class SceneWriterAgent:
     """
-    Advanced Scene Writer with Beat Sheet Architecture
+    Advanced Scene Writer with Beat Sheet Architecture + AI Critique Loop
 
-    Architektura trzech modułów:
+    Architektura CZTERECH modułów (Project 100x):
     1. ARCHITEKT - planuje Beat Sheet (Chain of Thought)
-    2. WIRTUOZ - generuje prozę realizującą Beat Sheet
+    2. WIRTUOZ PIÓRA - generuje prozę realizującą Beat Sheet
     3. WALIDATOR - sprawdza anty-wzorce (post-generation)
+    4. KRYTYK AI - analizuje jakość prozy i sugeruje poprawki (Draft→Critique→Rewrite)
 
     Rozwiązuje problemy:
     - Pętle narracyjne przez wymuszony postęp w Beat Sheet
     - Halucynacje postaci przez Character Lock
     - Purple Prose przez Burstiness/Perplexity controls
+    - Płaska proza przez iteracyjne udoskonalanie (Critique Loop)
     """
 
-    def __init__(self, use_beat_sheet: bool = True, validate_output: bool = True):
+    # Quality modes control the critique loop depth
+    QUALITY_FAST = "fast"          # No critique loop (cheapest)
+    QUALITY_STANDARD = "standard"  # 1 critique + rewrite pass
+    QUALITY_PREMIUM = "premium"    # 2 critique + rewrite passes
+
+    def __init__(
+        self,
+        use_beat_sheet: bool = True,
+        validate_output: bool = True,
+        quality_mode: str = "standard"
+    ):
         """
         Args:
             use_beat_sheet: Czy używać Beat Sheet Architect (Chain of Thought)
             validate_output: Czy walidować wygenerowany tekst
+            quality_mode: Tryb jakości - "fast" (brak krytyki), "standard" (1 pass), "premium" (2 passy)
         """
         self.ai_service = get_ai_service()
         self.name = "Scene Writer Agent (Divine)"
         self.use_beat_sheet = use_beat_sheet
         self.validate_output = validate_output
+        self.quality_mode = quality_mode
 
         # Komponenty Divine Prompt System
         self.beat_sheet_architect = get_beat_sheet_architect() if use_beat_sheet else None
@@ -105,6 +119,13 @@ class SceneWriterAgent:
             "sen/wizja jako źródło informacji",
             "powrót do punktu wyjścia"
         ]
+
+        # Critique loop configuration
+        self._critique_passes = {
+            self.QUALITY_FAST: 0,
+            self.QUALITY_STANDARD: 1,
+            self.QUALITY_PREMIUM: 2
+        }
 
     async def write_chapter(
         self,
@@ -252,6 +273,62 @@ class SceneWriterAgent:
                         tier=tier
                     )
                     total_cost += scene_result.cost
+
+            # KROK 4: KRYTYK AI - pętla Draft→Critique→Rewrite (Project 100x)
+            critique_passes = self._critique_passes.get(self.quality_mode, 0)
+            for critique_round in range(critique_passes):
+                logger.info(
+                    f"🔍 AI Critique pass {critique_round + 1}/{critique_passes} "
+                    f"for scene {scene_num}..."
+                )
+
+                # 4a. CRITIQUE - AI analizuje tekst
+                critique = await self._ai_critique_scene(
+                    scene_content=scene_result.content,
+                    genre=genre,
+                    pov_character=pov_character,
+                    scene_number=scene_num,
+                    chapter_number=chapter_number
+                )
+                total_cost += critique.get("cost", 0.0)
+
+                # Skip rewrite if critique score is high enough
+                critique_score = critique.get("score", 100)
+                if critique_score >= 85:
+                    logger.info(
+                        f"✅ Scene {scene_num} passed critique "
+                        f"({critique_score}/100) - no rewrite needed"
+                    )
+                    break
+
+                # 4b. REWRITE - AI przepisuje tekst uwzględniając uwagi
+                logger.info(
+                    f"✏️ Rewriting scene {scene_num} based on critique "
+                    f"({critique_score}/100)..."
+                )
+                rewritten = await self._ai_rewrite_scene(
+                    original_content=scene_result.content,
+                    critique_feedback=critique.get("feedback", ""),
+                    genre=genre,
+                    pov_character=pov_character,
+                    target_words=words_per_scene,
+                    tier=tier
+                )
+
+                # Replace scene content with rewritten version
+                scene_result = SceneResult(
+                    scene_number=scene_num,
+                    content=rewritten["content"],
+                    word_count=len(rewritten["content"].split()),
+                    cost=scene_result.cost + rewritten.get("cost", 0.0),
+                    model_used=scene_result.model_used
+                )
+                total_cost += rewritten.get("cost", 0.0)
+
+                logger.info(
+                    f"✅ Scene {scene_num} rewritten: "
+                    f"{scene_result.word_count} words (critique: {critique_score}/100)"
+                )
 
             scene_results.append(scene_result)
             total_cost += scene_result.cost + architect_cost
@@ -620,6 +697,159 @@ FORMAT:
             # NIGDY nie zwracaj pustego contentu - rzuć wyjątek!
             raise RuntimeError(f"Scene {scene_number} generation failed: {e}")
 
+    async def _ai_critique_scene(
+        self,
+        scene_content: str,
+        genre: str,
+        pov_character: Dict[str, Any],
+        scene_number: int,
+        chapter_number: int
+    ) -> Dict[str, Any]:
+        """
+        AI Critique - analizuje jakość sceny i zwraca szczegółowe uwagi.
+
+        Ocenia:
+        - Show Don't Tell (czy emocje są POKAZANE przez ciało/działanie)
+        - Głębia emocjonalna (czy czytelnik CZUJE)
+        - Spójność głosu postaci
+        - Rytm prozy (zmienność zdań)
+        - Logika sceny
+        """
+        char_name = pov_character.get('name', 'protagonist')
+
+        prompt = f"""Jesteś BEZLITOSNYM redaktorem literackim. Oceń tę scenę z rozdziału {chapter_number}:
+
+## SCENA {scene_number} (gatunek: {genre}, POV: {char_name})
+
+{scene_content[:4000]}
+
+## OCEŃ KRYTYCZNIE (0-100 za każdy aspekt):
+
+1. **SHOW DON'T TELL** (0-100): Czy emocje są POKAZANE przez ciało, działanie, percepcję?
+   - Szukaj: "czuł", "poczuła", "był smutny" = TELL (złe)
+   - Szukaj: "ścisnęło go w żołądku", "zacisnął pięści" = SHOW (dobre)
+
+2. **GŁĘBIA EMOCJONALNA** (0-100): Czy scena DOTYKA czytelnika?
+   - Czy jest autentyczna? Czy postacie reagują jak prawdziwi ludzie?
+
+3. **GŁOS POSTACI** (0-100): Czy narracja brzmi jak {char_name}?
+   - Czy słownictwo pasuje? Czy sposób myślenia jest spójny?
+
+4. **RYTM PROZY** (0-100): Czy zdania mają ZMIENNĄ długość?
+   - Krótkie zdania (1-3 słowa) budują napięcie
+   - Długie zdania budują atmosferę
+   - Monotonny rytm = nuda
+
+5. **LOGIKA I SPÓJNOŚĆ** (0-100): Czy scena ma sens?
+
+Odpowiedz TYLKO w JSON:
+{{
+    "score": <średnia 0-100>,
+    "show_dont_tell": <0-100>,
+    "emotional_depth": <0-100>,
+    "character_voice": <0-100>,
+    "prose_rhythm": <0-100>,
+    "logic": <0-100>,
+    "critical_issues": ["najważniejszy problem 1", "problem 2", "problem 3"],
+    "feedback": "Szczegółowe uwagi co poprawić (2-3 zdania)"
+}}"""
+
+        try:
+            response = await self.ai_service.generate(
+                prompt=prompt,
+                tier=ModelTier.TIER_1,  # Cheap model for critique
+                temperature=0.2,  # Analytical
+                max_tokens=800,
+                json_mode=True,
+                metadata={
+                    "agent": self.name,
+                    "task": "ai_critique",
+                    "chapter": chapter_number,
+                    "scene": scene_number
+                }
+            )
+
+            import json
+            try:
+                result = json.loads(response.content)
+                result["cost"] = response.cost
+                return result
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse critique JSON, assuming pass")
+                return {"score": 85, "feedback": "", "cost": response.cost}
+
+        except Exception as e:
+            logger.warning(f"AI critique failed: {e}, skipping")
+            return {"score": 85, "feedback": "", "cost": 0.0}
+
+    async def _ai_rewrite_scene(
+        self,
+        original_content: str,
+        critique_feedback: str,
+        genre: str,
+        pov_character: Dict[str, Any],
+        target_words: int,
+        tier: ModelTier
+    ) -> Dict[str, Any]:
+        """
+        AI Rewrite - przepisuje scenę uwzględniając uwagi krytyka.
+
+        Zachowuje: fabułę, postacie, kluczowe wydarzenia
+        Poprawia: styl, głębię emocjonalną, show don't tell, rytm
+        """
+        char_name = pov_character.get('name', 'protagonist')
+
+        prompt = f"""# ZADANIE: PRZEPISZ scenę, naprawiając wskazane problemy.
+
+## UWAGI KRYTYKA:
+{critique_feedback}
+
+## ORYGINALNA SCENA:
+{original_content[:5000]}
+
+## ZASADY PRZEPISYWANIA:
+1. ZACHOWAJ fabułę, postacie, wydarzenia, dialogi (treść ta sama!)
+2. POPRAW styl wg uwag krytyka
+3. Zamień KAŻDE "czuł/poczuła/był smutny" na CIAŁO/DZIAŁANIE
+4. Dodaj zmienność rytmu (krótkie + długie zdania)
+5. Pogłęb emocje przez percepcję zmysłową (zapach, dotyk, dźwięk)
+6. Dialogi z PAUZĄ (—), nigdy cudzysłowy
+7. 100% po polsku
+8. MINIMUM {target_words} słów
+
+## POV: {char_name} - narracja przez jego oczy i umysł
+
+Przepisz scenę. Zachowaj fabułę, popraw jakość prozy."""
+
+        system_prompt = f"""Jesteś redaktorem literackim, który UDOSKONALA tekst.
+NIE zmieniasz fabuły. NIE dodajesz nowych wydarzeń.
+POPRAWIASZ: styl, głębię emocjonalną, show don't tell, rytm prozy.
+Piszesz w 100% po polsku. Dialogi z PAUZĄ (—)."""
+
+        try:
+            response = await self.ai_service.generate(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                tier=tier,
+                temperature=0.75,  # Slightly lower than draft for focused rewrite
+                max_tokens=target_words * 2,
+                json_mode=False,
+                prefer_anthropic=False,
+                metadata={
+                    "agent": self.name,
+                    "task": "ai_rewrite",
+                }
+            )
+
+            return {
+                "content": response.content.strip(),
+                "cost": response.cost
+            }
+
+        except Exception as e:
+            logger.warning(f"AI rewrite failed: {e}, keeping original")
+            return {"content": original_content, "cost": 0.0}
+
     def _format_context(self, context_pack: Any, pov_character: Dict[str, Any]) -> str:
         """Format context for prompt"""
         if context_pack is None:
@@ -663,7 +893,8 @@ FORMAT:
 
 def get_scene_writer(
     use_beat_sheet: bool = True,
-    validate_output: bool = True
+    validate_output: bool = True,
+    quality_mode: str = "standard"
 ) -> SceneWriterAgent:
     """
     Get Scene Writer instance with Divine Prompt System.
@@ -671,13 +902,15 @@ def get_scene_writer(
     Args:
         use_beat_sheet: Enable Beat Sheet Architect (Chain of Thought planning)
         validate_output: Enable anti-pattern validation post-generation
+        quality_mode: "fast" (no critique), "standard" (1 pass), "premium" (2 passes)
 
     Returns:
         SceneWriterAgent configured with specified options
     """
     return SceneWriterAgent(
         use_beat_sheet=use_beat_sheet,
-        validate_output=validate_output
+        validate_output=validate_output,
+        quality_mode=quality_mode
     )
 
 

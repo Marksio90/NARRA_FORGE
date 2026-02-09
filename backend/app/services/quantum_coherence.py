@@ -13,6 +13,10 @@ from enum import Enum
 from datetime import datetime
 import uuid
 import asyncio
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -352,6 +356,19 @@ class QuantumCoherenceAnalyzer:
         self.timelines: Dict[str, List[TimelineEvent]] = {}
         self.world_rules: Dict[str, WorldRule] = {}
         self.character_states: Dict[str, Dict[str, List[CharacterState]]] = {}
+
+        # AI service for deep analysis
+        self._ai_service = None
+
+    def _get_ai_service(self):
+        """Lazy-load AI service."""
+        if self._ai_service is None:
+            try:
+                from app.services.ai_service import get_ai_service
+                self._ai_service = get_ai_service()
+            except Exception as e:
+                logger.warning(f"Could not load AI service for coherence: {e}")
+        return self._ai_service
 
     async def analyze_full_story(
         self,
@@ -827,17 +844,108 @@ class QuantumCoherenceAnalyzer:
         self,
         elements: Dict[str, NarrativeElement]
     ) -> List[CoherenceIssue]:
-        """Check thematic coherence."""
+        """Check thematic coherence using AI analysis."""
         issues = []
 
-        # Simplified theme checking
-        theme_elements = [
-            e for e in elements.values()
-            if e.element_type == CoherenceType.THEME
-        ]
+        ai_service = self._get_ai_service()
+        if not ai_service:
+            return issues
 
-        # Check for contradictory themes
-        # (simplified - would use semantic analysis in production)
+        # Group elements by chapter and extract theme-relevant content
+        chapter_themes = {}
+        for elem in elements.values():
+            if elem.chapter not in chapter_themes:
+                chapter_themes[elem.chapter] = []
+            chapter_themes[elem.chapter].append(elem.content[:200])
+
+        if len(chapter_themes) < 2:
+            return issues
+
+        # Sample content from early, middle, and late chapters
+        chapters = sorted(chapter_themes.keys())
+        sample_chapters = []
+        if chapters:
+            sample_chapters.append(chapters[0])
+            if len(chapters) > 2:
+                sample_chapters.append(chapters[len(chapters) // 2])
+            sample_chapters.append(chapters[-1])
+
+        samples = {}
+        for ch in sample_chapters:
+            texts = chapter_themes.get(ch, [])
+            samples[ch] = " ".join(texts[:3])[:500]
+
+        if not samples:
+            return issues
+
+        try:
+            from app.services.ai_service import ModelTier
+
+            prompt = f"""Przeanalizuj spójność tematyczną tych fragmentów powieści z różnych rozdziałów.
+
+{chr(10).join(f"## Rozdział {ch}:{chr(10)}{text}" for ch, text in samples.items())}
+
+Szukaj:
+1. Sprzecznych przesłań moralnych (np. bohater promuje jedną wartość, a potem jej zaprzecza)
+2. Niespójnego tonu (np. poważny dramat z nagle komediowym rozdziałem)
+3. Porzuconych motywów (symbole/motywy zaczynane i nigdy nierozwinięte)
+
+Odpowiedz TYLKO w JSON:
+{{
+    "issues": [
+        {{
+            "title": "krótki opis problemu",
+            "description": "szczegółowy opis",
+            "severity": "critical|major|moderate|minor",
+            "chapters": [1, 5]
+        }}
+    ]
+}}
+Jeśli nie ma problemów, zwróć {{"issues": []}}"""
+
+            response = await ai_service.generate(
+                prompt=prompt,
+                tier=ModelTier.TIER_1,
+                temperature=0.2,
+                max_tokens=800,
+                json_mode=True,
+                metadata={"task": "theme_coherence_check"}
+            )
+
+            import re
+            json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+                for issue_data in data.get("issues", []):
+                    severity_map = {
+                        "critical": SeverityLevel.CRITICAL,
+                        "major": SeverityLevel.MAJOR,
+                        "moderate": SeverityLevel.MODERATE,
+                        "minor": SeverityLevel.MINOR
+                    }
+                    ch_range = issue_data.get("chapters", [1, 1])
+                    issues.append(CoherenceIssue(
+                        issue_id=str(uuid.uuid4()),
+                        issue_type=CoherenceType.THEME,
+                        severity=severity_map.get(
+                            issue_data.get("severity", "moderate"),
+                            SeverityLevel.MODERATE
+                        ),
+                        status=IssueStatus.DETECTED,
+                        title=issue_data.get("title", "Niespójność tematyczna"),
+                        description=issue_data.get("description", ""),
+                        affected_elements=[],
+                        chapter_range=(
+                            ch_range[0] if ch_range else 1,
+                            ch_range[-1] if ch_range else 1
+                        ),
+                        suggested_fix="Przejrzyj i ujednolić temat/ton w wskazanych rozdziałach",
+                        auto_fixable=False,
+                        confidence=0.7,
+                        detected_at=datetime.now()
+                    ))
+        except Exception as e:
+            logger.warning(f"AI theme coherence check failed: {e}")
 
         return issues
 
@@ -846,24 +954,113 @@ class QuantumCoherenceAnalyzer:
         elements: Dict[str, NarrativeElement],
         characters: List[Dict[str, Any]]
     ) -> List[CoherenceIssue]:
-        """Check dialogue coherence."""
+        """Check dialogue coherence - ensures characters have consistent voices."""
         issues = []
+
+        ai_service = self._get_ai_service()
 
         dialogue_elements = [
             e for e in elements.values()
             if e.element_type == CoherenceType.DIALOGUE
         ]
 
-        # Check voice consistency per character
+        if not dialogue_elements:
+            return issues
+
         for character in characters:
             char_name = character.get("name", "")
+            if not char_name:
+                continue
+
             char_dialogues = [
                 e for e in dialogue_elements
                 if char_name in e.characters_involved
             ]
 
-            # Check for voice inconsistencies
-            # (simplified - would use NLP in production)
+            if len(char_dialogues) < 2:
+                continue
+
+            # Rule-based voice check: vocabulary consistency
+            vocab_sets = []
+            for d in char_dialogues[:5]:
+                words = set(d.content.lower().split())
+                vocab_sets.append(words)
+
+            # Check for dramatic vocabulary shifts between scenes
+            if len(vocab_sets) >= 2:
+                for i in range(len(vocab_sets) - 1):
+                    overlap = len(vocab_sets[i] & vocab_sets[i + 1])
+                    total = len(vocab_sets[i] | vocab_sets[i + 1])
+                    similarity = overlap / total if total > 0 else 1.0
+
+                    if similarity < 0.05:  # Very different vocabulary
+                        issues.append(CoherenceIssue(
+                            issue_id=str(uuid.uuid4()),
+                            issue_type=CoherenceType.DIALOGUE,
+                            severity=SeverityLevel.MODERATE,
+                            status=IssueStatus.DETECTED,
+                            title=f"Zmiana słownictwa postaci {char_name}",
+                            description=(
+                                f"Słownictwo {char_name} znacząco się zmienia między scenami. "
+                                f"Podobieństwo słownictwa: {similarity:.1%}"
+                            ),
+                            affected_elements=[],
+                            chapter_range=(
+                                char_dialogues[i].chapter,
+                                char_dialogues[i + 1].chapter
+                            ),
+                            suggested_fix=f"Ujednolicić styl wypowiedzi {char_name}",
+                            auto_fixable=False,
+                            confidence=0.6,
+                            detected_at=datetime.now()
+                        ))
+
+            # AI-powered deep voice analysis (if available)
+            if ai_service and len(char_dialogues) >= 3:
+                voice_guide = character.get("voice_guide", {})
+                samples = [f"R.{d.chapter}: {d.content[:150]}" for d in char_dialogues[:4]]
+
+                try:
+                    from app.services.ai_service import ModelTier
+
+                    prompt = (
+                        f"Czy te próbki dialogów postaci \"{char_name}\" są głosowo spójne?\n"
+                        f"Profil: {voice_guide.get('speechPatterns', 'brak')}\n\n"
+                        f"{chr(10).join(samples)}\n\n"
+                        f"Odpowiedz JSON: {{\"consistent\": true/false, "
+                        f"\"issue\": \"opis problemu lub null\"}}"
+                    )
+
+                    response = await ai_service.generate(
+                        prompt=prompt,
+                        tier=ModelTier.TIER_1,
+                        temperature=0.2,
+                        max_tokens=300,
+                        json_mode=True,
+                        metadata={"task": "dialogue_coherence", "character": char_name}
+                    )
+
+                    data = json.loads(response.content)
+                    if not data.get("consistent", True) and data.get("issue"):
+                        issues.append(CoherenceIssue(
+                            issue_id=str(uuid.uuid4()),
+                            issue_type=CoherenceType.DIALOGUE,
+                            severity=SeverityLevel.MAJOR,
+                            status=IssueStatus.DETECTED,
+                            title=f"[AI] Niespójny głos: {char_name}",
+                            description=data["issue"],
+                            affected_elements=[],
+                            chapter_range=(
+                                char_dialogues[0].chapter,
+                                char_dialogues[-1].chapter
+                            ),
+                            suggested_fix=f"Ujednolicić głos {char_name} wg profilu",
+                            auto_fixable=False,
+                            confidence=0.75,
+                            detected_at=datetime.now()
+                        ))
+                except Exception as e:
+                    logger.debug(f"AI dialogue check for {char_name} failed: {e}")
 
         return issues
 
@@ -1068,9 +1265,37 @@ class QuantumCoherenceAnalyzer:
         self,
         elements: List[NarrativeElement]
     ) -> List[NarrativeElement]:
-        """Find elements that introduce new plot points."""
-        # Simplified - would use more sophisticated analysis
-        return elements[:min(5, len(elements))]
+        """Find elements that introduce new plot points.
+
+        Identifies elements that introduce new characters, objects, locations,
+        or concepts that could be Chekhov's Guns requiring later resolution.
+        """
+        introduction_markers = [
+            "po raz pierwszy", "nigdy wcześniej", "nowy", "nowa", "nowe",
+            "pojawił się", "pojawiła się", "odkrył", "odkryła",
+            "znalazł", "znalazła", "tajemniczy", "tajemnicza",
+            "nieznany", "nieznana", "dziwny", "dziwna",
+            "zaskoczył", "zaskoczyła", "niespodziewanie",
+            "zauważył", "zauważyła", "pierwszy raz"
+        ]
+
+        introduced = []
+        for elem in elements:
+            content_lower = elem.content.lower()
+            # Check if element introduces something new
+            if any(marker in content_lower for marker in introduction_markers):
+                introduced.append(elem)
+
+        # Also include elements from early chapters (setup phase) with unique entities
+        seen_characters = set()
+        for elem in sorted(elements, key=lambda e: e.chapter):
+            new_chars = set(elem.characters_involved) - seen_characters
+            if new_chars and elem.chapter <= 3:
+                if elem not in introduced:
+                    introduced.append(elem)
+            seen_characters.update(elem.characters_involved)
+
+        return introduced
 
     def _is_element_resolved(
         self,
@@ -1094,9 +1319,28 @@ class QuantumCoherenceAnalyzer:
         end_chapter: int,
         elements: Dict[str, NarrativeElement]
     ) -> bool:
-        """Check if character could have logically acquired knowledge."""
-        # Simplified - assume true
-        return True
+        """Check if character could have logically acquired knowledge.
+
+        Searches for scenes between start and end chapters where the character
+        is present and the knowledge topic is mentioned.
+        """
+        knowledge_lower = knowledge.lower()
+
+        # Look for elements between the chapters that could explain the knowledge
+        for elem in elements.values():
+            if start_chapter <= elem.chapter <= end_chapter:
+                if character in elem.characters_involved:
+                    # Check if element content relates to the knowledge
+                    if knowledge_lower in elem.content.lower():
+                        return True
+
+                # Check if knowledge was revealed in a scene the character attended
+                if any(word in elem.content.lower() for word in knowledge_lower.split()[:3]):
+                    if character in elem.characters_involved:
+                        return True
+
+        # If no evidence found, flag as potentially impossible
+        return False
 
     def _find_rule_violations(
         self,

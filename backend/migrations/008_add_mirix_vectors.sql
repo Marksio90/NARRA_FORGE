@@ -21,18 +21,19 @@ BEGIN
     END IF;
 END$$;
 
--- IVFFlat index for approximate nearest-neighbor search (cosine distance)
--- Note: requires at least 1 row to exist; safe to run on empty table
+-- HNSW index for approximate nearest-neighbor search (cosine distance)
+-- HNSW advantages over IVFFlat:
+--   * No training phase needed (works immediately on empty tables)
+--   * Better recall accuracy at same speed
+--   * Supports real-time inserts without re-indexing
+-- m=16: max connections per node (higher=better recall, more memory)
+-- ef_construction=64: search width during build (higher=better quality, slower build)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes WHERE indexname = 'idx_mirix_vectors_embedding'
     ) THEN
-        BEGIN
-            CREATE INDEX idx_mirix_vectors_embedding
-            ON mirix_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10);
-        EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE 'ivfflat index creation skipped (table may be empty): %', SQLERRM;
-        END;
+        CREATE INDEX idx_mirix_vectors_embedding
+        ON mirix_vectors USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
     END IF;
 END$$;

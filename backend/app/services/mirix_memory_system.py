@@ -449,7 +449,15 @@ class CoreMemoryLayer(MemoryLayer):
         return item.id
 
     async def retrieve(self, query: str, limit: int = 10) -> List[CoreMemoryItem]:
-        """Retrieve core facts matching query"""
+        """Retrieve core facts matching query.
+
+        For small datasets (<1000 items), uses in-memory scan.
+        For larger datasets, delegates to pgvector SQL full-text search.
+        """
+        # Fast path: SQL-based filtering for large datasets
+        if len(self.items) > 500:
+            return await self._retrieve_via_sql(query, limit)
+
         results = []
         query_lower = query.lower()
 
@@ -462,6 +470,52 @@ class CoreMemoryLayer(MemoryLayer):
                 break
 
         return sorted(results, key=lambda x: x.priority.value)[:limit]
+
+    async def _retrieve_via_sql(self, query: str, limit: int) -> List[CoreMemoryItem]:
+        """SQL-based retrieval - offloads filtering to PostgreSQL."""
+        try:
+            from app.database import engine
+            from sqlalchemy import text as sa_text
+
+            with engine.connect() as conn:
+                result = conn.execute(sa_text("""
+                    SELECT id, content, metadata
+                    FROM mirix_vectors
+                    WHERE collection LIKE '%core%'
+                      AND content ILIKE :query
+                    LIMIT :limit
+                """), {"query": f"%{query[:100]}%", "limit": limit})
+
+                sql_results = []
+                for row in result.fetchall():
+                    meta = json.loads(row[1]) if isinstance(row[1], str) else row[1] or {}
+                    # If item exists in memory, return the rich object
+                    item_id = row[0]
+                    if item_id in self.items:
+                        self.items[item_id].touch()
+                        sql_results.append(self.items[item_id])
+                    else:
+                        # Reconstruct from DB
+                        sql_results.append(CoreMemoryItem(
+                            id=item_id,
+                            fact=row[0] if not isinstance(row[1], str) else row[0],
+                            category=meta.get("category", "unknown"),
+                            entities=meta.get("entities", "").split(", ") if meta.get("entities") else [],
+                            source=meta.get("source", ""),
+                            is_absolute=True,
+                        ))
+                return sql_results
+        except Exception as e:
+            logger.debug(f"SQL retrieve fallback to in-memory: {e}")
+            # Fallback to in-memory scan
+            results = []
+            query_lower = query.lower()
+            for item in self.items.values():
+                if query_lower in item.fact.lower():
+                    results.append(item)
+                if len(results) >= limit:
+                    break
+            return results
 
     async def query_by_context(self, context: Dict) -> List[CoreMemoryItem]:
         """Query core facts by context"""
@@ -535,6 +589,11 @@ class EpisodicMemoryLayer(MemoryLayer):
         return item.id
 
     async def retrieve(self, query: str, limit: int = 10) -> List[EpisodicMemoryItem]:
+        """Retrieve episodes matching query. Uses SQL for large datasets."""
+        # SQL fast-path for large datasets
+        if len(self.items) > 500:
+            return await self._retrieve_via_sql(query, limit)
+
         results = []
         query_lower = query.lower()
 
@@ -544,6 +603,40 @@ class EpisodicMemoryLayer(MemoryLayer):
                 results.append(item)
 
         return sorted(results, key=lambda x: x.chapter)[:limit]
+
+    async def _retrieve_via_sql(self, query: str, limit: int) -> List[EpisodicMemoryItem]:
+        """SQL-based retrieval for large episodic memory sets."""
+        try:
+            from app.database import engine
+            from sqlalchemy import text as sa_text
+
+            with engine.connect() as conn:
+                result = conn.execute(sa_text("""
+                    SELECT id, content, metadata
+                    FROM mirix_vectors
+                    WHERE collection LIKE '%episod%'
+                      AND content ILIKE :query
+                    ORDER BY created_at DESC
+                    LIMIT :limit
+                """), {"query": f"%{query[:100]}%", "limit": limit})
+
+                sql_results = []
+                for row in result.fetchall():
+                    item_id = row[0]
+                    if item_id in self.items:
+                        self.items[item_id].touch()
+                        sql_results.append(self.items[item_id])
+                return sql_results
+        except Exception as e:
+            logger.debug(f"SQL episodic retrieve fallback: {e}")
+            results = []
+            query_lower = query.lower()
+            for item in self.items.values():
+                if query_lower in item.summary.lower():
+                    results.append(item)
+                if len(results) >= limit:
+                    break
+            return results
 
     async def query_by_context(self, context: Dict) -> List[EpisodicMemoryItem]:
         results = []
@@ -1075,15 +1168,15 @@ class VectorMemoryLayer:
                     CREATE INDEX IF NOT EXISTS idx_mirix_vectors_collection
                     ON mirix_vectors (collection)
                 """))
-                # Use ivfflat index for fast approximate nearest-neighbor search
-                # (only works once we have enough rows, but CREATE INDEX IF NOT EXISTS is safe)
+                # HNSW index: no training phase needed, works on empty tables,
+                # better recall than ivfflat at comparable speed.
                 try:
                     conn.execute(sa_text("""
                         CREATE INDEX IF NOT EXISTS idx_mirix_vectors_embedding
-                        ON mirix_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 10)
+                        ON mirix_vectors USING hnsw (embedding vector_cosine_ops)
+                        WITH (m = 16, ef_construction = 64)
                     """))
                 except Exception:
-                    # ivfflat needs rows to build; skip on empty table
                     pass
                 conn.commit()
 

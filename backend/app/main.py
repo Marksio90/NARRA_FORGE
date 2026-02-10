@@ -3,6 +3,7 @@ Main FastAPI application for NarraForge
 Autonomous book generation platform with multi-agent orchestration
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -50,59 +51,56 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION,
-    description="Multi-Agentowa Platforma do Tworzenia Pełnometrażowych Książek",
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize application on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Modern lifespan handler (replaces deprecated on_event)"""
+    # Startup
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
-    
-    # Initialize database
     try:
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         raise
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
+    yield
+    # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
+
+
+# Create FastAPI app
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Multi-Agentowa Platforma do Tworzenia Pełnometrażowych Książek",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    lifespan=lifespan,
+)
+
+# Configure CORS with explicit methods and headers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=settings.ALLOWED_METHODS,
+    allow_headers=settings.ALLOWED_HEADERS,
+)
 
 
 # Exception handlers
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    """Global exception handler"""
+    """Global exception handler - never leaks internals in production"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "success": False,
-            "error": "Internal server error",
-            "detail": str(exc) if settings.DEBUG else "An unexpected error occurred"
-        }
-    )
+    content = {
+        "success": False,
+        "error": "Internal server error",
+    }
+    if settings.DEBUG:
+        content["detail"] = str(exc)
+    return JSONResponse(status_code=500, content=content)
 
 
 # Include routers

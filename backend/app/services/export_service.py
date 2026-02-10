@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 import logging
 from pathlib import Path
 from datetime import datetime
+from html import escape as html_escape
 
 from docx import Document
 from docx.shared import Pt, Inches
@@ -27,50 +28,57 @@ logger = logging.getLogger(__name__)
 async def export_to_format(db: Session, project_id: int, format: str) -> str:
     """
     Export project to specified format
-    
+
+    Blocking I/O (file writes, PDF generation) is offloaded to a thread
+    via asyncio.to_thread to avoid blocking the event loop.
+
     Args:
         db: Database session
         project_id: Project ID
         format: Output format (docx, epub, pdf, markdown)
-    
+
     Returns:
         Path to exported file
     """
+    import asyncio
+
     # Get project and chapters
     project = db.query(Project).filter(Project.id == project_id).first()
     chapters = db.query(Chapter).filter(
         Chapter.project_id == project_id
     ).order_by(Chapter.number).all()
-    
+
     if not project or not chapters:
         raise ValueError("Project or chapters not found")
-    
+
     # Create output directory
     output_dir = Path(settings.OUTPUT_DIR) / str(project_id)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Generate filename
+
+    # Generate filename - sanitize to prevent path traversal
     safe_name = "".join(c for c in project.name if c.isalnum() or c in (' ', '-', '_')).strip()
+    if not safe_name:
+        safe_name = f"project_{project_id}"
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Export based on format
+
+    # Export based on format (offload blocking I/O to thread)
     if format == "docx":
         file_path = output_dir / f"{safe_name}_{timestamp}.docx"
-        _export_docx(project, chapters, file_path)
+        await asyncio.to_thread(_export_docx, project, chapters, file_path)
     elif format == "epub":
         file_path = output_dir / f"{safe_name}_{timestamp}.epub"
-        _export_epub(project, chapters, file_path)
+        await asyncio.to_thread(_export_epub, project, chapters, file_path)
     elif format == "pdf":
         file_path = output_dir / f"{safe_name}_{timestamp}.pdf"
-        _export_pdf(project, chapters, file_path)
+        await asyncio.to_thread(_export_pdf, project, chapters, file_path)
     elif format == "markdown":
         file_path = output_dir / f"{safe_name}_{timestamp}.md"
-        _export_markdown(project, chapters, file_path)
+        await asyncio.to_thread(_export_markdown, project, chapters, file_path)
     else:
         raise ValueError(f"Unsupported format: {format}")
-    
+
     logger.info(f"Exported project {project_id} to {format}: {file_path}")
-    
+
     return str(file_path)
 
 
@@ -304,22 +312,22 @@ def _export_epub(project: Project, chapters: List[Chapter], file_path: Path):
 
             content = f'<div class="chapter-break"><h1>Rozdział {chapter.number}</h1>'
             if chapter.title:
-                content += f"<h2>{chapter.title}</h2>"
+                content += f"<h2>{html_escape(chapter.title)}</h2>"
 
-            # Process paragraphs with proper styling
+            # Process paragraphs with proper styling (escape HTML to prevent XSS/malformed EPUB)
             paragraphs = [p.strip() for p in chapter.content.split('\n\n') if p.strip()]
             for i, paragraph_text in enumerate(paragraphs):
+                safe_text = html_escape(paragraph_text)
                 # Detect dialogue
-                is_dialogue = paragraph_text.startswith('—') or paragraph_text.startswith('-')
+                is_dialogue = paragraph_text.startswith('\u2014') or paragraph_text.startswith('-')
 
                 # Apply appropriate class
                 if i == 0:
-                    # First paragraph - no indent
-                    content += f'<p class="first">{paragraph_text}</p>'
+                    content += f'<p class="first">{safe_text}</p>'
                 elif is_dialogue:
-                    content += f'<p class="dialogue">{paragraph_text}</p>'
+                    content += f'<p class="dialogue">{safe_text}</p>'
                 else:
-                    content += f'<p>{paragraph_text}</p>'
+                    content += f'<p>{safe_text}</p>'
 
             content += '</div>'
             c.content = content

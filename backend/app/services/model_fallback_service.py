@@ -1,8 +1,13 @@
 """
 Model Fallback Service for NarraForge 2.0
 
-Automatic failover between AI providers.
+Automatic failover between AI providers with Circuit Breaker pattern.
 If OpenAI fails - switch to Anthropic and vice versa.
+
+Circuit Breaker states:
+- CLOSED: Normal operation, requests pass through
+- OPEN: Provider failing, requests fail-fast to fallback (no waiting)
+- HALF_OPEN: Testing if provider recovered with a single probe request
 """
 
 from typing import Dict, List, Any, Optional, Tuple
@@ -11,10 +16,158 @@ from datetime import datetime, timedelta
 from enum import Enum
 import asyncio
 import logging
+import time
+import threading
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# CIRCUIT BREAKER IMPLEMENTATION
+# =============================================================================
+
+class CircuitBreakerState(str, Enum):
+    """Circuit breaker states"""
+    CLOSED = "closed"        # Normal operation
+    OPEN = "open"            # Failing - reject immediately, use fallback
+    HALF_OPEN = "half_open"  # Testing recovery with single probe
+
+
+@dataclass
+class CircuitBreakerConfig:
+    """Configuration for a circuit breaker"""
+    failure_threshold: int = 3          # Failures before opening
+    recovery_timeout: float = 30.0      # Seconds before trying half-open
+    half_open_max_calls: int = 1        # Max test calls in half-open
+    success_threshold: int = 2          # Successes in half-open to close
+
+
+class ProviderCircuitBreaker:
+    """
+    Circuit Breaker for an AI provider.
+
+    Prevents cascading failures by fast-failing when a provider is unhealthy.
+    Instead of waiting for timeouts, immediately routes to fallback provider.
+
+    State transitions:
+        CLOSED --[failure_threshold failures]--> OPEN
+        OPEN --[recovery_timeout elapsed]--> HALF_OPEN
+        HALF_OPEN --[success_threshold successes]--> CLOSED
+        HALF_OPEN --[any failure]--> OPEN
+    """
+
+    def __init__(self, provider_name: str, config: Optional[CircuitBreakerConfig] = None):
+        self.provider_name = provider_name
+        self.config = config or CircuitBreakerConfig()
+        self._state = CircuitBreakerState.CLOSED
+        self._failure_count = 0
+        self._success_count = 0
+        self._last_failure_time: Optional[float] = None
+        self._half_open_calls = 0
+        self._lock = threading.Lock()
+
+        # Metrics
+        self._total_calls = 0
+        self._total_failures = 0
+        self._total_short_circuits = 0
+        self._last_state_change: Optional[float] = None
+
+    @property
+    def state(self) -> CircuitBreakerState:
+        """Get current state, auto-transitioning OPEN -> HALF_OPEN if timeout elapsed."""
+        with self._lock:
+            if self._state == CircuitBreakerState.OPEN:
+                if (self._last_failure_time and
+                        time.monotonic() - self._last_failure_time >= self.config.recovery_timeout):
+                    self._transition_to(CircuitBreakerState.HALF_OPEN)
+            return self._state
+
+    @property
+    def is_call_permitted(self) -> bool:
+        """Check if a call is permitted through this circuit breaker."""
+        current_state = self.state  # triggers auto-transition check
+        if current_state == CircuitBreakerState.CLOSED:
+            return True
+        elif current_state == CircuitBreakerState.HALF_OPEN:
+            with self._lock:
+                if self._half_open_calls < self.config.half_open_max_calls:
+                    self._half_open_calls += 1
+                    return True
+                return False
+        else:  # OPEN
+            self._total_short_circuits += 1
+            return False
+
+    def record_success(self):
+        """Record a successful call."""
+        with self._lock:
+            self._total_calls += 1
+            if self._state == CircuitBreakerState.HALF_OPEN:
+                self._success_count += 1
+                if self._success_count >= self.config.success_threshold:
+                    self._transition_to(CircuitBreakerState.CLOSED)
+            else:
+                # In CLOSED state, reset failure count on success
+                self._failure_count = max(0, self._failure_count - 1)
+
+    def record_failure(self):
+        """Record a failed call."""
+        with self._lock:
+            self._total_calls += 1
+            self._total_failures += 1
+            self._last_failure_time = time.monotonic()
+
+            if self._state == CircuitBreakerState.HALF_OPEN:
+                # Any failure in half-open immediately reopens
+                self._transition_to(CircuitBreakerState.OPEN)
+            elif self._state == CircuitBreakerState.CLOSED:
+                self._failure_count += 1
+                if self._failure_count >= self.config.failure_threshold:
+                    self._transition_to(CircuitBreakerState.OPEN)
+
+    def _transition_to(self, new_state: CircuitBreakerState):
+        """Transition to a new state (must hold lock)."""
+        old_state = self._state
+        self._state = new_state
+        self._last_state_change = time.monotonic()
+
+        if new_state == CircuitBreakerState.CLOSED:
+            self._failure_count = 0
+            self._success_count = 0
+            self._half_open_calls = 0
+            logger.info(
+                f"Circuit breaker [{self.provider_name}]: {old_state.value} -> CLOSED "
+                f"(provider recovered)"
+            )
+        elif new_state == CircuitBreakerState.OPEN:
+            self._success_count = 0
+            self._half_open_calls = 0
+            logger.warning(
+                f"Circuit breaker [{self.provider_name}]: {old_state.value} -> OPEN "
+                f"(failures={self._failure_count}, "
+                f"recovery in {self.config.recovery_timeout}s)"
+            )
+        elif new_state == CircuitBreakerState.HALF_OPEN:
+            self._half_open_calls = 0
+            self._success_count = 0
+            logger.info(
+                f"Circuit breaker [{self.provider_name}]: {old_state.value} -> HALF_OPEN "
+                f"(testing recovery)"
+            )
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get circuit breaker metrics."""
+        return {
+            "state": self.state.value,
+            "failure_count": self._failure_count,
+            "total_calls": self._total_calls,
+            "total_failures": self._total_failures,
+            "total_short_circuits": self._total_short_circuits,
+            "last_failure": self._last_failure_time,
+            "last_state_change": self._last_state_change,
+        }
 
 
 class ProviderName(str, Enum):
@@ -66,8 +219,13 @@ class AllProvidersFailedError(Exception):
 
 class ModelFallbackService:
     """
-    Automatic fallback between AI providers.
+    Automatic fallback between AI providers with Circuit Breaker pattern.
     If OpenAI fails - switch to Anthropic and vice versa.
+
+    Circuit Breaker ensures:
+    - Zero "hanging" generations - fail-fast to fallback provider
+    - Automatic recovery detection via half-open probes
+    - No wasted resources on known-broken providers
     """
 
     # Provider priority order
@@ -107,6 +265,28 @@ class ModelFallbackService:
         self._openai_client = None
         self._anthropic_client = None
 
+        # Circuit breakers per provider
+        self._circuit_breakers: Dict[ProviderName, ProviderCircuitBreaker] = {
+            ProviderName.OPENAI: ProviderCircuitBreaker(
+                "openai",
+                CircuitBreakerConfig(
+                    failure_threshold=3,
+                    recovery_timeout=30.0,
+                    half_open_max_calls=1,
+                    success_threshold=2,
+                )
+            ),
+            ProviderName.ANTHROPIC: ProviderCircuitBreaker(
+                "anthropic",
+                CircuitBreakerConfig(
+                    failure_threshold=3,
+                    recovery_timeout=30.0,
+                    half_open_max_calls=1,
+                    success_threshold=2,
+                )
+            ),
+        }
+
     async def generate_with_fallback(
         self,
         prompt: str,
@@ -114,6 +294,7 @@ class ModelFallbackService:
         system_prompt: Optional[str] = None,
         max_tokens: int = 4000,
         temperature: float = 0.7,
+        enable_cache: bool = False,
         **kwargs
     ) -> AIResponse:
         """
@@ -136,9 +317,19 @@ class ModelFallbackService:
         last_error = None
 
         for provider, model in providers_to_try:
-            # Skip if provider is down
+            cb = self._circuit_breakers[provider]
+
+            # Circuit Breaker: fail-fast if provider is known to be down
+            if not cb.is_call_permitted:
+                logger.debug(
+                    f"Circuit breaker OPEN for {provider.value} - "
+                    f"skipping to fallback (state={cb.state.value})"
+                )
+                continue
+
+            # Also check legacy status (rate limits with Retry-After)
             if self._is_provider_down(provider):
-                logger.debug(f"Skipping {provider.value} - marked as down")
+                logger.debug(f"Skipping {provider.value} - marked as down (rate limited)")
                 continue
 
             try:
@@ -150,13 +341,15 @@ class ModelFallbackService:
                     prompt=prompt,
                     system_prompt=system_prompt,
                     max_tokens=max_tokens,
-                    temperature=temperature
+                    temperature=temperature,
+                    enable_cache=enable_cache
                 )
 
                 # Calculate latency
                 latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
 
-                # Mark provider as healthy
+                # Record success in circuit breaker
+                cb.record_success()
                 self._mark_provider_healthy(provider)
 
                 return AIResponse(
@@ -170,6 +363,7 @@ class ModelFallbackService:
 
             except RateLimitError as e:
                 logger.warning(f"Rate limit on {provider.value}: {e}")
+                cb.record_failure()
 
                 # If retry is quick, wait and retry
                 if e.retry_after and e.retry_after < 60:
@@ -182,11 +376,13 @@ class ModelFallbackService:
 
             except ProviderUnavailableError as e:
                 logger.error(f"Provider {provider.value} unavailable: {e}")
+                cb.record_failure()
                 self._mark_provider_down(provider)
                 last_error = e
 
             except Exception as e:
                 logger.error(f"Error with {provider.value}: {e}")
+                cb.record_failure()
                 last_error = e
                 continue
 
@@ -263,13 +459,14 @@ class ModelFallbackService:
         prompt: str,
         system_prompt: Optional[str],
         max_tokens: int,
-        temperature: float
+        temperature: float,
+        enable_cache: bool = False
     ) -> Dict[str, Any]:
         """Call specific AI provider."""
         if provider == ProviderName.OPENAI:
             return await self._call_openai(model, prompt, system_prompt, max_tokens, temperature)
         elif provider == ProviderName.ANTHROPIC:
-            return await self._call_anthropic(model, prompt, system_prompt, max_tokens, temperature)
+            return await self._call_anthropic(model, prompt, system_prompt, max_tokens, temperature, enable_cache)
         else:
             raise ValueError(f"Unknown provider: {provider}")
 
@@ -328,9 +525,10 @@ class ModelFallbackService:
         prompt: str,
         system_prompt: Optional[str],
         max_tokens: int,
-        temperature: float
+        temperature: float,
+        enable_cache: bool = False
     ) -> Dict[str, Any]:
-        """Call Anthropic API."""
+        """Call Anthropic API with optional prompt caching."""
         try:
             from anthropic import AsyncAnthropic, RateLimitError as AnthropicRateLimitError, APIError
 
@@ -347,7 +545,16 @@ class ModelFallbackService:
             }
 
             if system_prompt:
-                kwargs["system"] = system_prompt
+                if enable_cache:
+                    kwargs["system"] = [
+                        {
+                            "type": "text",
+                            "text": system_prompt,
+                            "cache_control": {"type": "ephemeral"}
+                        }
+                    ]
+                else:
+                    kwargs["system"] = system_prompt
 
             # Anthropic doesn't support temperature > 1
             if temperature <= 1:
@@ -433,7 +640,7 @@ class ModelFallbackService:
         return results
 
     def get_provider_status(self) -> Dict[str, Any]:
-        """Get current status of all providers."""
+        """Get current status of all providers including circuit breaker state."""
         return {
             provider.value: {
                 "is_down": status.is_down,
@@ -441,9 +648,17 @@ class ModelFallbackService:
                 "retry_after": status.retry_after.isoformat() if status.retry_after else None,
                 "failure_count": status.failure_count,
                 "last_success": status.last_success.isoformat() if status.last_success else None,
-                "last_failure": status.last_failure.isoformat() if status.last_failure else None
+                "last_failure": status.last_failure.isoformat() if status.last_failure else None,
+                "circuit_breaker": self._circuit_breakers[provider].get_metrics()
             }
             for provider, status in self.provider_status.items()
+        }
+
+    def get_circuit_breaker_status(self) -> Dict[str, Any]:
+        """Get circuit breaker status for all providers."""
+        return {
+            provider.value: cb.get_metrics()
+            for provider, cb in self._circuit_breakers.items()
         }
 
 

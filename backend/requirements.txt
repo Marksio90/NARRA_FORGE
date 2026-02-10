@@ -69,6 +69,9 @@ textstat==0.7.3
 # Vector Memory - uses pgvector (already in PostgreSQL stack)
 # chromadb removed: pgvector eliminates redundant vector DB dependency
 
+# GraphRAG - Knowledge Graph for relationship tracking
+networkx==3.2.1
+
 # Data Processing
 numpy==1.26.3
 pandas==2.2.0

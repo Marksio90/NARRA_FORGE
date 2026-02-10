@@ -5,6 +5,7 @@ System ensuring bestseller-level quality.
 Analyzes text against criteria common to world's best books.
 """
 
+import re
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
@@ -234,6 +235,29 @@ Ocena 0-100, gdzie 90+ = wysoce oryginalne."""
     def __init__(self, ai_service: Optional[AIService] = None):
         self.ai_service = ai_service or AIService()
 
+    # Hard-coded cliché patterns that trigger automatic score penalties
+    CLICHE_OPENING_PATTERNS = [
+        r"^\s*otworzył[a]?\s+oczy",
+        r"^\s*obudził[a]?\s+się",
+        r"^\s*zerwał[a]?\s+się\s+(z\s+)?(podłogi|łóżka|ziemi|posadzki)",
+        r"^\s*leżał[a]?\s+na\s+(zimn|tward|mokr)",
+        r"^\s*ocknął[a]?\s+się",
+        r"^\s*otworzyła?\s+oczy",
+        r"^\s*świat\s+wokół\s+(niego|niej)\s+wir",
+        r"^\s*ciemność\s+otoczyła",
+        r"^\s*gęsta[,]?\s+nieprzenikniona\s+ciemność",
+    ]
+
+    REPETITIVE_PHRASE_PATTERNS = [
+        r"mapa bólu",
+        r"duszący sen",
+        r"muszę iść dalej",
+        r"nie było odwrotu",
+        r"gęsta[,]?\s+nieprzenikniona\s+ciemność",
+        r"mrok\s+gęstniał",
+        r"ciemność\s+pochłonęła",
+    ]
+
     async def analyze_quality(
         self,
         content: str,
@@ -253,19 +277,47 @@ Ocena 0-100, gdzie 90+ = wysoce oryginalne."""
         """
         scores = {}
 
+        # Pre-check: detect hard cliché violations
+        cliche_penalty = self._detect_cliche_penalties(content)
+
         for criterion_name, criterion in self.BESTSELLER_CRITERIA.items():
             score = await self._evaluate_criterion(
                 content=content,
                 criterion=criterion,
                 genre=genre
             )
+
+            score_value = score["value"]
+            feedback = score["feedback"]
+            improvements = score["improvements"]
+
+            # Apply hard penalty for cliché openings on opening_hook criterion
+            if criterion_name == "opening_hook" and cliche_penalty["has_cliche_opening"]:
+                score_value = min(score_value, 15)  # Cap at 15/100
+                feedback = (
+                    f"KARA AUTOMATYCZNA: Wykryto kliszowe otwarcie "
+                    f"({cliche_penalty['matched_opening']}). {feedback}"
+                )
+                improvements = [
+                    "KRYTYCZNE: Zmień otwarcie — użyj In Medias Res, dialogu, mikro-detalu lub zaskakującej myśli"
+                ] + improvements
+
+            # Apply penalty for repetitive phrases on originality criterion
+            if criterion_name == "originality" and cliche_penalty["repetitive_count"] > 2:
+                penalty = min(40, cliche_penalty["repetitive_count"] * 10)
+                score_value = max(0, score_value - penalty)
+                feedback = (
+                    f"KARA: Wykryto {cliche_penalty['repetitive_count']} powtarzających się "
+                    f"kliszowych fraz. {feedback}"
+                )
+
             scores[criterion_name] = CriterionScore(
                 name=criterion_name,
-                score=score["value"],
+                score=score_value,
                 weight=criterion["weight"],
-                weighted_score=score["value"] * criterion["weight"],
-                feedback=score["feedback"],
-                improvements=score["improvements"]
+                weighted_score=score_value * criterion["weight"],
+                feedback=feedback,
+                improvements=improvements
             )
 
         total_score = sum(s.weighted_score for s in scores.values())
@@ -397,6 +449,46 @@ Odpowiedz w formacie JSON:
 
         # Return top improvement areas
         return [name for name, _, _ in improvements[:3]]
+
+    def _detect_cliche_penalties(self, content: str) -> Dict[str, Any]:
+        """
+        Hard detection of cliché patterns that automatically penalize scores.
+        This catches problems that AI-based evaluation might miss.
+        """
+        result = {
+            "has_cliche_opening": False,
+            "matched_opening": "",
+            "repetitive_count": 0,
+            "repetitive_matches": [],
+        }
+
+        # Check first 500 chars for cliché openings
+        opening = content[:500].lower().strip()
+        # Remove chapter title lines (e.g. "Rozdział 1", "Rozdział 1: Tytuł")
+        opening_lines = opening.split("\n")
+        content_start = ""
+        for line in opening_lines:
+            stripped = line.strip()
+            if stripped and not re.match(r"^rozdział\s+\d+", stripped, re.IGNORECASE):
+                content_start = stripped
+                break
+
+        for pattern in self.CLICHE_OPENING_PATTERNS:
+            if re.search(pattern, content_start, re.IGNORECASE):
+                result["has_cliche_opening"] = True
+                result["matched_opening"] = pattern
+                break
+
+        # Check full text for repetitive phrases
+        for pattern in self.REPETITIVE_PHRASE_PATTERNS:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                result["repetitive_count"] += len(matches)
+                result["repetitive_matches"].append(
+                    {"pattern": pattern, "count": len(matches)}
+                )
+
+        return result
 
     def _calculate_bestseller_potential(self, score: float, genre: GenreType) -> float:
         """Calculate bestseller potential score."""

@@ -164,6 +164,26 @@ GENRE_PROSE_STYLES = {
             "Satisfying reveal - surprising yet logical",
             "All loose ends tied up in resolution"
         ]
+    },
+    "religious": {
+        "style": "Grounded, spiritual but modern, focused on internal moral struggle",
+        "techniques": [
+            "Biblical allegory used subtly, not overtly",
+            "Focus on human connection rather than just divine intervention",
+            "Simple, parable-like clarity instead of purple prose",
+            "Concrete physical details grounding the spiritual experience",
+            "Moral dilemmas shown through action, not preaching",
+            "Community and relationships as vehicles for faith themes"
+        ],
+        "examples": "C.S. Lewis's clarity, Wm. Paul Young's accessibility, Marilynne Robinson's grace",
+        "reader_expectations": [
+            "Redemption arcs that feel earned, not handed",
+            "Crisis of faith resolved through action, not just prayer",
+            "Community and fellowship importance",
+            "Hope emerging from despair without being clichéd",
+            "Moral complexity - not simple good vs evil",
+            "Physical, tangible world - not abstract spiritual vagueness"
+        ]
     }
 }
 

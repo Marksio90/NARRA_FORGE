@@ -92,7 +92,30 @@ Dla każdej sceny tworzysz 5 punktów zwrotnych (beats):
 ⛔ ZABRONIONE jest używanie motywu "waham się czy uciec"
 ⛔ ZABRONIONE jest wprowadzanie postaci spoza autoryzowanej listy
 ⛔ ZABRONIONE jest kończenie sceny tam gdzie się zaczęła
-⛔ ZABRONIONE jest używanie snów/wizji jako źródła informacji"""
+⛔ ZABRONIONE jest używanie snów/wizji jako źródła informacji
+
+### 4. WERYFIKACJA REPETYTYWNOŚCI (ANTI-LOOP CHECK)
+
+Sprawdź streszczenie POPRZEDNIEJ sceny i WYMUŚ zmianę typu:
+
+**REGUŁY ROTACJI SCEN:**
+- JEŚLI w poprzedniej scenie bohater BUDZIŁ SIĘ w nieznanym miejscu
+  → W TEJ scenie MUSI spotkać inną postać (Dialog obowiązkowy)
+- JEŚLI w poprzedniej scenie bohater EKSPLOROWAŁ samotnie
+  → W TEJ scenie MUSI być w centrum akcji/zagrożenia fizycznego
+- JEŚLI w poprzedniej scenie bohater ROZWAŻAŁ/MYŚLAŁ
+  → W TEJ scenie MUSI podjąć natychmiastowe działanie pod presją czasu
+- JEŚLI w poprzedniej scenie bohater WALCZYŁ/UCIEKAŁ
+  → W TEJ scenie MUSI nastąpić dialog/konfrontacja werbalna
+
+**ZABRANIA SIĘ tworzenia sekwencji:**
+❌ [Pobudka] → [Eksploracja] → [Wyjście] — WIĘCEJ NIŻ RAZ w całej książce
+❌ Trzy kolejne sceny samotnej eksploracji
+❌ Dwa kolejne rozdziały zaczynające się od tego samego typu otwarcia
+
+**WYMAGANA ROTACJA TYPÓW SCEN:**
+Cykl: AKCJA → DIALOG → ODKRYCIE → KONFRONTACJA → DECYZJA
+(Nie musi być dokładnie w tej kolejności, ale ŻADEN typ nie może wystąpić 3x z rzędu)"""
 
 
 def get_architect_prompt(
@@ -154,6 +177,9 @@ def get_architect_prompt(
 
 ## POPRZEDNIA SCENA
 {previous_scene_summary if previous_scene_summary else "[Pierwsza scena rozdziału]"}
+
+## ANTI-LOOP: WYMUSZONA ZMIANA TYPU SCENY
+{f"Poprzednia scena istnieje — MUSISZ zmienić typ aktywności bohatera. Jeśli bohater eksplorował — teraz dialog. Jeśli budził się — teraz akcja. Jeśli myślał — teraz konfrontacja pod presją czasu. NIGDY nie powtarzaj schematu [Pobudka]-[Eksploracja]-[Wyjście]." if previous_scene_summary else "Pierwsza scena — zacznij od MOCNEGO hooka (akcja lub dialog)."}
 
 ## OGRANICZENIA KRYTYCZNE
 

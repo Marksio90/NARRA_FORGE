@@ -8,30 +8,47 @@ to guide AI generation toward publishable quality.
 # ============== OPENING RULES ==============
 
 BESTSELLER_OPENING_RULES = """
-ZASADY OTWARC BESTSELLEROWYCH
+ZASADY OTWARĆ BESTSELLEROWYCH (KRYTYCZNE - BEZWZGLĘDNE PRZESTRZEGANIE)
 
-PIERWSZE ZDANIE = HOOK, ktory:
-1. Pokazuje konflikt lub napiecie
-2. Stawia pytanie w umysle czytelnika
-3. Wprowadza wyjatkowy glos narracji
-4. Zawiera konkretny szczegol, nie ogolnik
+PIERWSZE ZDANIE = HOOK, który:
+1. Pokazuje konflikt lub napięcie
+2. Stawia pytanie w umyśle czytelnika
+3. Wprowadza wyjątkowy głos narracji
+4. Zawiera konkretny szczegół, nie ogólnik
 
-ZABRONIONE otwarcia:
-- Opis pogody ("Byl pochmurny dzien...")
-- Ogolne wprowadzenie ("John byl zwyklym czlowiekiem...")
-- Informacje biograficzne ("Urodzil sie w...")
-- Filozoficzne rozwazania ("Zycie jest...")
-- Budzenie sie ze snu
-- Opis pokoju/miejsca bez akcji
+## ABSOLUTNY ZAKAZ (ZERO TOLERANCJI):
+❌ Zaczynanie sceny od pobudki bohatera ("Otworzył oczy", "Obudził się", "Zerwał się z podłogi")
+❌ Opis ciemności/pogody w pierwszym zdaniu ("Było ciemno", "Był pochmurny dzień")
+❌ Ogólne wprowadzenie ("John był zwykłym człowiekiem...")
+❌ Informacje biograficzne ("Urodził się w...")
+❌ Filozoficzne rozważania ("Życie jest...")
+❌ Opis pokoju/miejsca bez akcji
+❌ Leżenie na podłodze/ziemi jako punkt startowy
 
-DOBRE otwarcia:
-- Akcja w toku: "Krew na liscie zwiastowala jego smierc."
-- Dialog z konfliktem: "Jesli tego nie zrobisz, wszyscy zginiemy."
-- Szczegol wyjatkowy: "Tego ranka znalazlem w szafie obca reke."
-- Wewnetrzna walka: "Trzeci raz w tym tygodniu musialem zabic."
-- In medias res: wrzucenie w srodek akcji
+## WYMAGANE OTWARCIE — WYBIERZ JEDNO (inne niż w poprzednim rozdziale!):
 
-PRZYKLADY Z BESTSELLEROW:
+1. **In Medias Res (Akcja):** Rzuć czytelnika w środek ruchu.
+   → "Kamień roztrzaskał się o ścianę tuż obok jego głowy."
+   → "Trzecie piętro. Schody się kończą. Drzwi — zamknięte."
+
+2. **Dialog:** Zacznij od kwestii wypowiadanej w połowie kłótni.
+   → "Nie możesz tego zrobić! — krzyknęła Maria."
+   → "— Kłamiesz. — Ewa nie patrzyła mu w oczy. — Kłamałeś od początku."
+
+3. **Mikro-detal:** Skup się na konkretnym, fizycznym obiekcie.
+   → "Krew na ostrzu noża już zaschła, tworząc rdzawą skorupę."
+   → "Trzy włosy na poduszce. Nie jego. Nie jej."
+
+4. **Zaskakująca myśl:** Nietypowe stwierdzenie bohatera.
+   → "Zabijanie demonów było łatwiejsze niż rozmowa z własnym bratem."
+   → "Piąty kościół w tym tygodniu. I piąte ciało."
+
+## REGUŁA ANTY-POBUDKOWA:
+JEŚLI poprzednia scena skończyła się zaśnięciem/omdleniem/utratą przytomności:
+→ NOWA SCENA MUSI zacząć się od KONKRETNEJ AKCJI FIZYCZNEJ (biegu, walki, rozmowy),
+  a NIE od budzenia się. Pomiń moment pobudki — wejdź w akcję.
+
+PRZYKŁADY Z BESTSELLERÓW:
 - "Mr. and Mrs. Dursley, of number four, Privet Drive, were proud to say that they were perfectly normal, thank you very much." (J.K. Rowling)
 - "It was a bright cold day in April, and the clocks were striking thirteen." (George Orwell)
 - "The man in black fled across the desert, and the gunslinger followed." (Stephen King)
@@ -629,6 +646,17 @@ ZASADY KOMEDII:
 - Sytuacje eskalują absurdalnie
 - Happy ending (lub bittersweet)
 - Jezyk: lekki, z puentami
+""",
+    "religious": """
+ZASADY PROZY RELIGIJNEJ:
+- Duchowość uziemiona w konkrecie fizycznym, nie abstrakcji
+- Alegoria biblijna subtelna, nie dosłowna
+- Dylematy moralne pokazane przez DZIAŁANIE, nie kazanie
+- Kryzys wiary rozwiązywany przez czyn, nie samą modlitwę
+- Wspólnota i relacje jako nośnik tematów wiary
+- Język prosty, przypowieściowy (C.S. Lewis, nie pseudo-biblijny patos)
+- Nadzieja wyłaniająca się z rozpaczy BEZ taniego sentymentalizmu
+- Bohater DZIAŁA w świecie fizycznym, nie unosi się w abstrakcji duchowej
 """
 }
 

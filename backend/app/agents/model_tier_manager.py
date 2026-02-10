@@ -75,7 +75,13 @@ class ModelTierManager:
         """
         # Determine tier
         tier = force_tier if force_tier else self.get_tier_for_task(task_type)
-        model = self.tier_models[tier]
+
+        # Type safety: coerce string tiers to int (handles legacy "TIER_1" values)
+        if isinstance(tier, str):
+            tier_map = {"TIER_1": 1, "TIER_2": 2, "TIER_3": 3}
+            tier = tier_map.get(tier, int(tier) if tier.isdigit() else 1)
+
+        model = self.tier_models.get(tier, settings.GPT_4O_MINI)
         
         logger.info(f"Generating with {model} (tier {tier}) for task: {task_type}")
         

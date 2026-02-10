@@ -395,12 +395,14 @@ class AIService:
                 if attempt < retry_count - 1:
                     await asyncio.sleep(wait_time)
                 else:
+                    with self.metrics._lock:
                     self.metrics.errors += 1
                     raise Exception(f"Rate limit exceeded after {retry_count} attempts: {e}")
 
             except (openai.APIConnectionError, AnthropicAPIConnectionError, AnthropicAPITimeoutError) as e:
                 # Network errors - retriable
-                self.metrics.errors += 1
+                with self.metrics._lock:
+                    self.metrics.errors += 1
                 logger.warning(f"Network error on attempt {attempt + 1}/{retry_count}: {str(e)}")
 
                 if attempt < retry_count - 1:
@@ -412,20 +414,23 @@ class AIService:
 
             except (openai.AuthenticationError, openai.PermissionDeniedError, AnthropicAuthenticationError, AnthropicPermissionDeniedError) as e:
                 # Auth/Permission errors - DO NOT retry (fail fast)
-                self.metrics.errors += 1
+                with self.metrics._lock:
+                    self.metrics.errors += 1
                 logger.error(f"Authentication/Permission error (non-retriable): {e}")
                 raise Exception(f"API authentication/permission error: {e}")
 
             except (openai.BadRequestError, AnthropicBadRequestError) as e:
                 # Bad request errors - DO NOT retry (fail fast)
-                self.metrics.errors += 1
+                with self.metrics._lock:
+                    self.metrics.errors += 1
                 logger.error(f"Bad request error (non-retriable): {e}")
                 raise Exception(f"API bad request error: {e}")
 
             except Exception as e:
                 # Unknown errors - retry with caution
                 last_error = e
-                self.metrics.errors += 1
+                with self.metrics._lock:
+                    self.metrics.errors += 1
                 logger.warning(
                     f"Unknown error on attempt {attempt + 1}/{retry_count}: {str(e)}"
                 )

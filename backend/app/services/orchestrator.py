@@ -504,11 +504,17 @@ class ServiceOrchestrator:
     """
 
     _instance = None
+    _init_lock = asyncio.Lock() if False else None  # Placeholder; real lock below
 
     def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
+        # Thread-safe singleton via module-level lock
+        import threading
+        if not hasattr(cls, '_singleton_lock'):
+            cls._singleton_lock = threading.Lock()
+        with cls._singleton_lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
@@ -518,8 +524,9 @@ class ServiceOrchestrator:
         # Workflow registry
         self.workflows: Dict[str, Workflow] = {}
 
-        # Execution history
+        # Execution history (bounded LRU-style: max 1000 entries)
         self.executions: Dict[str, WorkflowExecution] = {}
+        self._max_executions = 1000
 
         # Templates
         self.templates: Dict[str, WorkflowTemplate] = {}
@@ -743,6 +750,11 @@ class ServiceOrchestrator:
             project_id=project_id
         )
 
+        # Evict oldest executions if at capacity (prevents memory leak)
+        if len(self.executions) >= self._max_executions:
+            oldest_key = next(iter(self.executions))
+            del self.executions[oldest_key]
+
         self.executions[execution_id] = execution
         self.metrics["total_executions"] += 1
 
@@ -825,10 +837,11 @@ class ServiceOrchestrator:
                 execution.completed_at = datetime.now()
 
         except Exception as e:
-            execution.status = WorkflowStatus.FAILED
-            execution.error_message = str(e)
-            execution.completed_at = datetime.now()
-            self.metrics["failed_executions"] += 1
+            async with self._lock:
+                execution.status = WorkflowStatus.FAILED
+                execution.error_message = str(e)
+                execution.completed_at = datetime.now()
+                self.metrics["failed_executions"] += 1
         finally:
             # Always release distributed lock
             _distributed_lock.release(lock_name, holder_id)
@@ -843,7 +856,7 @@ class ServiceOrchestrator:
         step: WorkflowStep,
         execution: WorkflowExecution
     ) -> StepExecution:
-        """Execute a single step"""
+        """Execute a single step with iterative (non-recursive) retry logic"""
         step_execution = StepExecution(
             execution_id=str(uuid.uuid4()),
             step_id=step.step_id,
@@ -853,37 +866,45 @@ class ServiceOrchestrator:
         )
 
         execution.current_step_id = step.step_id
-        self.metrics["total_steps_executed"] += 1
+
+        async with self._lock:
+            self.metrics["total_steps_executed"] += 1
 
         # Run pre-step hooks
         for hook in self.pre_step_hooks:
             await hook(step, execution, step_execution)
 
-        try:
-            if step.step_type == StepType.PARALLEL:
-                result = await self._execute_parallel_steps(step, execution)
-            elif step.step_type == StepType.LOOP:
-                result = await self._execute_loop(step, execution)
-            elif step.step_type == StepType.CHECKPOINT:
-                result = self._create_checkpoint(step, execution)
-            else:
-                result = await self._call_service(step, execution.context)
+        # Iterative retry loop (fixes infinite recursion bug)
+        max_attempts = step.retry_config.max_retries + 1
+        for attempt in range(max_attempts):
+            try:
+                if step.step_type == StepType.PARALLEL:
+                    result = await self._execute_parallel_steps(step, execution)
+                elif step.step_type == StepType.LOOP:
+                    result = await self._execute_loop(step, execution)
+                elif step.step_type == StepType.CHECKPOINT:
+                    result = self._create_checkpoint(step, execution)
+                else:
+                    result = await self._call_service(step, execution.context)
 
-            step_execution.status = StepStatus.COMPLETED
-            step_execution.output_data = result
-            execution.context.update(result)
+                step_execution.status = StepStatus.COMPLETED
+                step_execution.output_data = result
+                execution.context.update(result)
+                break  # Success - exit retry loop
 
-        except Exception as e:
-            # Retry logic
-            if step_execution.retry_count < step.retry_config.max_retries:
-                step_execution.retry_count += 1
-                step_execution.status = StepStatus.RETRYING
-                delay = self._calculate_retry_delay(step.retry_config, step_execution.retry_count)
-                await asyncio.sleep(delay)
-                return await self._execute_step(step, execution)
-            else:
-                step_execution.status = StepStatus.FAILED
-                step_execution.error_message = str(e)
+            except Exception as e:
+                step_execution.retry_count = attempt + 1
+                if attempt < max_attempts - 1:
+                    step_execution.status = StepStatus.RETRYING
+                    delay = self._calculate_retry_delay(step.retry_config, attempt + 1)
+                    logger.warning(
+                        f"Step '{step.name}' failed (attempt {attempt + 1}/{max_attempts}), "
+                        f"retrying in {delay}s: {e}"
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    step_execution.status = StepStatus.FAILED
+                    step_execution.error_message = str(e)
 
         step_execution.completed_at = datetime.now()
         step_execution.duration_ms = (
@@ -1048,10 +1069,48 @@ class ServiceOrchestrator:
         condition: str,
         context: Dict[str, Any]
     ) -> bool:
-        """Evaluate step condition"""
-        # Simple condition evaluation - in production, use a proper expression engine
+        """Evaluate step condition safely without eval().
+
+        Supports simple expressions:
+        - "key" → truthy check on context[key]
+        - "key == value" → equality check
+        - "key != value" → inequality check
+        - "key > value" / "key < value" → numeric comparison
+        - "key in list_key" → membership check
+        - "not key" → negation
+        """
         try:
-            return eval(condition, {"__builtins__": {}}, context)
+            condition = condition.strip()
+
+            # Negation: "not key"
+            if condition.startswith("not "):
+                inner = condition[4:].strip()
+                return not self._evaluate_condition(inner, context)
+
+            # Comparison operators
+            for op, func in [
+                ("!=", lambda a, b: a != b),
+                ("==", lambda a, b: a == b),
+                (">=", lambda a, b: float(a) >= float(b)),
+                ("<=", lambda a, b: float(a) <= float(b)),
+                (">", lambda a, b: float(a) > float(b)),
+                ("<", lambda a, b: float(a) < float(b)),
+            ]:
+                if op in condition:
+                    left, right = condition.split(op, 1)
+                    left_val = context.get(left.strip(), left.strip())
+                    right_val = context.get(right.strip(), right.strip())
+                    return func(left_val, right_val)
+
+            # Membership: "key in list_key"
+            if " in " in condition:
+                item_key, list_key = condition.split(" in ", 1)
+                item_val = context.get(item_key.strip(), item_key.strip())
+                list_val = context.get(list_key.strip(), [])
+                return item_val in list_val
+
+            # Simple truthy check
+            return bool(context.get(condition, False))
         except Exception:
             return False
 

@@ -37,7 +37,7 @@ class TieredOpenAIClient:
         tier_models = {
             "low": getattr(settings, 'GPT_4O_MINI', 'gpt-4o-mini'),
             "mid": getattr(settings, 'GPT_4O', 'gpt-4o'),
-            "high": getattr(settings, 'GPT_4O', 'gpt-4o'),
+            "high": getattr(settings, 'GPT_4', 'gpt-4-turbo'),  # Premium tier uses GPT-4-turbo
         }
         return tier_models.get(tier, 'gpt-4o-mini')
 
@@ -66,10 +66,13 @@ class LLMService:
     """
     LLM Service providing tiered access to language models.
 
+    Reuses the OpenAI client from AIService to avoid duplicate connections
+    and ensure all API calls are tracked in a single cost/metrics system.
+
     Supports three tiers:
     - low: Fast and cheap (gpt-4o-mini)
     - mid: Balanced (gpt-4o)
-    - high: Premium quality (gpt-4o)
+    - high: Premium quality (gpt-4o / gpt-4-turbo)
 
     Usage:
         llm_service = get_llm_service()
@@ -81,22 +84,13 @@ class LLMService:
     """
 
     def __init__(self):
-        """Initialize LLM Service with OpenAI client"""
-        # Validate API key
-        if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "sk-placeholder-add-your-key":
-            logger.error("❌ OPENAI_API_KEY not set or using placeholder!")
-            raise ValueError(
-                "OPENAI_API_KEY is required. Please set it in .env file. "
-                "See backend/AI_SETUP.md for instructions."
-            )
+        """Initialize LLM Service, reusing the AIService OpenAI client"""
+        from app.services.ai_service import get_ai_service
+        ai_service = get_ai_service()
 
-        # Initialize async OpenAI client
-        logger.info("✅ Initializing LLM Service with AsyncOpenAI client")
-        self._client = AsyncOpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            timeout=600.0,  # 10 minute timeout for complex prompts
-            max_retries=3,
-        )
+        # Reuse the same AsyncOpenAI client from AIService
+        # This ensures a single connection pool and unified cost tracking
+        self._client = ai_service.openai_client
 
         # Cache tiered clients
         self._tiered_clients: dict[str, TieredOpenAIClient] = {}

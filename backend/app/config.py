@@ -16,13 +16,13 @@ class Settings(BaseSettings):
     APP_NAME: str = "NarraForge"
     APP_VERSION: str = "1.0.0"
     API_V1_PREFIX: str = "/api"
-    DEBUG: bool = True
-    ENVIRONMENT: str = "development"
+    DEBUG: bool = False  # Must be explicitly enabled - never default to True in production
+    ENVIRONMENT: str = "production"
     SECRET_KEY: str  # REQUIRED - No default for security (set in .env)
 
-    # Database
+    # Database - credentials MUST be set via .env (defaults are for local dev only)
     POSTGRES_USER: str = "narraforge"
-    POSTGRES_PASSWORD: str = "narraforge_password"
+    POSTGRES_PASSWORD: str  # REQUIRED - No default for security (set in .env)
     POSTGRES_DB: str = "narraforge"
     POSTGRES_HOST: str = "narraforge-postgres"
     POSTGRES_PORT: int = 5432
@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    ALLOWED_HEADERS: List[str] = ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
     
     # File Storage
     OUTPUT_DIR: str = "/app/output"

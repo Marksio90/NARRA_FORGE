@@ -143,11 +143,10 @@ class AgentOrchestrator:
         self.prose_writer = ProseWriterAgent()
         self.quality_control = QualityControlAgent()
 
-        # AI service for metrics
+        # AI service for metrics - use per-project metrics snapshot
+        # DO NOT reset_metrics() on the singleton as it affects other running projects
         self.ai_service = get_ai_service()
-
-        # Reset AI service metrics for this project
-        self.ai_service.reset_metrics()
+        self._cost_baseline = self.ai_service.get_metrics().total_cost
 
         # MIRIX Memory System - NarraForge 3.0
         self.mirix = get_mirix_system()
@@ -292,9 +291,10 @@ class AgentOrchestrator:
             self.project.current_activity = "Zakończone ✅"
             self.project.completed_at = datetime.utcnow()
 
-            # Update actual cost
+            # Update actual cost (delta from baseline to avoid cross-project interference)
             metrics = self.ai_service.get_metrics()
-            self.project.actual_cost = metrics.total_cost
+            project_cost = metrics.total_cost - self._cost_baseline
+            self.project.actual_cost = project_cost
 
             try:
                 self.db.commit()
@@ -319,7 +319,7 @@ class AgentOrchestrator:
                     "total_words": sum(ch['word_count'] for ch in chapters_data)
                 },
                 "ai_metrics": {
-                    "total_cost": metrics.total_cost,
+                    "total_cost": project_cost,
                     "total_tokens": metrics.total_tokens,
                     "api_calls": metrics.calls_made,
                     "errors": metrics.errors
@@ -423,10 +423,20 @@ class AgentOrchestrator:
 
         themes = title_analysis.get('themes', [])
 
+        # Serialize world_bible to dict (avoid leaking SQLAlchemy internals)
+        world_bible_dict = {
+            'geography': world_bible.geography,
+            'history': world_bible.history,
+            'systems': world_bible.systems,
+            'cultures': world_bible.cultures,
+            'rules': world_bible.rules,
+            'glossary': world_bible.glossary,
+        }
+
         characters_data = await self.character_creator.create_characters(
             genre=self.project.genre.value,
             project_name=self.project.name,
-            world_bible=world_bible.__dict__,
+            world_bible=world_bible_dict,
             title_analysis=title_analysis,
             character_count=character_count,
             themes=themes
@@ -487,10 +497,20 @@ class AgentOrchestrator:
             for c in characters
         ]
 
+        # Serialize world_bible to dict (avoid leaking SQLAlchemy internals)
+        wb_dict = {
+            'geography': world_bible.geography,
+            'history': world_bible.history,
+            'systems': world_bible.systems,
+            'cultures': world_bible.cultures,
+            'rules': world_bible.rules,
+            'glossary': world_bible.glossary,
+        }
+
         plot_data = await self.plot_architect.create_plot_structure(
             genre=self.project.genre.value,
             project_name=self.project.name,
-            world_bible=world_bible.__dict__,
+            world_bible=wb_dict,
             characters=characters_data,
             chapter_count=params.get('chapter_count', 25),
             subplot_count=params.get('subplot_count', 3),
@@ -534,7 +554,7 @@ class AgentOrchestrator:
             Exception: If cost limit is exceeded (100%)
         """
         metrics = self.ai_service.get_metrics()
-        current_cost = metrics.total_cost
+        current_cost = metrics.total_cost - self._cost_baseline
         max_cost = settings.MAX_COST_PER_PROJECT
         alert_threshold = settings.COST_ALERT_THRESHOLD
 
@@ -862,9 +882,9 @@ class AgentOrchestrator:
         self.project.progress_percentage = self.progress.get_percentage()
         self.project.current_activity = activity_with_time
 
-        # Update cost from AI service
+        # Update cost from AI service (delta from baseline)
         metrics = self.ai_service.get_metrics()
-        self.project.actual_cost = metrics.total_cost
+        self.project.actual_cost = metrics.total_cost - self._cost_baseline
 
         try:
             self.db.commit()

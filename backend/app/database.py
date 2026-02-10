@@ -4,26 +4,34 @@ Database configuration and session management
 
 import os
 import glob
+import logging
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from typing import Generator
 
 from app.config import settings
 
-# Create SQLAlchemy engine
+logger = logging.getLogger(__name__)
+
+
+# Create SQLAlchemy engine with proper connection pooling
+# QueuePool (default) reuses connections instead of creating new ones per request
 engine = create_engine(
     settings.DATABASE_URL,
-    poolclass=NullPool,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,  # Verify connections are alive before use
+    pool_recycle=1800,    # Recycle connections after 30 minutes
     echo=settings.DEBUG,
 )
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Create Base class for models
-Base = declarative_base()
+
+# Modern SQLAlchemy 2.0 declarative base
+class Base(DeclarativeBase):
+    pass
 
 
 def get_db() -> Generator:
@@ -40,35 +48,58 @@ def get_db() -> Generator:
 def apply_sql_migrations():
     """
     Apply SQL migrations from the migrations directory.
+    Tracks applied migrations to avoid re-applying them.
     Must be called AFTER create_all() to ensure tables exist.
     """
     migrations_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'migrations')
 
     if not os.path.isdir(migrations_dir):
-        print("⚠️  No migrations directory found")
+        logger.warning("No migrations directory found")
         return
 
     migration_files = sorted(glob.glob(os.path.join(migrations_dir, '*.sql')))
 
     with engine.connect() as conn:
+        # Create migration tracking table if not exists
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS _applied_migrations (
+                filename VARCHAR(255) PRIMARY KEY,
+                applied_at TIMESTAMP DEFAULT NOW()
+            )
+        """))
+        conn.commit()
+
+        # Get already-applied migrations
+        result = conn.execute(text("SELECT filename FROM _applied_migrations"))
+        applied = {row[0] for row in result}
+
         for migration_path in migration_files:
             filename = os.path.basename(migration_path)
             # Skip init.sql as it's handled by postgres entrypoint
             if filename == 'init.sql':
                 continue
 
+            # Skip already-applied migrations
+            if filename in applied:
+                logger.debug(f"Skipping already-applied migration: {filename}")
+                continue
+
             try:
                 with open(migration_path, 'r') as f:
                     sql = f.read()
 
-                print(f"  Applying: {filename}")
+                logger.info(f"Applying migration: {filename}")
                 conn.execute(text(sql))
+                conn.execute(
+                    text("INSERT INTO _applied_migrations (filename) VALUES (:f)"),
+                    {"f": filename}
+                )
                 conn.commit()
             except Exception as e:
-                print(f"  Warning applying {filename}: {e}")
+                logger.warning(f"Warning applying {filename}: {e}")
                 conn.rollback()
 
-    print("✅ Migrations complete!")
+    logger.info("Migrations complete")
 
 
 def init_db():
@@ -94,5 +125,5 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
     # Then apply SQL migrations (for schema changes to existing tables)
-    print("📦 Applying database migrations...")
+    logger.info("Applying database migrations...")
     apply_sql_migrations()

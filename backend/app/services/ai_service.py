@@ -19,9 +19,10 @@ from anthropic import (
 import logging
 import time
 import asyncio
+import threading
 import json
 from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 try:
@@ -74,11 +75,12 @@ class AIResponse:
 
 @dataclass
 class GenerationMetrics:
-    """Track generation metrics"""
+    """Thread-safe generation metrics"""
     total_tokens: int = 0
     total_cost: float = 0.0
     calls_made: int = 0
     errors: int = 0
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
 
 class AIService:
@@ -134,6 +136,7 @@ class AIService:
     # ---- Accurate token counting via tiktoken ----
 
     _tiktoken_encodings: Dict[str, Any] = {}
+    _tiktoken_lock = threading.Lock()
 
     def count_tokens(self, text: str, model: str = "gpt-4o") -> int:
         """Count tokens accurately using tiktoken (falls back to chars//4).
@@ -150,13 +153,14 @@ class AIService:
             return len(text) // 3
 
         try:
-            # Cache encodings per model for performance
+            # Thread-safe cache of tiktoken encodings
             if model not in self._tiktoken_encodings:
-                try:
-                    self._tiktoken_encodings[model] = tiktoken.encoding_for_model(model)
-                except KeyError:
-                    # Unknown model – use cl100k_base (GPT-4 family)
-                    self._tiktoken_encodings[model] = tiktoken.get_encoding("cl100k_base")
+                with self._tiktoken_lock:
+                    if model not in self._tiktoken_encodings:  # Double-checked locking
+                        try:
+                            self._tiktoken_encodings[model] = tiktoken.encoding_for_model(model)
+                        except KeyError:
+                            self._tiktoken_encodings[model] = tiktoken.get_encoding("cl100k_base")
 
             enc = self._tiktoken_encodings[model]
             return len(enc.encode(text))
@@ -353,10 +357,11 @@ class AIService:
                     provider
                 )
 
-                # Update global metrics
-                self.metrics.total_tokens += response['tokens_in'] + response['tokens_out']
-                self.metrics.total_cost += cost
-                self.metrics.calls_made += 1
+                # Update global metrics (thread-safe)
+                with self.metrics._lock:
+                    self.metrics.total_tokens += response['tokens_in'] + response['tokens_out']
+                    self.metrics.total_cost += cost
+                    self.metrics.calls_made += 1
 
                 logger.info(
                     f"AI generation successful: model={model}, "

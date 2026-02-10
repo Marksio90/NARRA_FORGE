@@ -41,4 +41,20 @@ celery_app.conf.update(
     # --- Result expiry ---
     # Clean up completed task results after 48 hours
     result_expires=172800,
+
+    # --- Queue routing: separate long-running generation from quick tasks ---
+    task_routes={
+        "app.tasks.generation_tasks.*": {"queue": "generation"},
+    },
+    task_default_queue="default",
+
+    # --- Max retries: prevent infinite retry loops on persistent failures ---
+    task_annotations={
+        "app.tasks.generation_tasks.generate_book_task": {
+            "max_retries": 2,
+            "autoretry_for": (ConnectionError, TimeoutError),
+            "retry_backoff": True,
+            "retry_backoff_max": 300,
+        }
+    },
 )

@@ -4,16 +4,11 @@
   "description": "NarraForge Frontend - Autonomiczna Kuźnia Literacka",
   "private": true,
   "dependencies": {
-    "@headlessui/react": "^1.7.17",
-    "@heroicons/react": "^2.1.1",
-    "ajv": "^8.12.0",
     "axios": "^1.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-query": "^3.39.3",
     "react-router-dom": "^6.21.0",
     "react-toastify": "^11.0.5",
-    "recharts": "^2.10.3",
     "tailwindcss": "^3.4.0"
   },
   "scripts": {
@@ -48,7 +43,4 @@
       "last 1 safari version"
     ]
   },
-  "resolutions": {
-    "ajv": "^8.0.0"
-  }
 }

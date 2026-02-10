@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 interface SimulationStep {
   step: number;
@@ -209,16 +210,11 @@ const ProjectView: React.FC = () => {
 
   const fetchProject = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
-      console.log('🔍 DEBUG: Received project:', response.data);
-      console.log('🔍 DEBUG: Project status:', response.data.status);
-      console.log('🔍 DEBUG: Simulation data from DB:', response.data.simulation_data);
-
+      const response = await axios.get(`${API_URL}/projects/${id}`);
       setProject(response.data);
 
       // If project has simulation_data persisted, load it into state
       if (response.data.simulation_data && !simulation) {
-        console.log('📊 Loading persisted simulation data');
         setSimulation(response.data.simulation_data);
       }
 
@@ -232,7 +228,7 @@ const ProjectView: React.FC = () => {
   const handleSimulate = async () => {
     setIsSimulating(true);
     try {
-      const response = await axios.post(`http://localhost:8000/api/projects/${id}/simulate`);
+      const response = await axios.post(`${API_URL}/projects/${id}/simulate`);
       setSimulation(response.data);
       toast.success('Symulacja zakończona pomyślnie!');
       // Refresh project to get updated status
@@ -247,7 +243,7 @@ const ProjectView: React.FC = () => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      await axios.post(`http://localhost:8000/api/projects/${id}/start`);
+      await axios.post(`${API_URL}/projects/${id}/start`);
       toast.info('Generowanie rozpoczęte...');
 
       // Clear any existing polling interval
@@ -258,7 +254,7 @@ const ProjectView: React.FC = () => {
       // Start polling for updates
       pollingIntervalRef.current = setInterval(async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/projects/${id}`);
+          const response = await axios.get(`${API_URL}/projects/${id}`);
           setProject(response.data);
           if (response.data.status === 'completed' || response.data.status === 'failed') {
             if (pollingIntervalRef.current) {
@@ -287,7 +283,7 @@ const ProjectView: React.FC = () => {
 
   const handleExport = async (format: string) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/projects/${id}/export/${format}`, {
+      const response = await axios.get(`${API_URL}/projects/${id}/export/${format}`, {
         responseType: 'blob'
       });
 

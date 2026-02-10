@@ -1,31 +1,46 @@
+# Build stage - install dependencies with build tools
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Runtime stage - slim image without build tools
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
     postgresql-client \
     dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy installed Python packages from builder
+COPY --from=builder /install /usr/local
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Create non-root user for security
+RUN groupadd -r narraforge && useradd -r -g narraforge -d /app -s /sbin/nologin narraforge
 
 # Copy application code
 COPY . .
 
 # Copy and make entrypoint script executable
 COPY docker-entrypoint.sh /usr/local/bin/
-# Convert Windows line endings (CRLF) to Unix (LF) - critical for cross-platform compatibility
 RUN dos2unix /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Create output directory
-RUN mkdir -p /app/output
+# Create output directory and set permissions
+RUN mkdir -p /app/output && chown -R narraforge:narraforge /app
+
+# Switch to non-root user
+USER narraforge
 
 # Expose port
 EXPOSE 8000

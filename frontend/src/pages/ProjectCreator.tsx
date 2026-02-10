@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 interface Genre {
   value: string;
@@ -91,7 +92,7 @@ const ProjectCreator: React.FC = () => {
 
     setIsCreating(true);
     try {
-      const response = await axios.post('http://localhost:8000/api/projects', {
+      const response = await axios.post(`${API_URL}/projects`, {
         name: projectTitle,
         genre: selectedGenre
       });

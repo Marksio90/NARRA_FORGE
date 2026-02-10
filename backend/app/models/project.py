@@ -91,9 +91,9 @@ class Project(Base):
     # Relationships
     user = relationship("User", back_populates="projects")
     series = relationship("Series", back_populates="books")
-    world_bible = relationship("WorldBible", back_populates="project", uselist=False)
+    world_bible = relationship("WorldBible", back_populates="project", uselist=False, cascade="all, delete-orphan")
     characters = relationship("Character", back_populates="project", cascade="all, delete-orphan")
-    plot_structure = relationship("PlotStructure", back_populates="project", uselist=False)
+    plot_structure = relationship("PlotStructure", back_populates="project", uselist=False, cascade="all, delete-orphan")
     chapters = relationship("Chapter", back_populates="project", cascade="all, delete-orphan")
     continuity_facts = relationship("ContinuityFact", back_populates="project", cascade="all, delete-orphan")
     generation_logs = relationship("GenerationLog", back_populates="project", cascade="all, delete-orphan")

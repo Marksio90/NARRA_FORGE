@@ -18,6 +18,8 @@ from enum import Enum
 import json
 import re
 import asyncio
+import random
+import math
 from collections import Counter
 
 from app.services.llm_service import get_llm_service
@@ -189,6 +191,290 @@ class StyledText:
 
 
 # =============================================================================
+# STYLOMETRY & FEW-SHOT INJECTION
+# =============================================================================
+
+@dataclass
+class StylometricFingerprint:
+    """
+    Quantitative stylometric fingerprint extracted from text samples.
+
+    Instead of describing style with adjectives ("write darkly"),
+    this captures measurable statistical features of the author's writing
+    that can be used for Few-Shot prompting.
+    """
+    # Sentence-level metrics
+    avg_sentence_length: float = 0.0      # Words per sentence
+    sentence_length_std: float = 0.0      # Standard deviation
+    short_sentence_ratio: float = 0.0     # % sentences < 8 words
+    long_sentence_ratio: float = 0.0      # % sentences > 25 words
+
+    # Vocabulary metrics
+    type_token_ratio: float = 0.0         # Unique words / total words
+    avg_word_length: float = 0.0          # Characters per word
+    hapax_legomena_ratio: float = 0.0     # Words appearing only once / total unique
+
+    # Punctuation patterns
+    comma_density: float = 0.0            # Commas per sentence
+    semicolon_density: float = 0.0        # Semicolons per sentence
+    dash_density: float = 0.0             # Dashes per sentence
+    exclamation_ratio: float = 0.0        # ! endings / total sentences
+    question_ratio: float = 0.0           # ? endings / total sentences
+    ellipsis_density: float = 0.0         # ... per sentence
+
+    # Dialogue patterns
+    dialogue_ratio: float = 0.0           # % text in dialogue
+    avg_dialogue_length: float = 0.0      # Words per dialogue turn
+
+    # Paragraph patterns
+    avg_paragraph_length: float = 0.0     # Sentences per paragraph
+    paragraph_length_std: float = 0.0
+
+    def to_prompt_description(self) -> str:
+        """Convert fingerprint to natural-language style instructions."""
+        parts = []
+
+        # Sentence length
+        if self.avg_sentence_length < 12:
+            parts.append("Pisz zwięzłe, krótkie zdania (średnio 8-12 słów)")
+        elif self.avg_sentence_length > 20:
+            parts.append("Twórz rozbudowane, wielokrotnie złożone zdania (średnio 20+ słów)")
+        else:
+            parts.append(f"Utrzymuj zróżnicowaną długość zdań (średnio ~{self.avg_sentence_length:.0f} słów)")
+
+        if self.short_sentence_ratio > 0.3:
+            parts.append("Często używaj krótkich, urywanych zdań dla efektu")
+
+        if self.sentence_length_std > 8:
+            parts.append("Mieszaj bardzo krótkie zdania z długimi - duży kontrast rytmiczny")
+
+        # Vocabulary
+        if self.type_token_ratio > 0.65:
+            parts.append("Używaj bogatego, zróżnicowanego słownictwa - unikaj powtórzeń")
+        elif self.type_token_ratio < 0.45:
+            parts.append("Celowo powtarzaj kluczowe słowa - prostota słownictwa")
+
+        # Punctuation
+        if self.dash_density > 0.3:
+            parts.append("Często używaj myślników i pauz (—) w narracji")
+        if self.ellipsis_density > 0.2:
+            parts.append("Stosuj wielokropki (...) dla efektu zawieszenia")
+        if self.semicolon_density > 0.15:
+            parts.append("Łącz zdania średnikami zamiast kropek")
+
+        # Dialogue
+        if self.dialogue_ratio > 0.4:
+            parts.append("Duży nacisk na dialogi - niech postacie mówią zamiast narracji")
+        elif self.dialogue_ratio < 0.15:
+            parts.append("Minimalizuj dialog - dominuje narracja i introspekcja")
+
+        # Paragraphs
+        if self.avg_paragraph_length < 3:
+            parts.append("Krótkie akapity (1-3 zdania) - szybki, dynamiczny rytm")
+        elif self.avg_paragraph_length > 6:
+            parts.append("Długie, gęste akapity - medytacyjny, refleksyjny styl")
+
+        return "\n".join(f"- {p}" for p in parts)
+
+
+class StyleSampleBank:
+    """
+    Bank of author writing samples for Dynamic Few-Shot Injection.
+
+    Instead of describing style with adjectives, stores actual text samples
+    from the author and extracts random fragments for injection into prompts.
+
+    This is the "Killer Feature" - the AI mimics the actual writing patterns
+    rather than a caricature based on adjective descriptions.
+    """
+
+    def __init__(self):
+        self._samples: Dict[str, List[str]] = {}  # profile_name -> list of text samples
+        self._fingerprints: Dict[str, StylometricFingerprint] = {}
+
+    def add_samples(self, profile_name: str, texts: List[str]):
+        """Add writing samples for a profile."""
+        if profile_name not in self._samples:
+            self._samples[profile_name] = []
+        self._samples[profile_name].extend(texts)
+        # Recompute fingerprint when samples change
+        self._fingerprints[profile_name] = self._compute_fingerprint(
+            self._samples[profile_name]
+        )
+
+    def get_random_excerpts(
+        self,
+        profile_name: str,
+        count: int = 3,
+        min_words: int = 40,
+        max_words: int = 200
+    ) -> List[str]:
+        """
+        Extract random excerpts from stored samples for Few-Shot injection.
+
+        Returns fragments of different lengths to show variety in the author's style.
+        """
+        samples = self._samples.get(profile_name, [])
+        if not samples:
+            return []
+
+        # Collect all viable fragments from all samples
+        all_fragments = []
+        for sample in samples:
+            paragraphs = [p.strip() for p in sample.split('\n\n') if p.strip()]
+            for para in paragraphs:
+                word_count = len(para.split())
+                if min_words <= word_count <= max_words:
+                    all_fragments.append(para)
+
+            # Also extract sentence-level fragments for variety
+            sentences = re.split(r'(?<=[.!?])\s+', sample)
+            # Group consecutive sentences into fragments
+            for i in range(0, len(sentences) - 2, 2):
+                fragment = ' '.join(sentences[i:i+3])
+                word_count = len(fragment.split())
+                if min_words <= word_count <= max_words:
+                    all_fragments.append(fragment)
+
+        if not all_fragments:
+            # Fallback: take first N chars of each sample
+            for sample in samples:
+                words = sample.split()[:max_words]
+                if len(words) >= min_words:
+                    all_fragments.append(' '.join(words))
+
+        if not all_fragments:
+            return []
+
+        # Return random selection
+        count = min(count, len(all_fragments))
+        return random.sample(all_fragments, count)
+
+    def get_fingerprint(self, profile_name: str) -> Optional[StylometricFingerprint]:
+        """Get the stylometric fingerprint for a profile."""
+        return self._fingerprints.get(profile_name)
+
+    def build_few_shot_prompt(
+        self,
+        profile_name: str,
+        scene_type: Optional[str] = None,
+        num_excerpts: int = 3
+    ) -> str:
+        """
+        Build a complete Few-Shot injection block for the generation prompt.
+
+        Returns a prompt section that includes:
+        1. Random author excerpts as examples
+        2. Stylometric instructions derived from statistical analysis
+        """
+        excerpts = self.get_random_excerpts(profile_name, count=num_excerpts)
+        fingerprint = self.get_fingerprint(profile_name)
+
+        if not excerpts and not fingerprint:
+            return ""
+
+        parts = []
+        parts.append("=" * 60)
+        parts.append("STYL AUTORA - NAŚLADUJ PONIŻSZE WZORCE")
+        parts.append("=" * 60)
+
+        if excerpts:
+            parts.append("\nPRZYKŁADY PISARSTWA AUTORA:")
+            for i, excerpt in enumerate(excerpts, 1):
+                parts.append(f"\n--- Przykład {i} ---")
+                parts.append(excerpt)
+
+        if fingerprint:
+            parts.append("\nINSTRUKCJE STYLOMETRYCZNE (na podstawie analizy statystycznej):")
+            parts.append(fingerprint.to_prompt_description())
+
+        parts.append("\nKLUCZOWA ZASADA: Naśladuj długość zdań, użycie interpunkcji, ")
+        parts.append("rytm dialogów i proporcje narracja/dialog z powyższych przykładów.")
+        parts.append("NIE opisuj stylu - po prostu pisz w tym stylu.")
+        parts.append("=" * 60)
+
+        return "\n".join(parts)
+
+    def _compute_fingerprint(self, texts: List[str]) -> StylometricFingerprint:
+        """Compute stylometric fingerprint from text samples."""
+        fp = StylometricFingerprint()
+        if not texts:
+            return fp
+
+        all_text = "\n\n".join(texts)
+
+        # Split into sentences
+        sentences = re.split(r'[.!?]+', all_text)
+        sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 3]
+
+        if not sentences:
+            return fp
+
+        # Sentence lengths
+        sentence_lengths = [len(s.split()) for s in sentences]
+        fp.avg_sentence_length = sum(sentence_lengths) / len(sentence_lengths)
+        if len(sentence_lengths) > 1:
+            mean = fp.avg_sentence_length
+            fp.sentence_length_std = math.sqrt(
+                sum((l - mean) ** 2 for l in sentence_lengths) / (len(sentence_lengths) - 1)
+            )
+
+        fp.short_sentence_ratio = sum(1 for l in sentence_lengths if l < 8) / len(sentence_lengths)
+        fp.long_sentence_ratio = sum(1 for l in sentence_lengths if l > 25) / len(sentence_lengths)
+
+        # Vocabulary
+        words = re.findall(r'\b\w+\b', all_text.lower())
+        if words:
+            unique_words = set(words)
+            fp.type_token_ratio = len(unique_words) / len(words)
+            fp.avg_word_length = sum(len(w) for w in words) / len(words)
+
+            word_counts = Counter(words)
+            hapax = sum(1 for count in word_counts.values() if count == 1)
+            fp.hapax_legomena_ratio = hapax / len(unique_words) if unique_words else 0
+
+        # Punctuation density (per sentence)
+        num_sentences = len(sentences)
+        fp.comma_density = all_text.count(',') / num_sentences
+        fp.semicolon_density = all_text.count(';') / num_sentences
+        fp.dash_density = (all_text.count('—') + all_text.count('–') + all_text.count(' - ')) / num_sentences
+        fp.ellipsis_density = all_text.count('...') / num_sentences
+
+        # Sentence endings
+        all_endings = re.findall(r'[.!?]+', all_text)
+        if all_endings:
+            fp.exclamation_ratio = sum(1 for e in all_endings if '!' in e) / len(all_endings)
+            fp.question_ratio = sum(1 for e in all_endings if '?' in e) / len(all_endings)
+
+        # Dialogue detection (text between quotes)
+        dialogue_matches = re.findall(r'[""„]([^""„"]+)["""]', all_text)
+        total_words = len(words)
+        if total_words > 0 and dialogue_matches:
+            dialogue_words = sum(len(d.split()) for d in dialogue_matches)
+            fp.dialogue_ratio = dialogue_words / total_words
+            fp.avg_dialogue_length = dialogue_words / len(dialogue_matches) if dialogue_matches else 0
+
+        # Paragraph patterns
+        paragraphs = [p.strip() for p in all_text.split('\n\n') if p.strip()]
+        if paragraphs:
+            para_sentence_counts = []
+            for para in paragraphs:
+                para_sents = re.split(r'[.!?]+', para)
+                para_sents = [s for s in para_sents if s.strip()]
+                para_sentence_counts.append(len(para_sents))
+
+            if para_sentence_counts:
+                fp.avg_paragraph_length = sum(para_sentence_counts) / len(para_sentence_counts)
+                if len(para_sentence_counts) > 1:
+                    mean = fp.avg_paragraph_length
+                    fp.paragraph_length_std = math.sqrt(
+                        sum((l - mean) ** 2 for l in para_sentence_counts) / (len(para_sentence_counts) - 1)
+                    )
+
+        return fp
+
+
+# =============================================================================
 # STYLE ADAPTATION ENGINE
 # =============================================================================
 
@@ -208,6 +494,7 @@ class StyleAdaptationEngine:
         self.llm_service = get_llm_service()
         self.style_profiles: Dict[str, StyleProfile] = {}
         self.active_profile: Optional[str] = None
+        self.sample_bank = StyleSampleBank()
         self._initialize_default_profiles()
 
     def _get_llm(self, tier: str = "mid"):
@@ -688,6 +975,124 @@ Zwróć JSON z:
             pacing_adjustment=pacing_adjustment,
             imagery_additions=profile.characteristic_phrases[:3] if scene_type in [SceneType.DESCRIPTION, SceneType.ROMANCE] else []
         )
+
+    # =========================================================================
+    # DYNAMIC FEW-SHOT STYLE INJECTION
+    # =========================================================================
+
+    async def ingest_author_samples(
+        self,
+        profile_name: str,
+        sample_texts: List[str],
+        create_profile: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Ingest author writing samples for Few-Shot style injection.
+
+        This is the key method for the "Killer Feature": instead of describing
+        style with adjectives, the system learns from actual writing samples
+        and injects random excerpts into generation prompts.
+
+        Args:
+            profile_name: Name for this style profile
+            sample_texts: List of text samples from the author (e.g., 3-10 pages)
+            create_profile: Also create/update a StyleProfile from the samples
+
+        Returns:
+            Dict with fingerprint data and sample statistics
+        """
+        # Store samples in the bank
+        self.sample_bank.add_samples(profile_name, sample_texts)
+
+        # Get computed fingerprint
+        fingerprint = self.sample_bank.get_fingerprint(profile_name)
+
+        # Optionally create a full StyleProfile from samples
+        if create_profile and profile_name not in self.style_profiles:
+            await self.create_profile_from_samples(
+                profile_name=profile_name,
+                sample_texts=sample_texts
+            )
+
+        total_words = sum(len(t.split()) for t in sample_texts)
+
+        return {
+            "profile_name": profile_name,
+            "samples_ingested": len(sample_texts),
+            "total_words": total_words,
+            "fingerprint": {
+                "avg_sentence_length": fingerprint.avg_sentence_length,
+                "sentence_length_std": fingerprint.sentence_length_std,
+                "type_token_ratio": fingerprint.type_token_ratio,
+                "dialogue_ratio": fingerprint.dialogue_ratio,
+                "short_sentence_ratio": fingerprint.short_sentence_ratio,
+                "long_sentence_ratio": fingerprint.long_sentence_ratio,
+                "comma_density": fingerprint.comma_density,
+                "dash_density": fingerprint.dash_density,
+                "avg_paragraph_length": fingerprint.avg_paragraph_length,
+            } if fingerprint else {},
+            "style_instructions_preview": fingerprint.to_prompt_description() if fingerprint else ""
+        }
+
+    def get_generation_style_block(
+        self,
+        profile_name: str,
+        scene_type: Optional[SceneType] = None,
+        num_excerpts: int = 3
+    ) -> str:
+        """
+        Get the complete style injection block for a generation prompt.
+
+        This should be appended to the system_prompt or inserted before the
+        generation instruction. It includes:
+        1. Random author writing excerpts (Few-Shot examples)
+        2. Statistical style instructions (stylometry)
+        3. Scene-type-specific adjustments
+
+        Returns:
+            String block to inject into the generation prompt
+        """
+        parts = []
+
+        # Few-Shot block from sample bank
+        few_shot_block = self.sample_bank.build_few_shot_prompt(
+            profile_name=profile_name,
+            scene_type=scene_type.value if scene_type else None,
+            num_excerpts=num_excerpts
+        )
+
+        if few_shot_block:
+            parts.append(few_shot_block)
+
+        # Add scene-type modifiers from the StyleProfile if available
+        profile = self.style_profiles.get(profile_name)
+        if profile and scene_type:
+            scene_modifiers = profile.scene_style_modifiers.get(scene_type, {})
+            if scene_modifiers:
+                modifier_lines = []
+                for dim_name, value in scene_modifiers.items():
+                    if value > 0.8:
+                        modifier_lines.append(f"- MAKSYMALIZUJ: {dim_name}")
+                    elif value < 0.3:
+                        modifier_lines.append(f"- MINIMALIZUJ: {dim_name}")
+
+                if modifier_lines:
+                    parts.append(f"\nDOSTOSOWANIA DLA SCENY TYPU '{scene_type.value.upper()}':")
+                    parts.extend(modifier_lines)
+
+            # Add profile-specific techniques
+            if profile.signature_techniques:
+                parts.append("\nTECHNIKI DO ZASTOSOWANIA:")
+                for tech in profile.signature_techniques[:4]:
+                    parts.append(f"- {tech}")
+
+            # Add avoided constructions
+            if profile.avoided_constructions:
+                parts.append("\nUNIKAJ:")
+                for avoid in profile.avoided_constructions[:3]:
+                    parts.append(f"- {avoid}")
+
+        return "\n".join(parts)
 
     # =========================================================================
     # CONSISTENCY CHECKING

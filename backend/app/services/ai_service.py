@@ -282,7 +282,8 @@ class AIService:
         json_mode: bool = False,
         prefer_anthropic: bool = False,
         retry_count: int = 3,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        enable_cache: bool = False
     ) -> AIResponse:
         """
         Generate content using AI
@@ -297,6 +298,10 @@ class AIService:
             prefer_anthropic: Prefer Claude over GPT when available
             retry_count: Number of retries on failure
             metadata: Additional metadata to track
+            enable_cache: Enable prompt caching for system_prompt.
+                For Anthropic: uses cache_control with ephemeral type (~90% cost reduction on cached input).
+                For OpenAI: system prompt is automatically cached by the API.
+                Best used when system_prompt contains large, stable content (World Bible, style guides).
 
         Returns:
             AIResponse with generated content and metrics
@@ -335,7 +340,8 @@ class AIService:
                         prompt=prompt,
                         system_prompt=system_prompt,
                         temperature=temperature,
-                        max_tokens=safe_max_tokens
+                        max_tokens=safe_max_tokens,
+                        enable_cache=enable_cache
                     )
 
                 # Calculate metrics
@@ -472,9 +478,19 @@ class AIService:
         prompt: str,
         system_prompt: Optional[str],
         temperature: float,
-        max_tokens: int
+        max_tokens: int,
+        enable_cache: bool = False
     ) -> Dict[str, Any]:
-        """Call Anthropic Claude API"""
+        """Call Anthropic Claude API with optional prompt caching.
+
+        When enable_cache=True and system_prompt is provided, the system prompt
+        is sent with cache_control={"type": "ephemeral"} which enables Anthropic's
+        prompt caching. This gives ~90% cost reduction on cached input tokens
+        (from $3/$15 to $0.30/$1.50 per 1M tokens for Sonnet).
+
+        The cache is maintained by Anthropic for 5 minutes after last use,
+        so consecutive chapter generations reuse the cached World Bible.
+        """
         if not self.anthropic_client:
             raise Exception("Anthropic client not initialized (missing API key)")
 
@@ -486,7 +502,23 @@ class AIService:
         }
 
         if system_prompt:
-            kwargs["system"] = system_prompt
+            if enable_cache:
+                # Use cache_control for the system prompt block.
+                # This tells Anthropic to cache the system prompt content.
+                # Subsequent requests with the same system prompt will use cached tokens.
+                kwargs["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ]
+                logger.debug(
+                    f"Anthropic prompt caching enabled for system prompt "
+                    f"({len(system_prompt)} chars)"
+                )
+            else:
+                kwargs["system"] = system_prompt
 
         response = await self.anthropic_client.messages.create(**kwargs)
 
@@ -497,10 +529,26 @@ class AIService:
         if not hasattr(response.content[0], 'text') or not response.content[0].text:
             raise Exception("Anthropic API returned no text in response")
 
+        # Track cache performance if available
+        cache_creation_tokens = getattr(response.usage, 'cache_creation_input_tokens', 0) or 0
+        cache_read_tokens = getattr(response.usage, 'cache_read_input_tokens', 0) or 0
+
+        if cache_read_tokens > 0:
+            logger.info(
+                f"Anthropic cache HIT: {cache_read_tokens} cached tokens "
+                f"(~{cache_read_tokens * 0.9 / 1_000_000 * 3.0:.4f}$ saved for Sonnet)"
+            )
+        elif cache_creation_tokens > 0:
+            logger.info(
+                f"Anthropic cache WRITE: {cache_creation_tokens} tokens cached for future use"
+            )
+
         return {
             'content': response.content[0].text,
             'tokens_in': response.usage.input_tokens,
             'tokens_out': response.usage.output_tokens,
+            'cache_creation_tokens': cache_creation_tokens,
+            'cache_read_tokens': cache_read_tokens,
         }
 
     def get_metrics(self) -> GenerationMetrics:

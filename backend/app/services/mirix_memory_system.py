@@ -26,6 +26,13 @@ import logging
 import asyncio
 from collections import defaultdict
 
+try:
+    import networkx as nx
+    _NETWORKX_AVAILABLE = True
+except ImportError:
+    nx = None
+    _NETWORKX_AVAILABLE = False
+
 from app.services.ai_service import AIService
 from app.models.project import GenreType
 
@@ -1395,6 +1402,385 @@ class VectorMemoryLayer:
 
 
 # =============================================================================
+# GRAPH RAG - RELATIONSHIP KNOWLEDGE GRAPH
+# =============================================================================
+
+class RelationshipType(str, Enum):
+    """Types of relationships between entities"""
+    FAMILY = "family"              # parent, sibling, child, spouse
+    ROMANTIC = "romantic"          # lover, ex, crush
+    PROFESSIONAL = "professional"  # boss, colleague, mentor
+    ANTAGONISTIC = "antagonistic"  # enemy, rival, betrayer
+    ALLIANCE = "alliance"         # ally, friend, protector
+    SOCIAL = "social"             # acquaintance, neighbor
+    SUPERNATURAL = "supernatural"  # bound_to, cursed_by, blessed_by
+    CUSTOM = "custom"
+
+
+@dataclass
+class RelationshipEdge:
+    """A directed relationship between two entities"""
+    source: str
+    target: str
+    relationship_type: RelationshipType
+    label: str                       # Human-readable label (e.g., "jest ojcem")
+    strength: float = 1.0            # 0.0 (weak) to 1.0 (strong)
+    sentiment: float = 0.0           # -1.0 (hostile) to 1.0 (loving)
+    is_known_to_reader: bool = True  # Has this been revealed?
+    established_chapter: int = 0     # When this was established
+    changed_chapter: Optional[int] = None  # When it last changed
+    history: List[str] = field(default_factory=list)  # Change log
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+class RelationshipGraph:
+    """
+    GraphRAG layer for MIRIX - Knowledge Graph of entity relationships.
+
+    Uses NetworkX for in-memory graph queries. Solves the key weakness of
+    pure vector search: understanding structured relationships like
+    "Who is X's father?", "Why does A hate B?", "Who knows the secret?"
+
+    Hybrid approach:
+    - Vector search (pgvector): finds semantically similar text
+    - Graph queries (NetworkX): finds structural relationships
+
+    Example queries the graph can answer:
+    - MATCH (p1)-[:FAMILY]->(p2) WHERE p1.name = "Anna"
+    - Find all enemies of the protagonist
+    - Get the relationship chain between two characters
+    - Detect relationship contradictions
+    """
+
+    def __init__(self):
+        if not _NETWORKX_AVAILABLE:
+            logger.warning(
+                "NetworkX not installed - RelationshipGraph will use fallback dict-based storage. "
+                "Install with: pip install networkx"
+            )
+            self._graph = None
+            self._edges: Dict[str, List[RelationshipEdge]] = defaultdict(list)
+        else:
+            self._graph = nx.MultiDiGraph()  # Directed multigraph (multiple edges between nodes)
+            self._edges = {}
+
+        self._entity_aliases: Dict[str, str] = {}  # alias -> canonical name
+
+    def _canonical(self, name: str) -> str:
+        """Resolve entity aliases to canonical name."""
+        normalized = name.strip().lower()
+        return self._entity_aliases.get(normalized, normalized)
+
+    def add_alias(self, alias: str, canonical_name: str):
+        """Register an alias for an entity (e.g., 'mama' -> 'anna kowalska')."""
+        self._entity_aliases[alias.strip().lower()] = canonical_name.strip().lower()
+
+    def add_relationship(self, edge: RelationshipEdge) -> bool:
+        """Add a relationship edge to the graph."""
+        source = self._canonical(edge.source)
+        target = self._canonical(edge.target)
+
+        if self._graph is not None:
+            # NetworkX path
+            if not self._graph.has_node(source):
+                self._graph.add_node(source, entity_type="unknown", first_seen=edge.established_chapter)
+            if not self._graph.has_node(target):
+                self._graph.add_node(target, entity_type="unknown", first_seen=edge.established_chapter)
+
+            self._graph.add_edge(
+                source, target,
+                key=edge.label,
+                relationship_type=edge.relationship_type.value,
+                label=edge.label,
+                strength=edge.strength,
+                sentiment=edge.sentiment,
+                is_known_to_reader=edge.is_known_to_reader,
+                established_chapter=edge.established_chapter,
+                changed_chapter=edge.changed_chapter,
+                history=edge.history,
+                metadata=edge.metadata,
+            )
+        else:
+            # Fallback dict-based storage
+            self._edges[source].append(edge)
+
+        logger.debug(f"Graph: {source} --[{edge.label}]--> {target}")
+        return True
+
+    def update_relationship(
+        self,
+        source: str,
+        target: str,
+        new_label: str,
+        new_sentiment: Optional[float] = None,
+        new_strength: Optional[float] = None,
+        chapter: int = 0,
+        reason: str = ""
+    ) -> bool:
+        """Update an existing relationship (e.g., friend -> enemy)."""
+        source = self._canonical(source)
+        target = self._canonical(target)
+
+        if self._graph is not None:
+            edges = self._graph.get_edge_data(source, target)
+            if edges:
+                # Update the first matching edge
+                for key, data in edges.items():
+                    old_label = data.get("label", "")
+                    data["label"] = new_label
+                    if new_sentiment is not None:
+                        data["sentiment"] = new_sentiment
+                    if new_strength is not None:
+                        data["strength"] = new_strength
+                    data["changed_chapter"] = chapter
+                    history = data.get("history", [])
+                    history.append(f"Ch.{chapter}: {old_label} -> {new_label} ({reason})")
+                    data["history"] = history
+                    logger.info(f"Graph updated: {source} --[{new_label}]--> {target} (was: {old_label})")
+                    return True
+        return False
+
+    def query_relationships(
+        self,
+        entity: str,
+        relationship_type: Optional[RelationshipType] = None,
+        direction: str = "both"  # "outgoing", "incoming", "both"
+    ) -> List[Dict[str, Any]]:
+        """
+        Query all relationships for an entity.
+
+        Args:
+            entity: Entity name to query
+            relationship_type: Filter by type (or None for all)
+            direction: "outgoing" (entity->X), "incoming" (X->entity), "both"
+
+        Returns:
+            List of relationship dicts with source, target, label, etc.
+        """
+        entity = self._canonical(entity)
+        results = []
+
+        if self._graph is not None:
+            if direction in ("outgoing", "both") and entity in self._graph:
+                for _, target, data in self._graph.out_edges(entity, data=True):
+                    if relationship_type and data.get("relationship_type") != relationship_type.value:
+                        continue
+                    results.append({
+                        "source": entity,
+                        "target": target,
+                        "direction": "outgoing",
+                        **data
+                    })
+
+            if direction in ("incoming", "both") and entity in self._graph:
+                for source, _, data in self._graph.in_edges(entity, data=True):
+                    if relationship_type and data.get("relationship_type") != relationship_type.value:
+                        continue
+                    results.append({
+                        "source": source,
+                        "target": entity,
+                        "direction": "incoming",
+                        **data
+                    })
+        else:
+            # Fallback
+            if direction in ("outgoing", "both"):
+                for edge in self._edges.get(entity, []):
+                    if relationship_type and edge.relationship_type != relationship_type:
+                        continue
+                    results.append({
+                        "source": entity,
+                        "target": self._canonical(edge.target),
+                        "direction": "outgoing",
+                        "label": edge.label,
+                        "relationship_type": edge.relationship_type.value,
+                        "strength": edge.strength,
+                        "sentiment": edge.sentiment,
+                    })
+            if direction in ("incoming", "both"):
+                for src, edges in self._edges.items():
+                    for edge in edges:
+                        if self._canonical(edge.target) == entity:
+                            if relationship_type and edge.relationship_type != relationship_type:
+                                continue
+                            results.append({
+                                "source": src,
+                                "target": entity,
+                                "direction": "incoming",
+                                "label": edge.label,
+                                "relationship_type": edge.relationship_type.value,
+                                "strength": edge.strength,
+                                "sentiment": edge.sentiment,
+                            })
+
+        return results
+
+    def find_path(self, source: str, target: str, max_depth: int = 5) -> Optional[List[Dict]]:
+        """
+        Find relationship path between two entities.
+        Useful for: "How are A and B connected?"
+        """
+        if self._graph is None:
+            return None
+
+        source = self._canonical(source)
+        target = self._canonical(target)
+
+        if source not in self._graph or target not in self._graph:
+            return None
+
+        try:
+            path = nx.shortest_path(self._graph, source, target)
+            if len(path) - 1 > max_depth:
+                return None
+
+            result = []
+            for i in range(len(path) - 1):
+                edge_data = self._graph.get_edge_data(path[i], path[i + 1])
+                if edge_data:
+                    first_edge = next(iter(edge_data.values()))
+                    result.append({
+                        "from": path[i],
+                        "to": path[i + 1],
+                        "label": first_edge.get("label", "related"),
+                        "sentiment": first_edge.get("sentiment", 0.0),
+                    })
+            return result
+        except nx.NetworkXNoPath:
+            return None
+
+    def get_context_for_characters(self, characters: List[str]) -> str:
+        """
+        Build a natural-language relationship context block for a scene.
+
+        This is injected into the LLM prompt before generation so the AI
+        knows the relationships between characters in the scene.
+        """
+        if not characters:
+            return ""
+
+        lines = []
+        seen_pairs = set()
+
+        for char in characters:
+            relationships = self.query_relationships(char)
+            for rel in relationships:
+                # Only include relationships between characters in this scene
+                other = rel["target"] if rel["source"] == self._canonical(char) else rel["source"]
+                if other not in [self._canonical(c) for c in characters]:
+                    continue
+
+                pair = tuple(sorted([rel["source"], rel["target"]]))
+                if pair in seen_pairs:
+                    continue
+                seen_pairs.add(pair)
+
+                sentiment_desc = ""
+                sentiment = rel.get("sentiment", 0.0)
+                if sentiment > 0.5:
+                    sentiment_desc = " (bliska relacja)"
+                elif sentiment < -0.5:
+                    sentiment_desc = " (wroga relacja)"
+
+                history = rel.get("history", [])
+                history_note = f" [Historia: {history[-1]}]" if history else ""
+
+                lines.append(
+                    f"- {rel['source']} -> {rel['target']}: "
+                    f"{rel.get('label', 'powiązani')}{sentiment_desc}{history_note}"
+                )
+
+        if not lines:
+            return ""
+
+        return "RELACJE MIĘDZY POSTACIAMI W SCENIE:\n" + "\n".join(lines)
+
+    def detect_contradictions(self, source: str, target: str, proposed_label: str) -> Optional[str]:
+        """
+        Check if a proposed relationship contradicts existing ones.
+        Returns contradiction description or None.
+        """
+        source = self._canonical(source)
+        target = self._canonical(target)
+
+        existing = self.query_relationships(source, direction="outgoing")
+        for rel in existing:
+            if rel["target"] == target:
+                old_label = rel.get("label", "")
+                old_type = rel.get("relationship_type", "")
+
+                # Family contradictions
+                if old_type == RelationshipType.FAMILY.value:
+                    family_contradictions = {
+                        "jest ojcem": ["jest matką", "jest dzieckiem"],
+                        "jest matką": ["jest ojcem", "jest dzieckiem"],
+                        "jest bratem": ["jest siostrą"],
+                        "jest siostrą": ["jest bratem"],
+                    }
+                    if old_label in family_contradictions:
+                        if proposed_label in family_contradictions[old_label]:
+                            return (
+                                f"SPRZECZNOŚĆ: {source} ma relację '{old_label}' z {target}, "
+                                f"ale proponowana relacja '{proposed_label}' jest sprzeczna."
+                            )
+
+        return None
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get graph statistics."""
+        if self._graph is not None:
+            return {
+                "backend": "networkx",
+                "nodes": self._graph.number_of_nodes(),
+                "edges": self._graph.number_of_edges(),
+                "entities": list(self._graph.nodes())[:20],  # First 20
+                "relationship_types": list(set(
+                    data.get("relationship_type", "unknown")
+                    for _, _, data in self._graph.edges(data=True)
+                )),
+            }
+        else:
+            total_edges = sum(len(edges) for edges in self._edges.values())
+            return {
+                "backend": "dict_fallback",
+                "nodes": len(self._edges),
+                "edges": total_edges,
+            }
+
+    def export_graph(self) -> Dict[str, Any]:
+        """Export the full graph for visualization or persistence."""
+        nodes = []
+        edges = []
+
+        if self._graph is not None:
+            for node, data in self._graph.nodes(data=True):
+                nodes.append({"id": node, **data})
+            for source, target, data in self._graph.edges(data=True):
+                edges.append({"source": source, "target": target, **data})
+        else:
+            seen_nodes = set()
+            for src, edge_list in self._edges.items():
+                if src not in seen_nodes:
+                    nodes.append({"id": src})
+                    seen_nodes.add(src)
+                for edge in edge_list:
+                    tgt = self._canonical(edge.target)
+                    if tgt not in seen_nodes:
+                        nodes.append({"id": tgt})
+                        seen_nodes.add(tgt)
+                    edges.append({
+                        "source": src,
+                        "target": tgt,
+                        "label": edge.label,
+                        "relationship_type": edge.relationship_type.value,
+                        "strength": edge.strength,
+                        "sentiment": edge.sentiment,
+                    })
+
+        return {"nodes": nodes, "edges": edges}
+
+
+# =============================================================================
 # MAIN MIRIX MEMORY SYSTEM
 # =============================================================================
 
@@ -1430,6 +1816,9 @@ class MIRIXMemorySystem:
         # Vector memory layers per project (semantic search)
         self._vector_layers: Dict[str, VectorMemoryLayer] = {}
 
+        # GraphRAG: relationship graphs per project
+        self._relationship_graphs: Dict[str, RelationshipGraph] = {}
+
         # Project-specific memory stores
         self.project_memories: Dict[str, Dict[MemoryType, MemoryLayer]] = {}
 
@@ -1437,7 +1826,7 @@ class MIRIXMemorySystem:
         self.global_procedural = ProceduralMemoryLayer()
         self.global_resources = ResourceMemoryLayer()
 
-        logger.info("MIRIX Memory System initialized with 6 layers + vector search")
+        logger.info("MIRIX Memory System initialized with 6 layers + vector search + GraphRAG")
 
     # =========================================================================
     # PROJECT INITIALIZATION
@@ -1478,6 +1867,103 @@ class MIRIXMemorySystem:
         vector_layer = self._get_vector_layer(project_id)
         where_filter = {"chapter": chapter_filter} if chapter_filter else None
         return await vector_layer.retrieve_relevant(query, limit, where_filter)
+
+    def _get_relationship_graph(self, project_id: str) -> RelationshipGraph:
+        """Get or create relationship graph for a project."""
+        if project_id not in self._relationship_graphs:
+            self._relationship_graphs[project_id] = RelationshipGraph()
+        return self._relationship_graphs[project_id]
+
+    async def store_relationship(
+        self,
+        project_id: str,
+        source: str,
+        target: str,
+        relationship_type: str,
+        label: str,
+        strength: float = 1.0,
+        sentiment: float = 0.0,
+        chapter: int = 0,
+        is_known_to_reader: bool = True,
+        metadata: Optional[Dict] = None,
+    ) -> bool:
+        """
+        Store a relationship between two entities in the knowledge graph.
+
+        Args:
+            project_id: Project ID
+            source: Source entity (e.g., "Jan Kowalski")
+            target: Target entity (e.g., "Anna Kowalska")
+            relationship_type: One of RelationshipType values
+            label: Human-readable label (e.g., "jest ojcem")
+            strength: 0.0-1.0 how strong the relationship is
+            sentiment: -1.0 (hostile) to 1.0 (loving)
+            chapter: Chapter where this was established
+            is_known_to_reader: Whether reader knows about this
+            metadata: Additional data
+
+        Returns:
+            True if stored successfully
+        """
+        graph = self._get_relationship_graph(project_id)
+
+        try:
+            rel_type = RelationshipType(relationship_type)
+        except ValueError:
+            rel_type = RelationshipType.CUSTOM
+
+        # Check for contradictions before storing
+        contradiction = graph.detect_contradictions(source, target, label)
+        if contradiction:
+            logger.warning(f"Relationship contradiction detected: {contradiction}")
+
+        edge = RelationshipEdge(
+            source=source,
+            target=target,
+            relationship_type=rel_type,
+            label=label,
+            strength=strength,
+            sentiment=sentiment,
+            is_known_to_reader=is_known_to_reader,
+            established_chapter=chapter,
+            metadata=metadata or {},
+        )
+
+        return graph.add_relationship(edge)
+
+    async def query_relationships(
+        self,
+        project_id: str,
+        entity: str,
+        relationship_type: Optional[str] = None,
+        direction: str = "both"
+    ) -> List[Dict[str, Any]]:
+        """Query relationships for an entity from the knowledge graph."""
+        graph = self._get_relationship_graph(project_id)
+        rel_type = RelationshipType(relationship_type) if relationship_type else None
+        return graph.query_relationships(entity, rel_type, direction)
+
+    async def get_relationship_context_for_scene(
+        self,
+        project_id: str,
+        characters: List[str]
+    ) -> str:
+        """
+        Get natural-language relationship context for characters in a scene.
+        This string is injected into the LLM prompt for relationship-aware generation.
+        """
+        graph = self._get_relationship_graph(project_id)
+        return graph.get_context_for_characters(characters)
+
+    async def find_relationship_path(
+        self,
+        project_id: str,
+        source: str,
+        target: str
+    ) -> Optional[List[Dict]]:
+        """Find the relationship chain between two entities."""
+        graph = self._get_relationship_graph(project_id)
+        return graph.find_path(source, target)
 
     async def initialize_project(self, project_id: str, genre: GenreType) -> Dict:
         """Initialize MIRIX memory for a new project"""
@@ -1762,7 +2248,8 @@ class MIRIXMemorySystem:
             "available_resources": [],
             "character_info": [],
             "location_info": None,
-            "semantic_matches": []  # NEW: vector search results
+            "semantic_matches": [],   # vector search results
+            "relationship_context": ""  # GraphRAG: relationship context for scene
         }
 
         if project_id not in self.project_memories:
@@ -1811,6 +2298,13 @@ class MIRIXMemorySystem:
             loc_info = await kv_layer.get_location_details(location)
             if loc_info:
                 context["location_info"] = loc_info.to_dict()
+
+        # GRAPHRAG: Get relationship context between characters in the scene
+        relationship_context = await self.get_relationship_context_for_scene(
+            project_id=project_id,
+            characters=characters
+        )
+        context["relationship_context"] = relationship_context
 
         # SEMANTIC VECTOR SEARCH - find contextually relevant memories
         # Build a natural language query from scene parameters
@@ -1933,11 +2427,12 @@ class MIRIXMemorySystem:
         project_id: str,
         characters: List[Dict]
     ) -> Dict[str, int]:
-        """Extract and store memory from character profiles"""
+        """Extract and store memory from character profiles, including relationships to graph"""
         counts = {
             "core_facts": 0,
             "knowledge_entries": 0,
-            "concepts": 0
+            "concepts": 0,
+            "relationships": 0
         }
 
         for char in characters:
@@ -1973,6 +2468,48 @@ class MIRIXMemorySystem:
                             is_absolute=True
                         )
                         counts["core_facts"] += 1
+
+            # Extract relationships into knowledge graph (GraphRAG)
+            relationships = char.get("relationships", {})
+            if isinstance(relationships, dict):
+                for target_name, rel_info in relationships.items():
+                    if isinstance(rel_info, str):
+                        label = rel_info
+                        rel_type = "social"
+                    elif isinstance(rel_info, dict):
+                        label = rel_info.get("label", rel_info.get("type", "powiązani"))
+                        rel_type = rel_info.get("type", "social")
+                    else:
+                        continue
+
+                    # Map common relationship labels to types
+                    rel_type_map = {
+                        "parent": "family", "father": "family", "mother": "family",
+                        "child": "family", "son": "family", "daughter": "family",
+                        "sibling": "family", "brother": "family", "sister": "family",
+                        "spouse": "family", "husband": "family", "wife": "family",
+                        "lover": "romantic", "crush": "romantic", "ex": "romantic",
+                        "enemy": "antagonistic", "rival": "antagonistic",
+                        "friend": "alliance", "ally": "alliance", "mentor": "professional",
+                        "boss": "professional", "colleague": "professional",
+                    }
+                    mapped_type = rel_type_map.get(rel_type.lower(), "social")
+
+                    # Determine sentiment from type
+                    sentiment_map = {
+                        "family": 0.5, "romantic": 0.7, "alliance": 0.6,
+                        "professional": 0.2, "antagonistic": -0.7, "social": 0.1,
+                    }
+
+                    await self.store_relationship(
+                        project_id=project_id,
+                        source=name,
+                        target=target_name,
+                        relationship_type=mapped_type,
+                        label=label,
+                        sentiment=sentiment_map.get(mapped_type, 0.0),
+                    )
+                    counts["relationships"] += 1
 
             # Extract archetype as semantic concept
             archetype = char.get("archetype", "")
@@ -2158,6 +2695,12 @@ Wyekstrahuj MAX 5 najważniejszych faktów. Jeśli nie ma nowych faktów, zwró�
             stats["vector_memory"] = self._vector_layers[project_id].get_stats()
         else:
             stats["vector_memory"] = {"initialized": False, "count": 0}
+
+        # GraphRAG stats
+        if project_id in self._relationship_graphs:
+            stats["relationship_graph"] = self._relationship_graphs[project_id].get_stats()
+        else:
+            stats["relationship_graph"] = {"nodes": 0, "edges": 0}
 
         return stats
 

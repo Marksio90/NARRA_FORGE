@@ -334,20 +334,26 @@ async def get_cover(cover_id: str) -> Dict[str, Any]:
 
 
 @router.get("/concepts")
-async def list_concepts() -> Dict[str, Any]:
+async def list_concepts(skip: int = 0, limit: int = 100) -> Dict[str, Any]:
     """List all cover concepts"""
     generator = get_cover_art_generator()
+    concepts = generator.list_concepts()
+    paginated = concepts[skip:skip + limit]
 
     return {
-        "concepts": generator.list_concepts()
+        "concepts": paginated,
+        "total": len(concepts)
     }
 
 
 @router.get("/covers")
-async def list_covers() -> Dict[str, Any]:
+async def list_covers(skip: int = 0, limit: int = 100) -> Dict[str, Any]:
     """List all generated covers"""
     generator = get_cover_art_generator()
+    covers = generator.list_covers()
+    paginated = covers[skip:skip + limit]
 
     return {
-        "covers": generator.list_covers()
+        "covers": paginated,
+        "total": len(covers)
     }

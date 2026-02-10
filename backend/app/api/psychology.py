@@ -281,7 +281,9 @@ async def get_report(report_id: str) -> Dict[str, Any]:
 
 
 @router.get("/reports")
-async def list_reports(project_id: Optional[str] = None) -> Dict[str, Any]:
+async def list_reports(project_id: Optional[str] = None, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
     """List all psychology reports"""
     engine = get_psychology_engine()
-    return {"reports": engine.list_reports(project_id)}
+    reports = engine.list_reports(project_id)
+    paginated = reports[skip:skip + limit]
+    return {"reports": paginated, "total": len(reports)}

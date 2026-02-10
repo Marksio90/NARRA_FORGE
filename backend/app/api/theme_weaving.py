@@ -223,7 +223,9 @@ async def get_weaving_plan(plan_id: str):
 
 @router.get("/plans")
 async def list_weaving_plans(
-    project_id: Optional[str] = Query(None, description="Filtruj po projekcie")
+    project_id: Optional[str] = Query(None, description="Filtruj po projekcie"),
+    skip: int = 0,
+    limit: int = 100
 ):
     """
     Listuje wszystkie aktywne plany wplatania.
@@ -234,9 +236,11 @@ async def list_weaving_plans(
         if project_id:
             plans = [p for p in plans if p["project_id"] == project_id]
 
+        paginated = plans[skip:skip + limit]
+
         return {
             "success": True,
-            "plans": plans,
+            "plans": paginated,
             "total_count": len(plans)
         }
     except Exception as e:

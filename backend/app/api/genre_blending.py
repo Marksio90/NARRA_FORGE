@@ -204,15 +204,16 @@ async def get_blend(blend_id: str):
 
 
 @router.get("/blends")
-async def list_blends():
+async def list_blends(skip: int = 0, limit: int = 100):
     """
     Listuje wszystkie aktywne blendy gatunków.
     """
     try:
         blends = genre_blending_service.list_active_blends()
+        paginated = blends[skip:skip + limit]
         return {
             "success": True,
-            "blends": blends,
+            "blends": paginated,
             "total_count": len(blends)
         }
     except Exception as e:

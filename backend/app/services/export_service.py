@@ -358,9 +358,24 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
     doc = SimpleDocTemplate(str(file_path), pagesize=letter)
     styles = getSampleStyleSheet()
 
-    # Register Unicode-capable font (Helvetica supports Polish characters)
-    # Note: Helvetica is built-in and supports extended Latin characters
-    font_name = 'Helvetica'
+    # Register Unicode-capable font for full Polish diacritics support (ąćęłńóśźż)
+    # DejaVu Serif is installed via fonts-dejavu-core in Dockerfile
+    import os
+    _dejavu_serif = '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf'
+    _dejavu_serif_bold = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'
+    _dejavu_serif_italic = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf'
+    if os.path.exists(_dejavu_serif):
+        pdfmetrics.registerFont(TTFont('DejaVuSerif', _dejavu_serif))
+        if os.path.exists(_dejavu_serif_bold):
+            pdfmetrics.registerFont(TTFont('DejaVuSerif-Bold', _dejavu_serif_bold))
+        if os.path.exists(_dejavu_serif_italic):
+            pdfmetrics.registerFont(TTFont('DejaVuSerif-Italic', _dejavu_serif_italic))
+        font_name = 'DejaVuSerif'
+        font_name_italic = 'DejaVuSerif-Italic' if os.path.exists(_dejavu_serif_italic) else 'DejaVuSerif'
+    else:
+        logger.warning("DejaVu fonts not found, falling back to Helvetica (limited Polish support)")
+        font_name = 'Helvetica'
+        font_name_italic = 'Helvetica-Oblique'
 
     # Custom styles with Unicode-capable font
     title_style = ParagraphStyle(
@@ -443,7 +458,7 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
                 title_style_italic = ParagraphStyle(
                     'ChapterTitleItalic',
                     parent=styles['Heading3'],
-                    fontName='Helvetica-Oblique',  # Helvetica italic for Polish support
+                    fontName=font_name_italic,
                     alignment=TA_CENTER,
                     fontSize=14
                 )

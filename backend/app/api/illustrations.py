@@ -303,13 +303,16 @@ async def get_character_profile(character_name: str) -> Dict[str, Any]:
 
 
 @router.get("/characters")
-async def list_character_profiles() -> Dict[str, Any]:
+async def list_character_profiles(skip: int = 0, limit: int = 100) -> Dict[str, Any]:
     """List all character visual profiles"""
     system = get_character_visual_system()
+    profiles = system.list_profiles()
+    paginated = profiles[skip:skip + limit]
 
     return {
-        "characters": system.list_profiles(),
-        "count": len(system.list_profiles())
+        "characters": paginated,
+        "count": len(paginated),
+        "total": len(profiles)
     }
 
 

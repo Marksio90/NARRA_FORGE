@@ -58,14 +58,16 @@ class ConsistencyCheckRequest(BaseModel):
 # =============================================================================
 
 @router.get("/profiles")
-async def list_profiles() -> Dict[str, Any]:
+async def list_profiles(skip: int = 0, limit: int = 100) -> Dict[str, Any]:
     """List all available style profiles"""
     engine = get_style_adaptation_engine()
     profiles = engine.list_profiles()
+    paginated = profiles[skip:skip + limit]
 
     return {
-        "profiles": profiles,
-        "count": len(profiles),
+        "profiles": paginated,
+        "count": len(paginated),
+        "total": len(profiles),
         "active_profile": engine.active_profile
     }
 

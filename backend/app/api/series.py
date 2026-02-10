@@ -167,13 +167,15 @@ async def create_series(
 
 @router.get("", response_model=SeriesListResponse)
 async def list_series(
+    skip: int = 0,
+    limit: int = 100,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """List all series belonging to the current user"""
     series_list = db.query(Series).filter(
         Series.user_id == current_user.id
-    ).order_by(Series.created_at.desc()).all()
+    ).order_by(Series.created_at.desc()).offset(skip).limit(limit).all()
 
     return SeriesListResponse(
         series=[SeriesResponse.model_validate(s) for s in series_list],

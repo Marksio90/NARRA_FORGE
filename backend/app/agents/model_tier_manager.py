@@ -24,7 +24,7 @@ class ModelTierManager:
     """
     
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY, timeout=300.0)
         self.tier_models = {
             1: settings.GPT_4O_MINI,
             2: settings.GPT_4O,
@@ -153,11 +153,18 @@ class ModelTierManager:
         # For now, simple heuristics
         
         # Check for warning signs of low quality
+        # Includes both English and Polish phrases (platform generates in Polish)
         warning_signs = [
             len(content) < 100,  # Too short
             content.count("...") > 5,  # Too many ellipses
-            "I cannot" in content,  # Refusal
-            "As an AI" in content,  # Breaking character
+            "I cannot" in content,  # Refusal (English)
+            "As an AI" in content,  # Breaking character (English)
+            "Nie mogę" in content,  # Refusal (Polish)
+            "Jako AI" in content,  # Breaking character (Polish)
+            "Jako sztuczna inteligencja" in content,  # Breaking character (Polish)
+            "nie jestem w stanie" in content,  # "I am unable to" (Polish)
+            "Przepraszam, ale" in content,  # "I'm sorry, but" (Polish)
+            "Nie jestem w stanie" in content,  # "I am not able to" (Polish)
         ]
         
         if any(warning_signs):

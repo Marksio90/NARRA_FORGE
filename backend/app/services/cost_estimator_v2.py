@@ -1,22 +1,27 @@
 """
-Accurate Cost Estimator V2 for NarraForge 2.0
+Accurate Cost Estimator V2 for NarraForge 2.0 (Audited & Fixed)
 
-Fixed cost estimation that accounts for ALL costs, not just prose generation.
-Includes proper Polish token coefficients and input context costs.
+Fixed:
+- ModelTier imported from ai_service.py (canonical source), not duplicated
+- Prose output tokens calculated dynamically from target word count
+- Polish tokenization coefficient increased to 1.8 (safer for inflected language)
+- Steps aligned with ServiceOrchestrator WORKFLOW_TEMPLATES
+- Added total_tokens_in/out and estimated_duration_min to DetailedCostEstimate
+- Input context per scene increased to 15k (accounts for RAG + GraphRAG context)
 """
 
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-from enum import Enum
+import logging
 
 from app.services.dynamic_parameters import BookParameters
 from app.config import settings
 
+# Canonical ModelTier from ai_service.py (int enum: 1, 2, 3)
+# NOT duplicated here - this was a critical type mismatch bug
+from app.services.ai_service import ModelTier
 
-class ModelTier(str, Enum):
-    TIER_1 = "TIER_1"  # GPT-4o-mini / Claude Haiku
-    TIER_2 = "TIER_2"  # GPT-4o / Claude Sonnet
-    TIER_3 = "TIER_3"  # GPT-4 / Claude Opus
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,7 +31,7 @@ class CostBreakdown:
     calls: int
     input_tokens: int
     output_tokens: int
-    tier: ModelTier
+    tier: int  # Plain int (1, 2, 3) for serialization safety
     cost: float
 
 
@@ -39,6 +44,9 @@ class DetailedCostEstimate:
     total: float
     confidence_range: Dict[str, float]
     warnings: List[str]
+    total_tokens_in: int = 0
+    total_tokens_out: int = 0
+    estimated_duration_min: int = 0
 
     def to_dict(self) -> Dict:
         return {
@@ -48,7 +56,7 @@ class DetailedCostEstimate:
                     "calls": v.calls,
                     "input_tokens": v.input_tokens,
                     "output_tokens": v.output_tokens,
-                    "tier": v.tier.value,
+                    "tier": v.tier,
                     "cost": round(v.cost, 4)
                 }
                 for k, v in self.breakdown.items()
@@ -56,6 +64,9 @@ class DetailedCostEstimate:
             "subtotal": round(self.subtotal, 2),
             "margin": round(self.margin, 2),
             "total": round(self.total, 2),
+            "total_tokens_in": self.total_tokens_in,
+            "total_tokens_out": self.total_tokens_out,
+            "estimated_duration_min": self.estimated_duration_min,
             "confidence_range": {
                 "min": round(self.confidence_range["min"], 2),
                 "max": round(self.confidence_range["max"], 2)
@@ -66,100 +77,38 @@ class DetailedCostEstimate:
 
 class AccurateCostEstimator:
     """
-    NEW, accurate cost estimator.
-    Accounts for ALL costs, not just prose generation.
+    Accurate cost estimator aligned with ServiceOrchestrator workflow.
+
+    Key fixes over V1:
+    - Output tokens for prose calculated from word_count / total_scenes * token_ratio
+    - Input context per scene is 15k (system + world bible + chars + previous + RAG + GraphRAG)
+    - Polish text tokenization uses 1.8x coefficient (not 1.6 - safer for inflected language)
+    - Steps match WORKFLOW_TEMPLATES from orchestrator.py
     """
 
-    # CORRECTED token coefficients
-    TOKENS_PER_WORD_POLISH = 1.6  # Polish = more tokens (was 1.33)
+    # Polish text produces ~1.8 tokens per word due to inflection (cases, genders, etc.)
+    # English is ~1.3. Using 1.8 instead of 1.6 provides safety margin.
+    TOKENS_PER_WORD_POLISH = 1.8
     TOKENS_PER_WORD_ENGLISH = 1.3
 
-    # Realistic input tokens per scene
+    # Realistic input tokens per scene (all context that goes into the prompt)
     SCENE_INPUT_TOKENS = {
-        "system_prompt": 2000,
-        "context_pack": 4000,
-        "beat_sheet": 1500,
-        "previous_scene": 2000,
-        "character_context": 2000,
-        "world_context": 1500,
-        "total": 13000  # NOT 5000!
+        "system_prompt": 2000,       # System instructions
+        "world_bible": 3000,         # World context (cached via prompt caching)
+        "beat_sheet": 1500,          # Scene plan
+        "previous_scene": 2000,      # Continuity from previous scene
+        "character_context": 2000,   # Character profiles for scene chars
+        "rag_context": 2000,         # Vector search results from MIRIX
+        "relationship_graph": 1000,  # GraphRAG relationship context
+        "style_few_shot": 1500,      # Few-shot style examples
+        "total": 15000               # Total context per scene call
     }
 
-    # Cost per step
-    STEP_COSTS = {
-        "titan_analysis": {
-            "calls": 12,  # 12 dimensions
-            "input_per_call": 500,
-            "output_per_call": 1000,
-            "tier": ModelTier.TIER_1
-        },
-        "world_building": {
-            "calls": 1,
-            "input": 3000,
-            "output": 8000,
-            "tier": ModelTier.TIER_2
-        },
-        "character_creation": {
-            "calls_per_character": 1,
-            "input": 2000,
-            "output": 4000,
-            "tier": ModelTier.TIER_2
-        },
-        "plot_architecture": {
-            "calls": 1,
-            "input": 5000,
-            "output": 10000,
-            "tier": ModelTier.TIER_2
-        },
-        "beat_sheet_per_scene": {
-            "input": 2000,
-            "output": 1500,
-            "tier": ModelTier.TIER_1
-        },
-        "prose_per_scene": {
-            "input": 13000,  # Realistic!
-            "output": 1800,  # ~1200 words * 1.5
-            "tier": ModelTier.TIER_2
-        },
-        "qa_per_scene": {
-            "input": 2500,
-            "output": 500,
-            "tier": ModelTier.TIER_1
-        },
-        "continuity_check": {
-            "calls": 1,
-            "input": 10000,
-            "output": 2000,
-            "tier": ModelTier.TIER_1
-        },
-        "style_polish": {
-            "calls_per_chapter": 1,
-            "input": 5000,
-            "output": 3000,
-            "tier": ModelTier.TIER_2
-        },
-        "final_assembly": {
-            "calls": 1,
-            "input": 2000,
-            "output": 1000,
-            "tier": ModelTier.TIER_1
-        }
-    }
-
-    # Model pricing per 1M tokens
+    # Model pricing per 1M tokens (from config, with int tier keys)
     MODEL_PRICES = {
-        ModelTier.TIER_1: {
-            "input": settings.TIER1_INPUT_COST,  # 0.15
-            "output": settings.TIER1_OUTPUT_COST  # 0.60
-        },
-        ModelTier.TIER_2: {
-            "input": settings.TIER2_INPUT_COST,  # 2.50
-            "output": settings.TIER2_OUTPUT_COST  # 10.0
-        },
-        ModelTier.TIER_3: {
-            "input": settings.TIER3_INPUT_COST,  # 30.0
-            "output": settings.TIER3_OUTPUT_COST  # 60.0
-        }
+        1: {"input": settings.TIER1_INPUT_COST, "output": settings.TIER1_OUTPUT_COST},
+        2: {"input": settings.TIER2_INPUT_COST, "output": settings.TIER2_OUTPUT_COST},
+        3: {"input": settings.TIER3_INPUT_COST, "output": settings.TIER3_OUTPUT_COST},
     }
 
     def estimate_project_cost(
@@ -168,7 +117,7 @@ class AccurateCostEstimator:
         include_margin: bool = True
     ) -> DetailedCostEstimate:
         """
-        Accurate project cost estimation.
+        Accurate project cost estimation aligned with orchestrator workflow.
 
         Args:
             parameters: Book parameters from DynamicParameterGenerator
@@ -178,155 +127,225 @@ class AccurateCostEstimator:
             DetailedCostEstimate with full breakdown
         """
         breakdown = {}
+        total_tokens_in = 0
+        total_tokens_out = 0
+        total_duration = 0  # minutes
 
-        # 1. TITAN Analysis
-        titan = self.STEP_COSTS["titan_analysis"]
-        breakdown["titan_analysis"] = CostBreakdown(
-            step_name="Analiza TITAN (13 wymiarów)",
-            calls=titan["calls"],
-            input_tokens=titan["calls"] * titan["input_per_call"],
-            output_tokens=titan["calls"] * titan["output_per_call"],
-            tier=titan["tier"],
+        # Core dimensions
+        n_chapters = parameters.chapter_count
+        n_scenes_per_chapter = parameters.scenes_per_chapter
+        total_scenes = n_chapters * n_scenes_per_chapter
+        total_chars = parameters.main_characters + parameters.supporting_characters
+        target_words = parameters.word_count
+
+        # CRITICAL FIX: Calculate output tokens per scene from target word count
+        # 90,000 words / 125 scenes = 720 words/scene * 1.8 = 1,296 tokens/scene
+        avg_words_per_scene = target_words / total_scenes if total_scenes > 0 else 0
+        output_tokens_per_scene = int(avg_words_per_scene * self.TOKENS_PER_WORD_POLISH)
+
+        # =====================================================================
+        # STEP 1: Initialize Project (mirix.initialize)
+        # =====================================================================
+        step_in, step_out = 500, 200
+        breakdown["initialize"] = CostBreakdown(
+            step_name="Inicjalizacja projektu",
+            calls=1,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=1,
+            cost=self._calc_cost(step_in, step_out, 1)
+        )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 0.5
+
+        # =====================================================================
+        # STEP 2: Analyze Trends (trends.analyze)
+        # =====================================================================
+        # 12 trend dimensions analyzed
+        calls = 12
+        step_in = 1000 * calls
+        step_out = 500 * calls
+        breakdown["trends_analysis"] = CostBreakdown(
+            step_name="Analiza trendów (12 wymiarów)",
+            calls=calls,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=1,
+            cost=self._calc_cost(step_in, step_out, 1)
+        )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 2
+
+        # =====================================================================
+        # STEP 3: Create Outline (pacing.create_outline)
+        # Plot architecture + chapter breakdown + beat sheets
+        # =====================================================================
+        step_in = 8000
+        step_out = 4000 + (1500 * total_scenes)  # Base outline + beat sheet per scene
+        breakdown["outline_and_beats"] = CostBreakdown(
+            step_name=f"Architektura fabuły + Beat sheets ({total_scenes} scen)",
+            calls=1 + total_scenes,
+            input_tokens=step_in + (2000 * total_scenes),
+            output_tokens=step_out,
+            tier=2,
             cost=self._calc_cost(
-                titan["calls"] * titan["input_per_call"],
-                titan["calls"] * titan["output_per_call"],
-                titan["tier"]
+                step_in + (2000 * total_scenes),
+                step_out,
+                2
             )
         )
+        total_tokens_in += step_in + (2000 * total_scenes)
+        total_tokens_out += step_out
+        total_duration += 3 + (0.1 * total_scenes)
 
-        # 2. World Building
-        wb = self.STEP_COSTS["world_building"]
-        breakdown["world_building"] = CostBreakdown(
-            step_name="Budowanie świata",
-            calls=wb["calls"],
-            input_tokens=wb["input"],
-            output_tokens=wb["output"],
-            tier=wb["tier"],
-            cost=self._calc_cost(wb["input"], wb["output"], wb["tier"])
-        )
-
-        # 3. Character Creation
-        char = self.STEP_COSTS["character_creation"]
-        total_chars = parameters.main_characters + parameters.supporting_characters
+        # =====================================================================
+        # STEP 4: Develop Characters (consciousness.create_characters)
+        # =====================================================================
+        step_in = 3000 * total_chars
+        step_out = 2000 * total_chars
         breakdown["character_creation"] = CostBreakdown(
             step_name=f"Kreacja postaci ({total_chars} postaci)",
             calls=total_chars,
-            input_tokens=char["input"] * total_chars,
-            output_tokens=char["output"] * total_chars,
-            tier=char["tier"],
-            cost=self._calc_cost(
-                char["input"] * total_chars,
-                char["output"] * total_chars,
-                char["tier"]
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=2,
+            cost=self._calc_cost(step_in, step_out, 2)
+        )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 0.5 * total_chars
+
+        # =====================================================================
+        # STEP 5: Generate Chapters (dialogue.generate) - BIGGEST COST
+        # This is the prose generation loop - one call per scene
+        # =====================================================================
+        scene_input = self.SCENE_INPUT_TOKENS["total"]  # 15,000 tokens context per scene
+        scene_output = output_tokens_per_scene  # Dynamically calculated!
+
+        prose_total_in = scene_input * total_scenes
+        prose_total_out = scene_output * total_scenes
+
+        # Sanity check: total output tokens must cover target word count
+        expected_output_words = prose_total_out / self.TOKENS_PER_WORD_POLISH
+        if expected_output_words < target_words * 0.9:
+            logger.warning(
+                f"Output token estimate ({prose_total_out}) may be too low for "
+                f"{target_words} words. Expected minimum: {int(target_words * self.TOKENS_PER_WORD_POLISH)}"
             )
-        )
 
-        # 4. Plot Architecture
-        plot = self.STEP_COSTS["plot_architecture"]
-        breakdown["plot_architecture"] = CostBreakdown(
-            step_name="Architektura fabuły",
-            calls=plot["calls"],
-            input_tokens=plot["input"],
-            output_tokens=plot["output"],
-            tier=plot["tier"],
-            cost=self._calc_cost(plot["input"], plot["output"], plot["tier"])
-        )
-
-        # 5. Scene Generation (BIGGEST COST!)
-        total_scenes = parameters.chapter_count * parameters.scenes_per_chapter
-
-        # Beat Sheets
-        beat = self.STEP_COSTS["beat_sheet_per_scene"]
-        breakdown["beat_sheets"] = CostBreakdown(
-            step_name=f"Beat sheets ({total_scenes} scen)",
-            calls=total_scenes,
-            input_tokens=beat["input"] * total_scenes,
-            output_tokens=beat["output"] * total_scenes,
-            tier=beat["tier"],
-            cost=self._calc_cost(
-                beat["input"] * total_scenes,
-                beat["output"] * total_scenes,
-                beat["tier"]
-            )
-        )
-
-        # Prose Generation (MAIN COST)
-        prose = self.STEP_COSTS["prose_per_scene"]
         breakdown["prose_generation"] = CostBreakdown(
-            step_name=f"Generowanie prozy ({total_scenes} scen)",
+            step_name=f"Generowanie prozy ({total_scenes} scen, ~{avg_words_per_scene:.0f} słów/scenę)",
             calls=total_scenes,
-            input_tokens=prose["input"] * total_scenes,
-            output_tokens=prose["output"] * total_scenes,
-            tier=prose["tier"],
-            cost=self._calc_cost(
-                prose["input"] * total_scenes,
-                prose["output"] * total_scenes,
-                prose["tier"]
-            )
+            input_tokens=prose_total_in,
+            output_tokens=prose_total_out,
+            tier=2,
+            cost=self._calc_cost(prose_total_in, prose_total_out, 2)
         )
+        total_tokens_in += prose_total_in
+        total_tokens_out += prose_total_out
+        total_duration += 0.5 * total_scenes  # ~30s per scene
 
-        # QA Validation
-        qa = self.STEP_COSTS["qa_per_scene"]
-        breakdown["quality_assurance"] = CostBreakdown(
-            step_name=f"Kontrola jakości ({total_scenes} scen)",
-            calls=total_scenes,
-            input_tokens=qa["input"] * total_scenes,
-            output_tokens=qa["output"] * total_scenes,
-            tier=qa["tier"],
-            cost=self._calc_cost(
-                qa["input"] * total_scenes,
-                qa["output"] * total_scenes,
-                qa["tier"]
-            )
-        )
-
-        # 6. Style Polish
-        style = self.STEP_COSTS["style_polish"]
+        # =====================================================================
+        # STEP 6: Apply Style (style.apply)
+        # =====================================================================
+        # Style polish reads the full chapter and rewrites
+        chapter_tokens = int((target_words / n_chapters) * self.TOKENS_PER_WORD_POLISH)
+        step_in = chapter_tokens * n_chapters
+        step_out = int(step_in * 1.1)  # Rewrite can be slightly longer
         breakdown["style_polish"] = CostBreakdown(
-            step_name=f"Polerowanie stylu ({parameters.chapter_count} rozdziałów)",
-            calls=parameters.chapter_count,
-            input_tokens=style["input"] * parameters.chapter_count,
-            output_tokens=style["output"] * parameters.chapter_count,
-            tier=style["tier"],
-            cost=self._calc_cost(
-                style["input"] * parameters.chapter_count,
-                style["output"] * parameters.chapter_count,
-                style["tier"]
-            )
+            step_name=f"Polerowanie stylu ({n_chapters} rozdziałów)",
+            calls=n_chapters,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=2,
+            cost=self._calc_cost(step_in, step_out, 2)
         )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 0.3 * n_chapters
 
-        # 7. Continuity Check
-        cont = self.STEP_COSTS["continuity_check"]
-        breakdown["continuity_check"] = CostBreakdown(
-            step_name="Sprawdzanie ciągłości",
-            calls=cont["calls"],
-            input_tokens=cont["input"],
-            output_tokens=cont["output"],
-            tier=cont["tier"],
-            cost=self._calc_cost(cont["input"], cont["output"], cont["tier"])
+        # =====================================================================
+        # STEP 7: Emotional Resonance (emotional.enhance)
+        # =====================================================================
+        step_in = 4000 * total_scenes
+        step_out = 500 * total_scenes
+        breakdown["emotional_resonance"] = CostBreakdown(
+            step_name=f"Rezonans emocjonalny ({total_scenes} scen)",
+            calls=total_scenes,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=1,
+            cost=self._calc_cost(step_in, step_out, 1)
         )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 0.05 * total_scenes
 
-        # 8. Final Assembly
-        final = self.STEP_COSTS["final_assembly"]
-        breakdown["final_assembly"] = CostBreakdown(
-            step_name="Finalizacja",
-            calls=final["calls"],
-            input_tokens=final["input"],
-            output_tokens=final["output"],
-            tier=final["tier"],
-            cost=self._calc_cost(final["input"], final["output"], final["tier"])
+        # =====================================================================
+        # STEP 8: Coherence Check (coherence.analyze)
+        # =====================================================================
+        step_in = 10000 * n_chapters
+        step_out = 1000 * n_chapters
+        breakdown["coherence_check"] = CostBreakdown(
+            step_name=f"Sprawdzanie spójności ({n_chapters} rozdziałów)",
+            calls=n_chapters,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=1,
+            cost=self._calc_cost(step_in, step_out, 1)
         )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 0.2 * n_chapters
 
-        # Calculate totals
+        # =====================================================================
+        # STEP 9: Cultural Adaptation (cultural.adapt)
+        # =====================================================================
+        step_in, step_out = 10000, 2000
+        breakdown["cultural_adaptation"] = CostBreakdown(
+            step_name="Adaptacja kulturowa",
+            calls=1,
+            input_tokens=step_in,
+            output_tokens=step_out,
+            tier=2,
+            cost=self._calc_cost(step_in, step_out, 2)
+        )
+        total_tokens_in += step_in
+        total_tokens_out += step_out
+        total_duration += 2
+
+        # =====================================================================
+        # STEP 10: Cover + Illustrations (covers/illustrations - DALL-E)
+        # Fixed cost per image, not token-based
+        # =====================================================================
+        cover_count = 1
+        illustration_count = max(1, n_chapters // 5)  # 1 illustration per 5 chapters
+        total_images = cover_count + illustration_count
+        image_cost = total_images * 0.080  # ~$0.08 per DALL-E 3 HD image
+
+        breakdown["visual_generation"] = CostBreakdown(
+            step_name=f"Okładka + ilustracje ({total_images} obrazów)",
+            calls=total_images,
+            input_tokens=0,
+            output_tokens=0,
+            tier=3,  # Treat as premium cost
+            cost=image_cost
+        )
+        total_duration += 1
+
+        # =====================================================================
+        # CALCULATE TOTALS
+        # =====================================================================
         subtotal = sum(b.cost for b in breakdown.values())
-
-        # Safety margin (+20%)
         margin = subtotal * 0.20 if include_margin else 0
-
         total = subtotal + margin
 
-        # Generate warnings
-        warnings = self._generate_warnings(parameters, total)
+        # Duration buffer
+        total_duration = int(total_duration * 1.2)  # +20% buffer
+
+        warnings = self._generate_warnings(parameters, total, total_tokens_out)
 
         return DetailedCostEstimate(
             breakdown=breakdown,
@@ -335,61 +354,85 @@ class AccurateCostEstimator:
             total=total,
             confidence_range={
                 "min": total * 0.85,
-                "max": total * 1.15
+                "max": total * 1.25
             },
-            warnings=warnings
+            warnings=warnings,
+            total_tokens_in=total_tokens_in,
+            total_tokens_out=total_tokens_out,
+            estimated_duration_min=total_duration,
         )
 
-    def _calc_cost(self, input_tokens: int, output_tokens: int, tier: ModelTier) -> float:
-        """Calculate cost for given token counts."""
-        prices = self.MODEL_PRICES[tier]
+    def _calc_cost(self, input_tokens: int, output_tokens: int, tier: int) -> float:
+        """Calculate cost for given token counts. Accepts int tier (1, 2, 3)."""
+        # Handle both int and ModelTier enum
+        tier_key = int(tier)
+        prices = self.MODEL_PRICES.get(tier_key, self.MODEL_PRICES[1])
         input_cost = (input_tokens / 1_000_000) * prices["input"]
         output_cost = (output_tokens / 1_000_000) * prices["output"]
         return input_cost + output_cost
 
-    def _generate_warnings(self, params: BookParameters, total: float) -> List[str]:
+    def _generate_warnings(
+        self, params: BookParameters, total: float, total_output_tokens: int
+    ) -> List[str]:
         """Generate warnings for user."""
         warnings = []
 
-        if total > 50:
-            warnings.append(f"Szacowany koszt (${total:.2f}) jest wysoki. Rozważ mniejszy zakres.")
-
-        if total > 100:
-            warnings.append(f"UWAGA: Koszt (${total:.2f}) przekracza $100. Upewnij się, że to zamierzone.")
+        if total > settings.MAX_COST_PER_PROJECT:
+            warnings.append(
+                f"UWAGA: Koszt (${total:.2f}) przekracza budżet bezpieczeństwa "
+                f"(${settings.MAX_COST_PER_PROJECT:.0f})."
+            )
+        elif total > 50:
+            warnings.append(
+                f"Szacowany koszt (${total:.2f}) jest wysoki. Rozważ mniejszy zakres."
+            )
 
         if params.word_count > 150000:
-            warnings.append("Bardzo długa książka (>150k słów) - generowanie może potrwać 2+ godziny.")
+            warnings.append(
+                "Bardzo długa książka (>150k słów) - generowanie może potrwać 2+ godziny."
+            )
 
         if params.main_characters > 10:
-            warnings.append("Duża ilość głównych postaci (>10) zwiększa ryzyko niespójności.")
+            warnings.append(
+                "Duża ilość głównych postaci (>10) zwiększa ryzyko niespójności."
+            )
 
         if params.chapter_count > 40:
-            warnings.append("Wiele rozdziałów (>40) - dłuższy czas generowania i wyższy koszt.")
+            warnings.append(
+                "Wiele rozdziałów (>40) - dłuższy czas generowania i wyższy koszt."
+            )
+
+        # Math sanity check
+        expected_words = total_output_tokens / self.TOKENS_PER_WORD_POLISH
+        if expected_words < params.word_count * 0.8:
+            warnings.append(
+                f"Szacowana liczba tokenów wyjściowych ({total_output_tokens:,}) "
+                f"może być niewystarczająca dla {params.word_count:,} słów. "
+                f"Rzeczywisty koszt może być wyższy."
+            )
 
         return warnings
 
     def estimate_duration_minutes(self, parameters: BookParameters) -> int:
         """Estimate generation duration in minutes."""
         total_scenes = parameters.chapter_count * parameters.scenes_per_chapter
+        total_chars = parameters.main_characters + parameters.supporting_characters // 2
 
-        # Base times per step (in minutes)
         times = {
-            "titan_analysis": 2,
-            "world_building": 1,
-            "character_creation": 0.5 * (parameters.main_characters + parameters.supporting_characters // 2),
-            "plot_architecture": 2,
-            "beat_sheets": 0.1 * total_scenes,
-            "prose_generation": 0.5 * total_scenes,  # ~30 seconds per scene
-            "qa": 0.05 * total_scenes,
-            "style_polish": 0.2 * parameters.chapter_count,
-            "continuity": 2,
-            "assembly": 1
+            "initialize": 0.5,
+            "trends": 2,
+            "outline_beats": 3 + (0.1 * total_scenes),
+            "characters": 0.5 * total_chars,
+            "prose": 0.5 * total_scenes,
+            "style": 0.3 * parameters.chapter_count,
+            "emotional": 0.05 * total_scenes,
+            "coherence": 0.2 * parameters.chapter_count,
+            "cultural": 2,
+            "visuals": 1,
         }
 
         total_minutes = sum(times.values())
-
-        # Add 20% buffer
-        return int(total_minutes * 1.2)
+        return int(total_minutes * 1.2)  # +20% buffer
 
 
 # Singleton instance

@@ -135,13 +135,15 @@ def _persist_execution_to_db(execution: "WorkflowExecution") -> bool:
             }
 
             if log_entry is None:
-                from app.services.ai_service import ModelTier
+                # Use generation_log's ModelTier (str enum "tier1"/"tier2"/"tier3")
+                # NOT ai_service.ModelTier (int enum 1/2/3) - DB column expects string enum
+                from app.models.generation_log import ModelTier as DBModelTier
                 log_entry = GenerationLog(
                     project_id=int(execution.project_id) if execution.project_id and str(execution.project_id).isdigit() else None,
                     step=0,
                     step_name=f"workflow_{execution.execution_id}",
                     agent_name="ServiceOrchestrator",
-                    model_tier=ModelTier.TIER_1,
+                    model_tier=DBModelTier.TIER1,
                     model_name="orchestrator",
                     tokens_in=0,
                     tokens_out=0,

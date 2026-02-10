@@ -59,6 +59,18 @@ FORBIDDEN_OPENING_PHRASES = [
     r"^obudził się",
     r"^minęł[ao] kilka dni",
     r"^był[ao]? to",
+
+    # === NOWE: Pętla pobudkowa (Groundhog Day loop) ===
+    r"otworzył[a]? oczy",
+    r"zerwał[a]? się z (podłogi|łóżka|ziemi|posadzki)",
+    r"leżał[a]? na (zimn|tward|mokr)",
+    r"ocknął[a]? się",
+    r"odzyskał[a]? przytomność",
+    r"świat wokół (niego|niej) wir",
+    r"gęsta[,]? nieprzenikniona ciemność",
+    r"ciemność otoczyła",
+    r"mrok (go |ją )?pochłonął",
+    r"duszący sen",
 ]
 
 FORBIDDEN_CLICHES = [

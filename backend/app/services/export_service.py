@@ -13,6 +13,7 @@ from html import escape as html_escape
 from docx import Document
 from docx.shared import Pt, Inches
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch as rl_inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
@@ -401,7 +402,7 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
         alignment=TA_JUSTIFY,
         fontSize=12,
         leading=16,
-        fontName=font_name,  # Helvetica supports Polish characters
+        fontName=font_name,
         firstLineIndent=18,  # First line indent (book style)
         leftIndent=0,
         rightIndent=0,
@@ -443,34 +444,38 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
     content = []
     
     # Title page
-    content.append(Paragraph(project.name, title_style))
-    content.append(Spacer(1, 0.2*Inches))
-    content.append(Paragraph(f"Gatunek: {project.genre.value.title()}", styles['Normal']))
-    content.append(Spacer(1, 0.5*Inches))
+    # Escape title for ReportLab XML parser
+    safe_title = html_escape(project.name)
+    content.append(Paragraph(safe_title, title_style))
+    content.append(Spacer(1, 0.2 * rl_inch))
+    content.append(Paragraph(f"Gatunek: {html_escape(project.genre.value.title())}", styles['Normal']))
+    content.append(Spacer(1, 0.5 * rl_inch))
     content.append(Paragraph("Stworzone przez NarraForge", styles['Normal']))
     content.append(PageBreak())
     
+    # Chapter title italic style (created once, reused for all chapters)
+    chapter_title_italic_style = ParagraphStyle(
+        'ChapterTitleItalic',
+        parent=styles['Heading3'],
+        fontName=font_name_italic,
+        alignment=TA_CENTER,
+        fontSize=14
+    )
+
     # Chapters
     for chapter in chapters:
         if chapter.content:
             content.append(Paragraph(f"Rozdział {chapter.number}", chapter_style))
             if chapter.title:
-                title_style_italic = ParagraphStyle(
-                    'ChapterTitleItalic',
-                    parent=styles['Heading3'],
-                    fontName=font_name_italic,
-                    alignment=TA_CENTER,
-                    fontSize=14
-                )
-                content.append(Paragraph(chapter.title, title_style_italic))
+                content.append(Paragraph(html_escape(chapter.title), chapter_title_italic_style))
 
-            content.append(Spacer(1, 0.3*Inches))
+            content.append(Spacer(1, 0.3 * rl_inch))
 
             # Chapter content with professional formatting
             paragraphs = [p.strip() for p in chapter.content.split('\n\n') if p.strip()]
             for i, paragraph_text in enumerate(paragraphs):
                 # Detect if dialogue (starts with em dash)
-                is_dialogue = paragraph_text.startswith('—') or paragraph_text.startswith('-')
+                is_dialogue = paragraph_text.startswith('\u2014') or paragraph_text.startswith('-')
 
                 # Choose style: first paragraph has no indent
                 if i == 0:
@@ -481,15 +486,14 @@ def _export_pdf(project: Project, chapters: List[Chapter], file_path: Path):
                     current_style = body_style
 
                 try:
-                    # Ensure proper encoding for Polish characters
-                    safe_text = paragraph_text.encode('utf-8', 'replace').decode('utf-8')
+                    # Escape for ReportLab XML parser (handles &, <, > in text)
+                    safe_text = html_escape(paragraph_text)
                     content.append(Paragraph(safe_text, current_style))
-                    content.append(Spacer(1, 0.05*Inches))  # Small space between paragraphs
+                    content.append(Spacer(1, 0.05 * rl_inch))
                 except Exception as e:
                     logger.warning(f"Failed to add paragraph to PDF: {e}")
-                    # Add as plain text if Paragraph fails
-                    content.append(Paragraph(paragraph_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), current_style))
-                    content.append(Spacer(1, 0.05*Inches))
+                    content.append(Paragraph(html_escape(paragraph_text), current_style))
+                    content.append(Spacer(1, 0.05 * rl_inch))
 
             content.append(PageBreak())
     

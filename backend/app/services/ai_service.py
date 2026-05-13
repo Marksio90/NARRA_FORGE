@@ -396,7 +396,7 @@ class AIService:
                     await asyncio.sleep(wait_time)
                 else:
                     with self.metrics._lock:
-                    self.metrics.errors += 1
+                        self.metrics.errors += 1
                     raise Exception(f"Rate limit exceeded after {retry_count} attempts: {e}")
 
             except (openai.APIConnectionError, AnthropicAPIConnectionError, AnthropicAPITimeoutError) as e:
